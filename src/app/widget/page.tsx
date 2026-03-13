@@ -265,6 +265,7 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
           boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
           fontFamily: "inherit",
           whiteSpace: "nowrap",
+          margin: "50px"
         }}
         aria-label="Toggle feedback form"
       >

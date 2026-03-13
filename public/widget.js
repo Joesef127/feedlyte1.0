@@ -22,9 +22,13 @@
     right: position === "bottom-right" ? "24px" : "auto",
     left: position === "bottom-left" ? "24px" : "auto",
     zIndex: "2147483647",
-    width: "0",
+    width: "380px",
+    maxWidth: "calc(100vw - 48px)",
     height: "0",
     overflow: "visible",
+    display: "flex",
+    justifyContent: position === "bottom-left" ? "flex-start" : "flex-end",
+    alignItems: "flex-end",
   });
 
   // iframe

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations";
+import { handleError } from "@/lib/api-helpers";
 
 export async function POST(req: Request) {
   try {
@@ -33,7 +34,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(user, { status: 201 });
   } catch (e) {
-    console.error("[register]", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleError(e, "register");
   }
 }

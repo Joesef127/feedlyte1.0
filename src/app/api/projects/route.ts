@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { createProjectSchema } from "@/lib/validations";
+import { handleError } from "@/lib/api-helpers";
 
 export async function GET() {
   const session = await auth();
@@ -9,30 +10,34 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const projects = await prisma.project.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { feedback: true } },
-      feedback: {
-        where: { status: "new" },
-        select: { id: true },
+  try {
+    const projects = await prisma.project.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { feedback: true } },
+        feedback: {
+          where: { status: "new" },
+          select: { id: true },
+        },
       },
-    },
-  });
+    });
 
-  const result = projects.map((p) => ({
-    id: p.id,
-    name: p.name,
-    color: p.color,
-    position: p.position,
-    label: p.label,
-    createdAt: p.createdAt.toISOString(),
-    feedbackCount: p._count.feedback,
-    newCount: p.feedback.length,
-  }));
+    const result = projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      position: p.position,
+      label: p.label,
+      createdAt: p.createdAt.toISOString(),
+      feedbackCount: p._count.feedback,
+      newCount: p.feedback.length,
+    }));
 
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (e) {
+    return handleError(e, "projects/GET");
+  }
 }
 
 export async function POST(req: Request) {
@@ -57,9 +62,6 @@ export async function POST(req: Request) {
         ...parsed.data,
         userId: session.user.id,
       },
-      include: {
-        _count: { select: { feedback: true } },
-      },
     });
 
     return NextResponse.json(
@@ -76,7 +78,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (e) {
-    console.error("[projects/POST]", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleError(e, "projects/POST");
   }
 }

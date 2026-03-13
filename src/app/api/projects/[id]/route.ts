@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
+import { handleError } from "@/lib/api-helpers";
 
 export async function GET(
   _req: Request,
@@ -11,26 +12,30 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const project = await prisma.project.findFirst({
-    where: { id, userId: session.user.id },
-    include: { _count: { select: { feedback: true } } },
-  });
+  try {
+    const { id } = await params;
+    const project = await prisma.project.findFirst({
+      where: { id, userId: session.user.id },
+      include: { _count: { select: { feedback: true } } },
+    });
 
-  if (!project) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!project) {
+      return NextResponse.json({ error: "Project not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      id: project.id,
+      name: project.name,
+      color: project.color,
+      position: project.position,
+      label: project.label,
+      createdAt: project.createdAt.toISOString(),
+      feedbackCount: project._count.feedback,
+      newCount: 0,
+    });
+  } catch (e) {
+    return handleError(e, "projects/[id]/GET");
   }
-
-  return NextResponse.json({
-    id: project.id,
-    name: project.name,
-    color: project.color,
-    position: project.position,
-    label: project.label,
-    createdAt: project.createdAt.toISOString(),
-    feedbackCount: project._count.feedback,
-    newCount: 0,
-  });
 }
 
 export async function DELETE(
@@ -42,15 +47,19 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const project = await prisma.project.findFirst({
-    where: { id, userId: session.user.id },
-  });
+  try {
+    const { id } = await params;
+    const project = await prisma.project.findFirst({
+      where: { id, userId: session.user.id },
+    });
 
-  if (!project) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!project) {
+      return NextResponse.json({ error: "Project not found." }, { status: 404 });
+    }
+
+    await prisma.project.delete({ where: { id } });
+    return new NextResponse(null, { status: 204 });
+  } catch (e) {
+    return handleError(e, "projects/[id]/DELETE");
   }
-
-  await prisma.project.delete({ where: { id } });
-  return new NextResponse(null, { status: 204 });
 }

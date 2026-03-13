@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { submitFeedbackSchema } from "@/lib/validations";
 import { feedbackRateLimit } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/api-helpers";
+import { getClientIp, handleError } from "@/lib/api-helpers";
 
 // CORS headers for the public feedback submission endpoint
 const CORS_HEADERS = {
@@ -108,10 +108,6 @@ export async function POST(req: Request) {
       { status: 201, headers: CORS_HEADERS }
     );
   } catch (e) {
-    console.error("[feedback/POST]", e);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS }
-    );
+    return handleError(e, "feedback/POST", CORS_HEADERS);
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { updateStatusSchema } from "@/lib/validations";
+import { handleError } from "@/lib/api-helpers";
 
 // Helper: verify feedback ownership (user must own the project the feedback belongs to)
 async function getOwnedFeedback(id: string, userId: string) {
@@ -22,14 +23,18 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const feedback = await getOwnedFeedback(id, session.user.id);
-  if (!feedback) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  try {
+    const { id } = await params;
+    const feedback = await getOwnedFeedback(id, session.user.id);
+    if (!feedback) {
+      return NextResponse.json({ error: "Feedback not found." }, { status: 404 });
+    }
 
-  await prisma.feedback.delete({ where: { id } });
-  return new NextResponse(null, { status: 204 });
+    await prisma.feedback.delete({ where: { id } });
+    return new NextResponse(null, { status: 204 });
+  } catch (e) {
+    return handleError(e, "feedback/[id]/DELETE");
+  }
 }
 
 export async function PATCH(
@@ -68,7 +73,6 @@ export async function PATCH(
       status: updated.status,
     });
   } catch (e) {
-    console.error("[feedback/PATCH]", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleError(e, "feedback/PATCH");
   }
 }

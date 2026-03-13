@@ -12,7 +12,7 @@ interface EmbedCodeProps {
 export function EmbedCode({ project }: EmbedCodeProps) {
   const [copied, setCopied] = useState(false);
 
-  const embedCode = `<script src="https://feedstack.dev/widget.js" data-project="${project.id}"></script>`;
+  const embedCode = `<script src="https://feedlyte.vercel.app/widget.js" data-project="${project.id}"></script>`;
 
   const copy = () => {
     navigator.clipboard.writeText(embedCode).catch(() => {});
