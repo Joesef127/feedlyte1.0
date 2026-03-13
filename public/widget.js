@@ -24,11 +24,11 @@
     zIndex: "2147483647",
     width: "380px",
     maxWidth: "calc(100vw - 48px)",
-    height: "0",
-    overflow: "visible",
     display: "flex",
-    justifyContent: position === "bottom-left" ? "flex-start" : "flex-end",
-    alignItems: "flex-end",
+    flexDirection: "column",
+    justifyContent: "flex-end",
+    alignItems: position === "bottom-left" ? "flex-start" : "flex-end",
+    pointerEvents: "none",
   });
 
   // iframe
@@ -46,6 +46,7 @@
     overflow: "hidden",
     transition: "height 0.25s ease",
     background: "transparent",
+    pointerEvents: "all",
   });
   iframe.setAttribute("allowtransparency", "true");
   iframe.setAttribute("scrolling", "no");
