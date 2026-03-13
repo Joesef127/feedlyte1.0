@@ -1,0 +1,22 @@
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+function Textarea({
+  className,
+  ...props
+}: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      className={cn(
+        "flex w-full rounded-lg border border-[#2a2a2a] bg-input px-3 py-2",
+        "text-[13px] text-foreground placeholder:text-[#3d3d3d]",
+        "outline-none transition-colors focus:border-primary",
+        "disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Textarea };
