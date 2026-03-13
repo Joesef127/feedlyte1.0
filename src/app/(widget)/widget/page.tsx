@@ -39,7 +39,10 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
     setSubmitting(true);
     setError("");
     try {
-      const res = await fetch("/api/feedback", {
+      // Use absolute URL — the widget runs in an iframe on a third-party domain,
+      // so a relative path would resolve to the host page's origin, not ours.
+      const apiBase = typeof window !== "undefined" ? window.location.origin : "";
+      const res = await fetch(`${apiBase}/api/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -17,7 +17,7 @@ export default function WidgetRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ colorScheme: "normal" }}>
       <body>
         <style>{`
           html, body {
@@ -25,6 +25,7 @@ export default function WidgetRootLayout({
             margin: 0 !important;
             padding: 0 !important;
             overflow: hidden !important;
+            color-scheme: normal !important;
           }
           *, *::before, *::after {
             box-sizing: border-box;
