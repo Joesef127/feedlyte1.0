@@ -78,6 +78,7 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
         alignItems: isRight ? "flex-end" : "flex-start",
         padding: "0",
         background: "transparent",
+        width: "100%",
       }}
     >
       {/* Feedback panel */}

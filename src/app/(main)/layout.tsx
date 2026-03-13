@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import "./globals.css";
+import "../globals.css";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: "Collect and manage feedback from your users with a lightweight embeddable widget.",
 };
 
-export default function RootLayout({
+export default function MainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
