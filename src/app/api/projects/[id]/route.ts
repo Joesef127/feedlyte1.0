@@ -1,0 +1,56 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const project = await prisma.project.findFirst({
+    where: { id, userId: session.user.id },
+    include: { _count: { select: { feedback: true } } },
+  });
+
+  if (!project) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    id: project.id,
+    name: project.name,
+    color: project.color,
+    position: project.position,
+    label: project.label,
+    createdAt: project.createdAt.toISOString(),
+    feedbackCount: project._count.feedback,
+    newCount: 0,
+  });
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const project = await prisma.project.findFirst({
+    where: { id, userId: session.user.id },
+  });
+
+  if (!project) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.project.delete({ where: { id } });
+  return new NextResponse(null, { status: 204 });
+}

@@ -1,33 +1,59 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { MessageSquare } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 
-interface AuthScreenProps {
-  onLogin: () => void;
-}
-
 type Mode = "login" | "register";
 
-export function AuthScreen({ onLogin }: AuthScreenProps) {
+export function AuthScreen() {
   const [mode, setMode] = useState<Mode>("login");
-  const [email, setEmail] = useState("jordan@acme.dev");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const submit = () => {
-    if (!email || !password) {
+  const submit = async () => {
+    setError("");
+    if (!email || !password || (mode === "register" && !name)) {
       setError("All fields required.");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      if (mode === "register") {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "Registration failed.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password.");
+        setLoading(false);
+        return;
+      }
+      // Session update handled by useSession in app.tsx — no reload needed
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
-      onLogin();
-    }, 900);
+    }
   };
 
   return (
@@ -70,7 +96,7 @@ export function AuthScreen({ onLogin }: AuthScreenProps) {
         {/* Form */}
         <div className="flex flex-col gap-3.5">
           {mode === "register" && (
-            <FormField label="Name" value={name} onChange={setName} placeholder="Jordan Kim" />
+            <FormField label="Name" value={name} onChange={setName} placeholder="Your name" />
           )}
           <FormField
             label="Email"
@@ -93,18 +119,12 @@ export function AuthScreen({ onLogin }: AuthScreenProps) {
             className="w-full bg-primary text-primary-foreground border-none py-[11px] rounded-lg text-[13px] font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
           >
             {loading
-              ? "Authenticating..."
+              ? mode === "register" ? "Creating account..." : "Signing in..."
               : mode === "login"
               ? "Sign In"
               : "Create Account"}
           </button>
         </div>
-
-        {mode === "login" && (
-          <p className="text-center text-muted-foreground text-[12px] mt-5 mb-0">
-            Demo: any email + password works.
-          </p>
-        )}
       </div>
     </div>
   );

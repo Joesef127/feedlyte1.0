@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { Feedback, Page, Project } from "@/types";
-import { MOCK_PROJECTS, INITIAL_FEEDBACK } from "@/data/mock";
+import { useSession, signOut } from "next-auth/react";
+import type { Page, Project } from "@/types";
 import { AuthScreen } from "@/components/auth/auth-screen";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -12,14 +12,20 @@ import { AllFeedbackPage } from "@/components/feedback/all-feedback-page";
 import { SettingsPage } from "@/components/settings/settings-page";
 
 export function App() {
-  const [authed, setAuthed] = useState(false);
+  const { status } = useSession();
   const [page, setPage] = useState<Page>("projects");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-  const [feedback, setFeedback] = useState<Feedback[]>(INITIAL_FEEDBACK);
 
-  if (!authed) {
-    return <AuthScreen onLogin={() => setAuthed(true)} />;
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return <AuthScreen />;
   }
 
   const handleSetPage = (p: Page) => {
@@ -32,7 +38,7 @@ export function App() {
       <Sidebar
         page={selectedProject ? "projects" : page}
         setPage={handleSetPage}
-        onLogout={() => setAuthed(false)}
+        onLogout={() => signOut({ redirect: false })}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header page={page} project={selectedProject} />
@@ -41,21 +47,11 @@ export function App() {
             <ProjectDetailPage
               project={selectedProject}
               onBack={() => setSelectedProject(null)}
-              feedback={feedback}
-              setFeedback={setFeedback}
             />
           ) : page === "projects" ? (
-            <ProjectsPage
-              projects={projects}
-              setProjects={setProjects}
-              onSelectProject={setSelectedProject}
-            />
+            <ProjectsPage onSelectProject={setSelectedProject} />
           ) : page === "feedback" ? (
-            <AllFeedbackPage
-              feedback={feedback}
-              setFeedback={setFeedback}
-              projects={projects}
-            />
+            <AllFeedbackPage />
           ) : (
             <SettingsPage />
           )}
@@ -64,3 +60,4 @@ export function App() {
     </div>
   );
 }
+

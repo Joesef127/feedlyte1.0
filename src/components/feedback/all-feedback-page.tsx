@@ -1,20 +1,14 @@
 "use client";
 
-import type { Feedback, Project, Status } from "@/types";
 import { FeedbackTable } from "./feedback-table";
+import { useAllFeedback, useUpdateFeedbackStatus, useDeleteFeedback } from "@/hooks/use-feedback";
+import { useProjects } from "@/hooks/use-projects";
 
-interface AllFeedbackPageProps {
-  feedback: Feedback[];
-  setFeedback: React.Dispatch<React.SetStateAction<Feedback[]>>;
-  projects: Project[];
-}
-
-export function AllFeedbackPage({ feedback, setFeedback, projects }: AllFeedbackPageProps) {
-  const updateStatus = (fbId: string, status: Status) =>
-    setFeedback((prev) => prev.map((f) => (f.id === fbId ? { ...f, status } : f)));
-
-  const deleteFb = (fbId: string) =>
-    setFeedback((prev) => prev.filter((f) => f.id !== fbId));
+export function AllFeedbackPage() {
+  const { data: feedback = [], isLoading } = useAllFeedback();
+  const { data: projects = [] } = useProjects();
+  const updateStatus = useUpdateFeedbackStatus();
+  const deleteFb = useDeleteFeedback();
 
   return (
     <div className="flex-1 px-9 py-8 overflow-y-auto">
@@ -23,14 +17,16 @@ export function AllFeedbackPage({ feedback, setFeedback, projects }: AllFeedback
           All Feedback
         </h1>
         <p className="text-[13px] text-muted-foreground mt-1 m-0">
-          {feedback.length} total entries across {projects.length} projects
+          {feedback.length} total entries across {projects.length} project{projects.length !== 1 ? "s" : ""}
         </p>
       </div>
       <FeedbackTable
         feedback={feedback}
-        onUpdateStatus={updateStatus}
-        onDelete={deleteFb}
+        isLoading={isLoading}
+        onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+        onDelete={(id) => deleteFb.mutate(id)}
       />
     </div>
   );
 }
+

@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { MOCK_USER } from "@/data/mock";
+import { useSession } from "next-auth/react";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
 
 export function SettingsPage() {
+  const { data: session } = useSession();
   const [saved, setSaved] = useState(false);
+
+  const name = session?.user?.name ?? "";
+  const email = session?.user?.email ?? "";
 
   const handleSave = () => {
     setSaved(true);
@@ -30,11 +34,11 @@ export function SettingsPage() {
         <Card>
           <h3 className="text-[14px] font-bold text-foreground mb-4">Account</h3>
           <div className="flex flex-col gap-3">
-            <FormField label="Name" value={MOCK_USER.name} onChange={() => {}} />
+            <FormField label="Name" value={name} onChange={() => {}} />
             <FormField
               label="Email"
               type="email"
-              value={MOCK_USER.email}
+              value={email}
               onChange={() => {}}
             />
             <Button onClick={handleSave}>{saved ? "Saved!" : "Save Changes"}</Button>

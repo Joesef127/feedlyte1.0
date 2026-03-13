@@ -2,20 +2,23 @@
 
 import { useState } from "react";
 import { ArrowLeft, Trash2, Bell, MessageSquare, Check } from "lucide-react";
-import type { Feedback, Project, ProjectDetailTab } from "@/types";
+import type { Project, ProjectDetailTab } from "@/types";
 import { Button } from "@/components/ui/button";
-import { FormField } from "@/components/ui/form-field";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { WidgetPreview } from "@/components/widget/widget-preview";
 import { FeedbackTable } from "../feedback/feedback-table";
 import { EmbedCode } from "./embed-code";
+import {
+  useFeedback,
+  useUpdateFeedbackStatus,
+  useDeleteFeedback,
+} from "@/hooks/use-feedback";
+import { useDeleteProject } from "@/hooks/use-projects";
 
 interface ProjectDetailPageProps {
   project: Project;
   onBack: () => void;
-  feedback: Feedback[];
-  setFeedback: React.Dispatch<React.SetStateAction<Feedback[]>>;
 }
 
 const WIDGET_COLORS = ["#F59E0B", "#3B82F6", "#10B981", "#8B5CF6", "#EF4444"];
@@ -25,28 +28,29 @@ const TABS: { id: ProjectDetailTab; label: string }[] = [
   { id: "settings", label: "Widget Settings" },
 ];
 
-export function ProjectDetailPage({
-  project,
-  onBack,
-  feedback,
-  setFeedback,
-}: ProjectDetailPageProps) {
+export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
   const [tab, setTab] = useState<ProjectDetailTab>("feedback");
   const [deleteModal, setDeleteModal] = useState(false);
 
-  const pFeedback = feedback.filter((f) => f.projectId === project.id);
-
-  const updateStatus = (fbId: string, status: Feedback["status"]) =>
-    setFeedback((prev) => prev.map((f) => (f.id === fbId ? { ...f, status } : f)));
-
-  const deleteFb = (fbId: string) =>
-    setFeedback((prev) => prev.filter((f) => f.id !== fbId));
+  const { data: pFeedback = [], isLoading: feedbackLoading } = useFeedback(project.id);
+  const updateStatus = useUpdateFeedbackStatus(project.id);
+  const deleteFb = useDeleteFeedback(project.id);
+  const deleteProject = useDeleteProject();
 
   const stats = [
     { label: "Total Feedback", value: pFeedback.length, Icon: MessageSquare },
     { label: "Unreviewed", value: pFeedback.filter((f) => f.status === "new").length, Icon: Bell },
     { label: "Resolved", value: pFeedback.filter((f) => f.status === "resolved").length, Icon: Check },
   ];
+
+  const handleDeleteProject = async () => {
+    try {
+      await deleteProject.mutateAsync(project.id);
+      onBack();
+    } catch {
+      // handled by mutation state
+    }
+  };
 
   return (
     <div className="flex-1 px-9 py-8 overflow-y-auto">
@@ -84,7 +88,7 @@ export function ProjectDetailPage({
               <Icon size={14} className="text-[#3d3d3d]" />
             </div>
             <span className="text-[26px] font-bold text-foreground tracking-[-0.04em]">
-              {value}
+              {feedbackLoading ? "—" : value}
             </span>
           </Card>
         ))}
@@ -113,8 +117,9 @@ export function ProjectDetailPage({
       {tab === "feedback" && (
         <FeedbackTable
           feedback={pFeedback}
-          onUpdateStatus={updateStatus}
-          onDelete={deleteFb}
+          isLoading={feedbackLoading}
+          onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
+          onDelete={(id) => deleteFb.mutate(id)}
         />
       )}
 
@@ -136,11 +141,6 @@ export function ProjectDetailPage({
           <Card>
             <h3 className="text-[14px] font-bold text-foreground mb-4">Widget Configuration</h3>
             <div className="flex flex-col gap-3.5">
-              <FormField
-                label="Button Label"
-                value={project.label || "Feedback"}
-                onChange={() => {}}
-              />
               <div>
                 <p className="text-[12px] text-[#737373] font-medium uppercase tracking-[0.04em] mb-2">
                   Accent Color
@@ -177,9 +177,6 @@ export function ProjectDetailPage({
                   ))}
                 </div>
               </div>
-              <div className="pt-2">
-                <Button fullWidth>Save Settings</Button>
-              </div>
             </div>
           </Card>
         </div>
@@ -196,12 +193,21 @@ export function ProjectDetailPage({
           <strong className="text-foreground">{project.name}</strong> and all{" "}
           {pFeedback.length} feedback entries. This cannot be undone.
         </p>
+        {deleteProject.isError && (
+          <p className="text-destructive text-[13px] mb-4">
+            Failed to delete project. Please try again.
+          </p>
+        )}
         <div className="flex gap-2 justify-end">
           <Button variant="secondary" onClick={() => setDeleteModal(false)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={() => setDeleteModal(false)}>
-            Delete Project
+          <Button
+            variant="danger"
+            onClick={handleDeleteProject}
+            disabled={deleteProject.isPending}
+          >
+            {deleteProject.isPending ? "Deleting..." : "Delete Project"}
           </Button>
         </div>
       </Modal>

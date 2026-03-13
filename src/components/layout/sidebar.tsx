@@ -1,8 +1,8 @@
 "use client";
 
 import { LayoutGrid, MessageSquare, Settings, LogOut } from "lucide-react";
+import { useSession } from "next-auth/react";
 import type { Page } from "@/types";
-import { MOCK_USER } from "@/data/mock";
 
 interface SidebarProps {
   page: Page;
@@ -17,6 +17,10 @@ const NAV_ITEMS: { id: Page; label: string; Icon: React.FC<{ size?: number }> }[
 ];
 
 export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
+  const { data: session } = useSession();
+  const name = session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "Account";
+  const email = session?.user?.email ?? "";
+
   return (
     <div className="w-[220px] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 h-screen sticky top-0">
       {/* Logo */}
@@ -57,11 +61,11 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
       {/* User + Logout */}
       <div className="p-2 border-t border-sidebar-border">
         <div className="px-2.5 py-2.5 rounded-lg bg-card mb-2">
-          <p className="text-[12px] font-semibold text-foreground m-0">
-            {MOCK_USER.name}
+          <p className="text-[12px] font-semibold text-foreground m-0 truncate">
+            {name}
           </p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 m-0">
-            {MOCK_USER.email}
+          <p className="text-[11px] text-muted-foreground mt-0.5 m-0 truncate">
+            {email}
           </p>
         </div>
         <button
@@ -75,3 +79,4 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
     </div>
   );
 }
+

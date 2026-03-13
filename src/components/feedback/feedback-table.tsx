@@ -9,6 +9,7 @@ import { FeedbackDetail } from "./feedback-detail";
 
 interface FeedbackTableProps {
   feedback: Feedback[];
+  isLoading?: boolean;
   onUpdateStatus: (id: string, status: Status) => void;
   onDelete: (id: string) => void;
 }
@@ -20,7 +21,7 @@ const STATUS_FILTERS: { id: "all" | Status; label: string }[] = [
   { id: "resolved", label: "Resolved" },
 ];
 
-export function FeedbackTable({ feedback, onUpdateStatus, onDelete }: FeedbackTableProps) {
+export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }: FeedbackTableProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [selected, setSelected] = useState<Feedback | null>(null);
@@ -82,7 +83,11 @@ export function FeedbackTable({ feedback, onUpdateStatus, onDelete }: FeedbackTa
       </div>
 
       {/* List */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="text-center py-12 text-muted-foreground text-[14px]">
+          Loading feedback...
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-12">
           <MessageSquare size={32} className="text-[#2a2a2a] mx-auto" />
           <p className="text-[#3d3d3d] text-[14px] mt-3">
