@@ -49,7 +49,7 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
           projectId,
           message: message.trim(),
           email: email.trim() || undefined,
-          pageUrl: window.parent?.location?.href ?? "",
+          pageUrl: (() => { try { return window.parent?.location?.href ?? ""; } catch { return ""; } })(),
           userAgent: navigator.userAgent,
         }),
       });

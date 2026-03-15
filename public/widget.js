@@ -22,8 +22,7 @@
     right: position === "bottom-right" ? "24px" : "auto",
     left: position === "bottom-left" ? "24px" : "auto",
     zIndex: "2147483647",
-    width: "fit-content",
-    height: "fit-content",
+    width: "380px",
     maxWidth: "calc(100vw - 48px)",
     display: "flex",
     flexDirection: "column",
@@ -39,8 +38,8 @@
   iframe.id = "feedstack-widget-frame";
   Object.assign(iframe.style, {
     border: "none",
-    width: "max-content",
-    height: "max-content",
+    width: "380px",
+    height: "68px",
     maxWidth: "calc(100vw - 48px)",
     display: "block",
     borderRadius: "12px",
