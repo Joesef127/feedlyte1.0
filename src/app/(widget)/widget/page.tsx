@@ -40,14 +40,13 @@ export default function WidgetPage() {
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
       const apiBase = typeof window !== "undefined" ? window.location.origin : "";
-      const res = await fetch(`${apiBase}/api/feedback`, {
+      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId,
           message: message.trim(),
           email: email.trim() || undefined,
-          pageUrl: (() => { try { return window.parent?.location?.href ?? ""; } catch { return ""; } })(),
+          pageUrl: document.referrer || "",
           userAgent: navigator.userAgent,
         }),
       });

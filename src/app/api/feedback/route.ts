@@ -71,6 +71,15 @@ export async function POST(req: Request) {
   }
 
   try {
+    const reqUrl = new URL(req.url);
+    const projectId = reqUrl.searchParams.get("project") ?? "";
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Project ID is required." },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
+
     const body = await req.json();
     const parsed = submitFeedbackSchema.safeParse(body);
 
@@ -81,7 +90,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { projectId, message, email, pageUrl, userAgent } = parsed.data;
+    const { message, email, pageUrl, userAgent } = parsed.data;
 
     // Verify the project exists (public lookup by id)
     const project = await prisma.project.findUnique({ where: { id: projectId } });

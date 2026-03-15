@@ -34,7 +34,6 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 // ── Feedback ─────────────────────────────────────────────────────────────────
 
 export const submitFeedbackSchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
   message: z.string().min(1, "Message is required").max(2000),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   pageUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
