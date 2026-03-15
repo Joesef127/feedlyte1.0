@@ -17,13 +17,13 @@
   var container = document.createElement("div");
   container.id = "feedstack-widget-container";
   Object.assign(container.style, {
-    position: "fixed",
+    position: "absolute",
     bottom: "24px",
     right: position === "bottom-right" ? "24px" : "auto",
     left: position === "bottom-left" ? "24px" : "auto",
     zIndex: "2147483647",
-    width: "380px",
-    height: "100%",
+    width: "max-content",
+    height: "fit-content",
     maxWidth: "calc(100vw - 48px)",
     display: "flex",
     flexDirection: "column",
