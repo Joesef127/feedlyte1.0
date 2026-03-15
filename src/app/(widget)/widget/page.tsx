@@ -19,10 +19,16 @@ export default function WidgetPage() {
   // component inside an iframe, so window.location.search is always available
   // and avoids Next.js searchParams Promise resolution differences between
   // dev and production builds.
+  const [pageUrl, setPageUrl] = useState("");
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setProjectId(params.get("project") ?? "");
     setPosition(params.get("position") ?? "bottom-right");
+    // Prefer the URL passed by widget.js (most reliable — runs on host page
+    // before any cross-origin restrictions). Fall back to document.referrer
+    // which browsers set on iframes when no referrer policy blocks it.
+    setPageUrl(params.get("url") ?? document.referrer ?? "");
   }, []);
 
   // Notify parent of height changes
@@ -46,7 +52,7 @@ export default function WidgetPage() {
         body: JSON.stringify({
           message: message.trim(),
           email: email.trim() || undefined,
-          pageUrl: document.referrer || "",
+          pageUrl: pageUrl,
           userAgent: navigator.userAgent,
         }),
       });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { submitFeedbackSchema } from "@/lib/validations";
+import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { feedbackRateLimit } from "@/lib/rate-limit";
 import { getClientIp, handleError } from "@/lib/api-helpers";
 
@@ -72,13 +72,16 @@ export async function POST(req: Request) {
 
   try {
     const reqUrl = new URL(req.url);
-    const projectId = reqUrl.searchParams.get("project") ?? "";
-    if (!projectId) {
+    const queryParsed = projectQuerySchema.safeParse(
+      Object.fromEntries(reqUrl.searchParams)
+    );
+    if (!queryParsed.success) {
       return NextResponse.json(
-        { error: "Project ID is required." },
+        { error: queryParsed.error.issues[0].message },
         { status: 400, headers: CORS_HEADERS }
       );
     }
+    const { project: projectId } = queryParsed.data;
 
     const body = await req.json();
     const parsed = submitFeedbackSchema.safeParse(body);
@@ -113,7 +116,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { message: "Feedback received. Thank you!" },
+      { id: feedback.id, message: "Feedback received. Thank you!" },
       { status: 201, headers: CORS_HEADERS }
     );
   } catch (e) {

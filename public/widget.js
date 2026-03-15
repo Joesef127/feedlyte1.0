@@ -19,7 +19,10 @@
   // on the iframe is the simplest and most compatible approach.
   var iframe = document.createElement("iframe");
   iframe.src =
-    origin + "/widget?project=" + encodeURIComponent(projectId) + "&position=" + encodeURIComponent(position);
+    origin +
+    "/widget?project=" + encodeURIComponent(projectId) +
+    "&position=" + encodeURIComponent(position) +
+    "&url=" + encodeURIComponent(window.location.href);
   iframe.id = "feedstack-widget-frame";
   Object.assign(iframe.style, {
     position: "fixed",
