@@ -22,14 +22,14 @@
     right: position === "bottom-right" ? "24px" : "auto",
     left: position === "bottom-left" ? "24px" : "auto",
     zIndex: "2147483647",
-    width: "max-content",
+    width: "fit-content",
     height: "fit-content",
     maxWidth: "calc(100vw - 48px)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "flex-end",
     alignItems: position === "bottom-left" ? "flex-start" : "flex-end",
-    pointerEvents: "all",
+    pointerEvents: "none",
   });
 
   // iframe
