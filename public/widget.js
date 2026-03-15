@@ -13,38 +13,29 @@
   var src = script.src || "";
   var origin = src ? src.replace(/\/widget\.js(\?.*)?$/, "") : window.location.origin;
 
-  // Container styles
-  var container = document.createElement("div");
-  container.id = "feedstack-widget-container";
-  Object.assign(container.style, {
-    position: "fixed",
-    bottom: "24px",
-    right: position === "bottom-right" ? "24px" : "auto",
-    left: position === "bottom-left" ? "24px" : "auto",
-    zIndex: "2147483647",
-    width: "380px",
-    maxWidth: "calc(100vw - 48px)",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-end",
-    alignItems: position === "bottom-left" ? "flex-start" : "flex-end",
-  });
-
-  // iframe
+  // Inject iframe directly into body — no wrapper div.
+  // A wrapper div creates its own stacking context and can swallow pointer
+  // events depending on the host page's CSS. Putting position:fixed directly
+  // on the iframe is the simplest and most compatible approach.
   var iframe = document.createElement("iframe");
   iframe.src =
     origin + "/widget?project=" + encodeURIComponent(projectId) + "&position=" + encodeURIComponent(position);
   iframe.id = "feedstack-widget-frame";
   Object.assign(iframe.style, {
+    position: "fixed",
+    bottom: "24px",
+    right: position === "bottom-right" ? "24px" : "auto",
+    left: position === "bottom-left" ? "24px" : "auto",
+    zIndex: "2147483647",
     border: "none",
     width: "380px",
     height: "68px",
     maxWidth: "calc(100vw - 48px)",
     display: "block",
-    borderRadius: "12px",
     overflow: "hidden",
     transition: "height 0.25s ease",
     background: "transparent",
+    colorScheme: "normal",
   });
   iframe.setAttribute("allowtransparency", "true");
   iframe.setAttribute("scrolling", "no");
@@ -58,6 +49,5 @@
     }
   });
 
-  container.appendChild(iframe);
-  document.body.appendChild(container);
+  document.body.appendChild(iframe);
 })();
