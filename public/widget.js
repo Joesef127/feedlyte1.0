@@ -17,7 +17,7 @@
   var container = document.createElement("div");
   container.id = "feedstack-widget-container";
   Object.assign(container.style, {
-    position: "absolute",
+    position: "fixed",
     bottom: "24px",
     right: position === "bottom-right" ? "24px" : "auto",
     left: position === "bottom-left" ? "24px" : "auto",
@@ -39,8 +39,8 @@
   iframe.id = "feedstack-widget-frame";
   Object.assign(iframe.style, {
     border: "none",
-    width: "380px",
-    height: "68px",
+    width: "max-content",
+    height: "max-content",
     maxWidth: "calc(100vw - 48px)",
     display: "block",
     borderRadius: "12px",
