@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-interface WidgetPageProps {
-  searchParams: Promise<{ project?: string; position?: string }>;
-}
-
-export default function WidgetPage({ searchParams }: WidgetPageProps) {
+export default function WidgetPage() {
   const [projectId, setProjectId] = useState("");
   const [position, setPosition] = useState("bottom-right");
 
@@ -19,13 +15,15 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resolve searchParams (Next.js 15+ returns a Promise)
+  // Read URL params directly from window.location — this is a pure client
+  // component inside an iframe, so window.location.search is always available
+  // and avoids Next.js searchParams Promise resolution differences between
+  // dev and production builds.
   useEffect(() => {
-    Promise.resolve(searchParams).then((p) => {
-      setProjectId(p.project ?? "");
-      setPosition(p.position ?? "bottom-right");
-    });
-  }, [searchParams]);
+    const params = new URLSearchParams(window.location.search);
+    setProjectId(params.get("project") ?? "");
+    setPosition(params.get("position") ?? "bottom-right");
+  }, []);
 
   // Notify parent of height changes
   useEffect(() => {
