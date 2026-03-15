@@ -28,7 +28,6 @@
     flexDirection: "column",
     justifyContent: "flex-end",
     alignItems: position === "bottom-left" ? "flex-start" : "flex-end",
-    pointerEvents: "none",
   });
 
   // iframe
@@ -46,7 +45,6 @@
     overflow: "hidden",
     transition: "height 0.25s ease",
     background: "transparent",
-    pointerEvents: "all",
   });
   iframe.setAttribute("allowtransparency", "true");
   iframe.setAttribute("scrolling", "no");
