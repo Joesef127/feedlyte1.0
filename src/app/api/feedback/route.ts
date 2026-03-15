@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { id: feedback.id, message: "Feedback received. Thank you!" },
+      { message: "Feedback received. Thank you!" },
       { status: 201, headers: CORS_HEADERS }
     );
   } catch (e) {
