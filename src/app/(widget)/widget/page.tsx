@@ -8,15 +8,37 @@ interface WidgetSearchParams {
   url?: string;
 }
 
+// Stable fallback used when the Next.js searchParams prop is not provided
+// (bare iframe URL, tests without DOM). Defined outside the component so the
+// reference never changes between renders — use() must always be called
+// unconditionally to satisfy the Rules of Hooks.
+//
+// Compatibility: React.use() for unwrapping Promises is available in
+// React 19+ (this project uses React 19.2.3 / Next.js 16.1.6).
+const EMPTY_PARAMS_PROMISE: Promise<WidgetSearchParams> = Promise.resolve({});
+
+// Only allow http/https pageUrls — prevents protocol-injection attacks
+// (e.g. javascript:, data:) slipping through before server validation.
+function sanitizePageUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? url
+      : "";
+  } catch {
+    return "";
+  }
+}
+
 export default function WidgetPage({
-  searchParams,
+  searchParams = EMPTY_PARAMS_PROMISE,
 }: {
   searchParams?: Promise<WidgetSearchParams>;
 }) {
-  // Resolve the Next.js searchParams Promise when provided — enables testing
-  // without a real browser environment. React.use() may be called
-  // conditionally in React 19+.
-  const resolvedParams = searchParams ? use(searchParams) : null;
+  // Always called unconditionally — satisfies Rules of Hooks.
+  // When no real searchParams are provided, EMPTY_PARAMS_PROMISE resolves to {}
+  // and the window.location fallback effect below takes over.
+  const resolvedParams = use(searchParams);
 
   const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
   const [position, setPosition] = useState(resolvedParams?.position ?? "bottom-right");
@@ -37,7 +59,8 @@ export default function WidgetPage({
   useEffect(() => {
     // Only needed when the searchParams prop wasn't provided (e.g., bare
     // iframe URL not routed through Next.js, or in tests without DOM access).
-    if (resolvedParams) return;
+    // resolvedParams.project is undefined when using the EMPTY_PARAMS fallback.
+    if (resolvedParams.project) return;
     const params = new URLSearchParams(window.location.search);
     setProjectId(params.get("project") ?? "");
     setPosition(params.get("position") ?? "bottom-right");
@@ -50,9 +73,22 @@ export default function WidgetPage({
   // Notify parent of height changes
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Use the known host-page origin instead of "*" to avoid broadcasting
+    // widget state to unintended windows. Fall back to "*" only when the
+    // origin cannot be determined (e.g., referrer policy blocks it).
+    const targetOrigin = (() => {
+      try {
+        const origin = new URL(pageUrl || document.referrer).origin;
+        // "null" is the serialised opaque origin some browsers return for
+        // sandboxed iframes — treat it as unknown.
+        return origin && origin !== "null" ? origin : "*";
+      } catch {
+        return "*";
+      }
+    })();
     const h = containerRef.current?.scrollHeight ?? 68;
-    window.parent.postMessage({ type: "feedlyte:resize", height: h }, "*");
-  }, [open, submitted]);
+    window.parent.postMessage({ type: "feedlyte:resize", height: h }, targetOrigin);
+  }, [open, submitted, pageUrl]);
 
   const handleSubmit = async () => {
     if (!message.trim() || !projectId) return;
@@ -68,7 +104,10 @@ export default function WidgetPage({
         body: JSON.stringify({
           message: message.trim(),
           email: email.trim() || undefined,
-          pageUrl: pageUrl,
+          // Sanitize before sending — server validation is the authoritative
+          // check, but stripping non-http(s) protocols client-side adds
+          // defence-in-depth against protocol-injection via the url param.
+          pageUrl: sanitizePageUrl(pageUrl),
           userAgent: navigator.userAgent,
         }),
       });

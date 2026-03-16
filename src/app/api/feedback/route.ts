@@ -4,16 +4,28 @@ import prisma from "@/lib/prisma";
 import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { feedbackRateLimit } from "@/lib/rate-limit";
 import { getClientIp, handleError } from "@/lib/api-helpers";
+import { get } from "http";
 
-// CORS headers for the public feedback submission endpoint
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://feedlyte.vercel.app, http://localhost:3000", // allow only our frontend to submit feedback
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+// CORS — public feedback submission endpoint
+const ALLOWED_ORIGINS = [
+  "https://feedlyte.vercel.app",
+  "http://localhost:3000",
+];
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin)
+      ? origin
+      : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Vary": "Origin",
+  };
+}
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: getCorsHeaders(req) });
 }
 
 // GET /api/feedback — authenticated, returns all feedback for the current user
@@ -66,7 +78,7 @@ export async function POST(req: Request) {
   if (!limited.success) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
-      { status: 429, headers: CORS_HEADERS }
+      { status: 429, headers: getCorsHeaders(req) }
     );
   }
 
@@ -78,7 +90,7 @@ export async function POST(req: Request) {
     if (!queryParsed.success) {
       return NextResponse.json(
         { error: queryParsed.error.issues[0].message },
-        { status: 400, headers: CORS_HEADERS }
+        { status: 400, headers: getCorsHeaders(req) }
       );
     }
     const { project: projectId } = queryParsed.data;
@@ -89,7 +101,7 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0].message },
-        { status: 400, headers: CORS_HEADERS }
+        { status: 400, headers: getCorsHeaders(req) }
       );
     }
 
@@ -100,7 +112,7 @@ export async function POST(req: Request) {
     if (!project) {
       return NextResponse.json(
         { error: "Project not found." },
-        { status: 404, headers: CORS_HEADERS }
+        { status: 404, headers: getCorsHeaders(req) }
       );
     }
 
@@ -117,9 +129,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { id: feedback.id, message: "Feedback received. Thank you!" },
-      { status: 201, headers: CORS_HEADERS }
+      { status: 201, headers: getCorsHeaders(req) }
     );
   } catch (e) {
-    return handleError(e, "feedback/POST", CORS_HEADERS);
+    return handleError(e, "feedback/POST", getCorsHeaders(req));
   }
 }
