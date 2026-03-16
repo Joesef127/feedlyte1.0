@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { feedbackRateLimit } from "@/lib/rate-limit";
 import { getClientIp, handleError } from "@/lib/api-helpers";
-import { get } from "http";
 
 // CORS — public feedback submission endpoint
 const ALLOWED_ORIGINS = [
