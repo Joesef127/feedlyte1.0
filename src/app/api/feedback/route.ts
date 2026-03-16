@@ -7,7 +7,7 @@ import { getClientIp, handleError } from "@/lib/api-helpers";
 
 // CORS headers for the public feedback submission endpoint
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://feedlyte.vercel.app, http://localhost:3000", // allow only our frontend to submit feedback
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };

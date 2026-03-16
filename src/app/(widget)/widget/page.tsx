@@ -1,10 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 
-export default function WidgetPage() {
-  const [projectId, setProjectId] = useState("");
-  const [position, setPosition] = useState("bottom-right");
+interface WidgetSearchParams {
+  project?: string;
+  position?: string;
+  url?: string;
+}
+
+export default function WidgetPage({
+  searchParams,
+}: {
+  searchParams?: Promise<WidgetSearchParams>;
+}) {
+  // Resolve the Next.js searchParams Promise when provided — enables testing
+  // without a real browser environment. React.use() may be called
+  // conditionally in React 19+.
+  const resolvedParams = searchParams ? use(searchParams) : null;
+
+  const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
+  const [position, setPosition] = useState(resolvedParams?.position ?? "bottom-right");
 
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -15,13 +30,14 @@ export default function WidgetPage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Read URL params directly from window.location — this is a pure client
-  // component inside an iframe, so window.location.search is always available
-  // and avoids Next.js searchParams Promise resolution differences between
-  // dev and production builds.
-  const [pageUrl, setPageUrl] = useState("");
+  // Prefer the value from searchParams prop (most reliable). The window.location
+  // fallback below handles the case where the prop is absent.
+  const [pageUrl, setPageUrl] = useState(resolvedParams?.url ?? "");
 
   useEffect(() => {
+    // Only needed when the searchParams prop wasn't provided (e.g., bare
+    // iframe URL not routed through Next.js, or in tests without DOM access).
+    if (resolvedParams) return;
     const params = new URLSearchParams(window.location.search);
     setProjectId(params.get("project") ?? "");
     setPosition(params.get("position") ?? "bottom-right");
@@ -29,7 +45,7 @@ export default function WidgetPage() {
     // before any cross-origin restrictions). Fall back to document.referrer
     // which browsers set on iframes when no referrer policy blocks it.
     setPageUrl(params.get("url") ?? document.referrer ?? "");
-  }, []);
+  }, [resolvedParams]);
 
   // Notify parent of height changes
   useEffect(() => {
