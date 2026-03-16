@@ -30,7 +30,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
             <MessageSquare size={14} className="text-primary-foreground" strokeWidth={2} />
           </div>
           <span className="text-base font-bold text-foreground tracking-[-0.02em]">
-            FeedStack
+            Feedlyte
           </span>
         </div>
       </div>

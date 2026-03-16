@@ -1,14 +1,47 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 
-interface WidgetPageProps {
-  searchParams: Promise<{ project?: string; position?: string }>;
+interface WidgetSearchParams {
+  project?: string;
+  position?: string;
+  url?: string;
 }
 
-export default function WidgetPage({ searchParams }: WidgetPageProps) {
-  const [projectId, setProjectId] = useState("");
-  const [position, setPosition] = useState("bottom-right");
+// Stable fallback used when the Next.js searchParams prop is not provided
+// (bare iframe URL, tests without DOM). Defined outside the component so the
+// reference never changes between renders — use() must always be called
+// unconditionally to satisfy the Rules of Hooks.
+//
+// Compatibility: React.use() for unwrapping Promises is available in
+// React 19+ (this project uses React 19.2.3 / Next.js 16.1.6).
+const EMPTY_PARAMS_PROMISE: Promise<WidgetSearchParams> = Promise.resolve({});
+
+// Only allow http/https pageUrls — prevents protocol-injection attacks
+// (e.g. javascript:, data:) slipping through before server validation.
+function sanitizePageUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? url
+      : "";
+  } catch {
+    return "";
+  }
+}
+
+export default function WidgetPage({
+  searchParams = EMPTY_PARAMS_PROMISE,
+}: {
+  searchParams?: Promise<WidgetSearchParams>;
+}) {
+  // Always called unconditionally — satisfies Rules of Hooks.
+  // When no real searchParams are provided, EMPTY_PARAMS_PROMISE resolves to {}
+  // and the window.location fallback effect below takes over.
+  const resolvedParams = use(searchParams);
+
+  const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
+  const [position, setPosition] = useState(resolvedParams?.position ?? "bottom-right");
 
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -19,20 +52,43 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resolve searchParams (Next.js 15+ returns a Promise)
+  // Prefer the value from searchParams prop (most reliable). The window.location
+  // fallback below handles the case where the prop is absent.
+  const [pageUrl, setPageUrl] = useState(resolvedParams?.url ?? "");
+
   useEffect(() => {
-    Promise.resolve(searchParams).then((p) => {
-      setProjectId(p.project ?? "");
-      setPosition(p.position ?? "bottom-right");
-    });
-  }, [searchParams]);
+    // Only needed when the searchParams prop wasn't provided (e.g., bare
+    // iframe URL not routed through Next.js, or in tests without DOM access).
+    // resolvedParams.project is undefined when using the EMPTY_PARAMS fallback.
+    if (resolvedParams.project) return;
+    const params = new URLSearchParams(window.location.search);
+    setProjectId(params.get("project") ?? "");
+    setPosition(params.get("position") ?? "bottom-right");
+    // Prefer the URL passed by widget.js (most reliable — runs on host page
+    // before any cross-origin restrictions). Fall back to document.referrer
+    // which browsers set on iframes when no referrer policy blocks it.
+    setPageUrl(params.get("url") ?? document.referrer ?? "");
+  }, [resolvedParams]);
 
   // Notify parent of height changes
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Use the known host-page origin instead of "*" to avoid broadcasting
+    // widget state to unintended windows. Fall back to "*" only when the
+    // origin cannot be determined (e.g., referrer policy blocks it).
+    const targetOrigin = (() => {
+      try {
+        const origin = new URL(pageUrl || document.referrer).origin;
+        // "null" is the serialised opaque origin some browsers return for
+        // sandboxed iframes — treat it as unknown.
+        return origin && origin !== "null" ? origin : "*";
+      } catch {
+        return "*";
+      }
+    })();
     const h = containerRef.current?.scrollHeight ?? 68;
-    window.parent.postMessage({ type: "feedstack:resize", height: h }, "*");
-  }, [open, submitted]);
+    window.parent.postMessage({ type: "feedlyte:resize", height: h }, targetOrigin);
+  }, [open, submitted, pageUrl]);
 
   const handleSubmit = async () => {
     if (!message.trim() || !projectId) return;
@@ -42,14 +98,16 @@ export default function WidgetPage({ searchParams }: WidgetPageProps) {
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
       const apiBase = typeof window !== "undefined" ? window.location.origin : "";
-      const res = await fetch(`${apiBase}/api/feedback`, {
+      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId,
           message: message.trim(),
           email: email.trim() || undefined,
-          pageUrl: window.parent?.location?.href ?? "",
+          // Sanitize before sending — server validation is the authoritative
+          // check, but stripping non-http(s) protocols client-side adds
+          // defence-in-depth against protocol-injection via the url param.
+          pageUrl: sanitizePageUrl(pageUrl),
           userAgent: navigator.userAgent,
         }),
       });

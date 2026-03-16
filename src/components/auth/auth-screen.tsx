@@ -65,7 +65,7 @@ export function AuthScreen() {
             <MessageSquare size={16} className="text-primary-foreground" strokeWidth={2} />
           </div>
           <span className="text-[22px] font-bold text-foreground tracking-[-0.03em]">
-            FeedStack
+            Feedlyte
           </span>
         </div>
         <p className="text-muted-foreground text-[13px]">

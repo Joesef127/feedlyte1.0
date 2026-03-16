@@ -33,11 +33,25 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 // ── Feedback ─────────────────────────────────────────────────────────────────
 
+export const projectQuerySchema = z.object({
+  project: z.string().min(1, "Project ID is required"),
+});
+
+export type ProjectQueryInput = z.infer<typeof projectQuerySchema>;
+
 export const submitFeedbackSchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
   message: z.string().min(1, "Message is required").max(2000),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
-  pageUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  pageUrl: z
+    .string()
+    .url("Invalid URL")
+    .max(2048, "URL too long")
+    .refine(
+      (url) => /^https?:\/\//i.test(url),
+      "Only http and https URLs are allowed"
+    )
+    .optional()
+    .or(z.literal("")),
   userAgent: z.string().max(300).optional(),
 });
 

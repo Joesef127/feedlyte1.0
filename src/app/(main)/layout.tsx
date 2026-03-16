@@ -16,7 +16,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FeedStack — Feedback infrastructure for modern products",
+  title: "Feedlyte — Feedback infrastructure for modern products",
   description: "Collect and manage feedback from your users with a lightweight embeddable widget.",
 };
 
