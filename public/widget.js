@@ -23,7 +23,7 @@
     "/widget?project=" + encodeURIComponent(projectId) +
     "&position=" + encodeURIComponent(position) +
     "&url=" + encodeURIComponent(window.location.href);
-  iframe.id = "feedstack-widget-frame";
+  iframe.id = "feedlyte-widget-frame";
   Object.assign(iframe.style, {
     position: "fixed",
     bottom: "24px",
@@ -47,7 +47,7 @@
   // Listen for size messages from the iframe
   window.addEventListener("message", function (e) {
     if (!origin || e.origin !== origin) return;
-    if (e.data && e.data.type === "feedstack:resize" && typeof e.data.height === "number") {
+    if (e.data && e.data.type === "feedlyte:resize" && typeof e.data.height === "number") {
       iframe.style.height = e.data.height + "px";
     }
   });

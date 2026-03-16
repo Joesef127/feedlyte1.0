@@ -35,7 +35,7 @@ export default function WidgetPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const h = containerRef.current?.scrollHeight ?? 68;
-    window.parent.postMessage({ type: "feedstack:resize", height: h }, "*");
+    window.parent.postMessage({ type: "feedlyte:resize", height: h }, "*");
   }, [open, submitted]);
 
   const handleSubmit = async () => {
