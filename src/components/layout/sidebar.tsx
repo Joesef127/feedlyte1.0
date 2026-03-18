@@ -29,7 +29,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
           <div className="w-7 h-7 bg-primary rounded-[7px] flex items-center justify-center shrink-0">
             <MessageSquare size={14} className="text-primary-foreground" strokeWidth={2} />
           </div>
-          <span className="text-base font-bold text-foreground tracking-[-0.02em]">
+          <span className="text-xl font-bold text-foreground tracking-[-0.02em]">
             Feedlyte
           </span>
         </div>
@@ -37,7 +37,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 p-2">
-        <p className="text-[10px] font-semibold text-[#3d3d3d] uppercase tracking-[0.08em] px-2 py-1 mb-1">
+        <p className="text-[10px] font-semibold text-[#d3d0d0] uppercase tracking-[0.08em] px-2 py-1 mb-1">
           Navigation
         </p>
         {NAV_ITEMS.map(({ id, label, Icon }) => (
@@ -60,7 +60,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
 
       {/* User + Logout */}
       <div className="p-2 border-t border-sidebar-border">
-        <div className="px-2.5 py-2.5 rounded-lg bg-card mb-2">
+        <div className="px-2.5 py-2 mb-2">
           <p className="text-[12px] font-semibold text-foreground m-0 truncate">
             {name}
           </p>

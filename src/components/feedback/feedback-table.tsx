@@ -59,7 +59,7 @@ export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }:
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search feedback..."
-            className="w-full bg-card border border-border rounded-lg py-2 pl-[34px] pr-3 text-[13px] text-foreground placeholder:text-[#3d3d3d] outline-none focus:border-primary transition-colors"
+            className="w-full bg-card border border-border rounded-lg py-2 pl-[34px] pr-3 text-[13px] text-foreground placeholder:text-[#d3d0d0] outline-none focus:border-primary transition-colors"
           />
         </div>
 
@@ -90,7 +90,7 @@ export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }:
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
           <MessageSquare size={32} className="text-[#2a2a2a] mx-auto" />
-          <p className="text-[#3d3d3d] text-[14px] mt-3">
+          <p className="text-[#d3d0d0] text-[14px] mt-3">
             No feedback matches your filters.
           </p>
         </div>

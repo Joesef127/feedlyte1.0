@@ -44,7 +44,7 @@ export function EmbedCode({ project }: EmbedCodeProps) {
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <p className="text-[12px] text-[#3d3d3d] mt-4">
+      <p className="text-[12px] text-[#d3d0d0] mt-4">
         Widget loads asynchronously. No impact on page performance.
       </p>
     </Card>

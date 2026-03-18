@@ -42,6 +42,8 @@ export default function WidgetPage({
 
   const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
   const [position, setPosition] = useState(resolvedParams?.position ?? "bottom-right");
+  const [widgetColor, setWidgetColor] = useState("#F59E0B");
+  const [widgetLabel, setWidgetLabel] = useState("Feedback");
 
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -69,6 +71,22 @@ export default function WidgetPage({
     // which browsers set on iframes when no referrer policy blocks it.
     setPageUrl(params.get("url") ?? document.referrer ?? "");
   }, [resolvedParams]);
+
+  // Fetch project config (color, label) from the public widget-config endpoint.
+  // This ensures the widget always reflects what’s saved in the dashboard.
+  useEffect(() => {
+    const id = projectId || resolvedParams?.project;
+    if (!id) return;
+    const base = typeof window !== "undefined" ? window.location.origin : "";
+    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        if (data.color) setWidgetColor(data.color);
+        if (data.label) setWidgetLabel(data.label);
+      })
+      .catch(() => {});
+  }, [projectId, resolvedParams?.project]);
 
   // Notify parent of height changes
   useEffect(() => {
@@ -126,7 +144,7 @@ export default function WidgetPage({
     }
   };
 
-  const primaryColor = "#F59E0B";
+  const primaryColor = widgetColor;
   const isRight = position !== "bottom-left";
 
   return (
@@ -180,7 +198,7 @@ export default function WidgetPage({
                 style={{
                   marginTop: "14px",
                   background: "transparent",
-                  border: "1px solid #3d3d3d",
+                  border: "1px solid #d3d0d0",
                   borderRadius: "6px",
                   color: "#a3a3a3",
                   fontSize: "12px",
@@ -288,7 +306,7 @@ export default function WidgetPage({
                 style={{
                   width: "100%",
                   background:
-                    !message.trim() || submitting ? "#3d3d3d" : primaryColor,
+                    !message.trim() || submitting ? "#d3d0d0" : primaryColor,
                   border: "none",
                   borderRadius: "7px",
                   color:
@@ -316,7 +334,7 @@ export default function WidgetPage({
           background: primaryColor,
           border: "none",
           borderRadius: "22px",
-          color: "#1a1a1a",
+          color: "#ffffff",
           fontSize: "13px",
           fontWeight: 600,
           padding: "10px 18px",
@@ -331,7 +349,7 @@ export default function WidgetPage({
         aria-label="Toggle feedback form"
       >
         <span style={{ fontSize: "15px" }}>💬</span>
-        Feedback
+        {widgetLabel}
       </button>
     </div>
   );

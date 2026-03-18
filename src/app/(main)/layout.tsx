@@ -26,7 +26,13 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      {/* Anti-FOUC: apply saved theme before first paint */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){var t=localStorage.getItem('feedlyte-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()`,
+        }}
+      />
       <body
         className={`${dmSans.variable} ${dmMono.variable} antialiased font-sans`}
       >

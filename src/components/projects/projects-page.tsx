@@ -13,8 +13,6 @@ interface ProjectsPageProps {
   onSelectProject: (project: Project) => void;
 }
 
-const WIDGET_COLORS = ["#F59E0B", "#3B82F6", "#10B981", "#8B5CF6", "#EF4444", "#EC4899"];
-
 export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
   const { data: projects = [], isLoading, isError } = useProjects();
   const createProject = useCreateProject();
@@ -22,14 +20,16 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState("#F59E0B");
+  const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
 
   const create = async () => {
     if (!name.trim()) return;
     try {
-      await createProject.mutateAsync({ name: name.trim(), color });
+      await createProject.mutateAsync({ name: name.trim(), color, position });
       setShowModal(false);
       setName("");
       setColor("#F59E0B");
+      setPosition("bottom-right");
     } catch {
       // error handled by mutation state
     }
@@ -69,10 +69,10 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
       {!isLoading && !isError && projects.length === 0 && (
         <div className="text-center py-20">
           <div className="w-[52px] h-[52px] bg-card rounded-xl flex items-center justify-center mx-auto mb-4">
-            <LayoutGrid size={24} className="text-[#3d3d3d]" />
+            <LayoutGrid size={24} className="text-[#d3d0d0]" />
           </div>
           <p className="text-muted-foreground text-[15px] m-0">No projects yet.</p>
-          <p className="text-[#3d3d3d] text-[13px] mt-1.5 mb-5">
+          <p className="text-[#d3d0d0] text-[13px] mt-1.5 mb-5">
             Create one to start collecting feedback.
           </p>
           <Button onClick={() => setShowModal(true)} className="gap-1.5">
@@ -100,20 +100,42 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
             placeholder="My Website"
           />
           <div>
-            <p className="text-[12px] text-[#737373] font-medium uppercase tracking-[0.04em] mb-2">
+            <p className="text-[12px] text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
               Widget Color
             </p>
+            <div className="flex items-center gap-3">
+              <div
+                style={{ background: color }}
+                className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
+              />
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                title="Pick a color"
+              />
+              <span className="text-[12px] text-muted-foreground font-mono">{color}</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-[12px] text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+              Widget Position
+            </p>
             <div className="flex gap-2">
-              {WIDGET_COLORS.map((c) => (
+              {(["bottom-right", "bottom-left"] as const).map((pos) => (
                 <button
-                  key={c}
-                  onClick={() => setColor(c)}
+                  key={pos}
+                  onClick={() => setPosition(pos)}
                   style={{
-                    background: c,
-                    border: `3px solid ${color === c ? "#E5E5E5" : "transparent"}`,
+                    borderColor: position === pos ? color : "var(--border)",
+                    color: position === pos ? color : "var(--muted-foreground)",
+                    background: position === pos ? color + "15" : "transparent",
                   }}
-                  className="w-7 h-7 rounded-full cursor-pointer transition-all"
-                />
+                  className="px-3 py-[7px] rounded-[7px] border text-[12px] font-medium cursor-pointer transition-all"
+                >
+                  {pos}
+                </button>
               ))}
             </div>
           </div>

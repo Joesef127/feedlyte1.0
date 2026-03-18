@@ -59,7 +59,7 @@ export function SettingsPage() {
               ["Retention", "12 months"],
             ].map(([k, v]) => (
               <div key={k} className="bg-background rounded-lg p-3">
-                <p className="text-[11px] text-[#3d3d3d] uppercase tracking-[0.06em] mb-1 m-0">
+                <p className="text-[11px] text-[#d3d0d0] uppercase tracking-[0.06em] mb-1 m-0">
                   {k}
                 </p>
                 <p className="text-[14px] font-bold text-foreground m-0">{v}</p>

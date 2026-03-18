@@ -47,6 +47,7 @@ export function App() {
             <ProjectDetailPage
               project={selectedProject}
               onBack={() => setSelectedProject(null)}
+              onUpdate={setSelectedProject}
             />
           ) : page === "projects" ? (
             <ProjectsPage onSelectProject={setSelectedProject} />
