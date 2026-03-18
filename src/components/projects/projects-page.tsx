@@ -43,7 +43,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
           <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
             Projects
           </h1>
-          <p className="text-[13px] text-muted-foreground mt-1 m-0">
+          <p className="text-sm text-muted-foreground mt-1 m-0">
             {projects.length} project{projects.length !== 1 ? "s" : ""} total
           </p>
         </div>
@@ -72,7 +72,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
             <LayoutGrid size={24} className="text-[#d3d0d0]" />
           </div>
           <p className="text-muted-foreground text-[15px] m-0">No projects yet.</p>
-          <p className="text-[#d3d0d0] text-[13px] mt-1.5 mb-5">
+          <p className="text-[#d3d0d0] text-sm mt-1.5 mb-5">
             Create one to start collecting feedback.
           </p>
           <Button onClick={() => setShowModal(true)} className="gap-1.5">
@@ -140,7 +140,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
             </div>
           </div>
           {createProject.isError && (
-            <p className="text-destructive text-[13px]">
+            <p className="text-destructive text-sm">
               {(createProject.error as Error)?.message ?? "Failed to create project."}
             </p>
           )}

@@ -59,7 +59,7 @@ export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }:
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search feedback..."
-            className="w-full bg-card border border-border rounded-lg py-2 pl-[34px] pr-3 text-[13px] text-foreground placeholder:text-[#d3d0d0] outline-none focus:border-primary transition-colors"
+            className="w-full bg-card border border-border rounded-lg py-2 pl-[34px] pr-3 text-sm text-foreground placeholder:text-[#d3d0d0] outline-none focus:border-primary transition-colors"
           />
         </div>
 

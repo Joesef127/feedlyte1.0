@@ -15,7 +15,7 @@ export function FeedbackRow({ fb, onSelect }: FeedbackRowProps) {
       className="bg-card border border-border rounded-[10px] px-4 py-[14px] flex items-start gap-3.5 cursor-pointer hover:border-border/60 transition-colors"
     >
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] text-foreground font-medium leading-relaxed mb-1.5 truncate overflow-hidden">
+        <p className="text-sm text-foreground font-medium leading-relaxed mb-1.5 truncate overflow-hidden">
           {fb.message}
         </p>
         <div className="flex gap-3 items-center flex-wrap">

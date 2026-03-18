@@ -23,7 +23,7 @@ export function EmbedCode({ project }: EmbedCodeProps) {
   return (
     <Card>
       <h3 className="text-[14px] font-bold text-foreground mb-2">Embed Script</h3>
-      <p className="text-[13px] text-muted-foreground mb-4">
+      <p className="text-sm text-muted-foreground mb-4">
         Paste this script before the closing{" "}
         <code className="font-mono text-[12px]">&lt;/body&gt;</code> tag on your website.
       </p>

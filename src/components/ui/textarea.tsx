@@ -9,7 +9,7 @@ function Textarea({
     <textarea
       className={cn(
         "flex w-full rounded-lg border border-[#2a2a2a] bg-input px-3 py-2",
-        "text-[13px] text-foreground placeholder:text-[#d3d0d0]",
+        "text-sm text-foreground placeholder:text-[#d3d0d0]",
         "outline-none transition-colors focus:border-primary",
         "disabled:cursor-not-allowed disabled:opacity-50 resize-none",
         className

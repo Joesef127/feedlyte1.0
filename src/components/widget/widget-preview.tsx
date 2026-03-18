@@ -66,7 +66,7 @@ export function WidgetPreview({ project }: WidgetPreviewProps) {
                 >
                   <Check size={18} style={{ color }} strokeWidth={2.5} />
                 </div>
-                <p className="text-[13px] text-foreground font-semibold m-0">
+                <p className="text-sm text-foreground font-semibold m-0">
                   Thanks for your feedback!
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-1 mb-3">
@@ -82,7 +82,7 @@ export function WidgetPreview({ project }: WidgetPreviewProps) {
             ) : (
               <>
                 <div className="flex justify-between items-center mb-2.5">
-                  <span className="text-[13px] font-bold text-foreground">
+                  <span className="text-sm font-bold text-foreground">
                     Share Feedback
                   </span>
                   <button

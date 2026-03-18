@@ -46,7 +46,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
             onClick={() => setPage(id)}
             className={[
               "w-full flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg border-none",
-              "text-[13px] font-medium cursor-pointer transition-all duration-150 mb-0.5 text-left",
+              "text-sm font-medium cursor-pointer transition-all duration-150 mb-0.5 text-left",
               page === id
                 ? "bg-secondary text-foreground"
                 : "bg-transparent text-muted-foreground hover:text-foreground",
@@ -70,7 +70,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
         </div>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg border-none bg-transparent text-muted-foreground text-[13px] font-medium cursor-pointer hover:text-foreground transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg border-none bg-transparent text-muted-foreground text-sm font-medium cursor-pointer hover:text-foreground transition-colors"
         >
           <LogOut size={15} />
           Sign Out

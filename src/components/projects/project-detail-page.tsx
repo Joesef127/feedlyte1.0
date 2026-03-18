@@ -77,7 +77,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
       <div className="mb-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 bg-transparent border-none text-muted-foreground cursor-pointer text-[13px] mb-4 p-0 hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 bg-transparent border-none text-muted-foreground cursor-pointer text-sm mb-4 p-0 hover:text-foreground transition-colors"
         >
           <ArrowLeft size={14} />
           Back to Projects
@@ -87,7 +87,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
             <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
               {project.name}
             </h1>
-            <p className="text-[13px] text-muted-foreground font-mono mt-1 m-0">
+            <p className="text-sm text-muted-foreground font-mono mt-1 m-0">
               {project.id}
             </p>
           </div>
@@ -120,7 +120,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
             key={id}
             onClick={() => setTab(id)}
             className={[
-              "px-4 py-[9px] border-none bg-transparent text-[13px] font-semibold cursor-pointer transition-all",
+              "px-4 py-[9px] border-none bg-transparent text-sm font-semibold cursor-pointer transition-all",
               "border-b-2 -mb-px",
               tab === id
                 ? "text-primary border-primary"
@@ -147,7 +147,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
           <EmbedCode project={project} />
           <Card>
             <h3 className="text-[14px] font-bold text-foreground mb-2">Widget Preview</h3>
-            <p className="text-[13px] text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               This is how your widget appears on external websites.
             </p>
             <WidgetPreview project={project} />
@@ -207,7 +207,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
                 placeholder="Feedback"
               />
               {updateProject.isError && (
-                <p className="text-destructive text-[13px]">
+                <p className="text-destructive text-sm">
                   {(updateProject.error as Error)?.message ?? "Failed to save."}
                 </p>
               )}
@@ -236,7 +236,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
           {pFeedback.length} feedback entries. This cannot be undone.
         </p>
         {deleteProject.isError && (
-          <p className="text-destructive text-[13px] mb-4">
+          <p className="text-destructive text-sm mb-4">
             Failed to delete project. Please try again.
           </p>
         )}
