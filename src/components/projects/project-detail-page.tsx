@@ -103,7 +103,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
         {stats.map(({ label, value, Icon }) => (
           <Card key={label}>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[12px] text-muted-foreground font-medium">{label}</span>
+              <span className="text-sm text-muted-foreground font-medium">{label}</span>
               <Icon size={14} className="text-[#d3d0d0]" />
             </div>
             <span className="text-[26px] font-bold text-foreground tracking-[-0.04em]">
@@ -161,7 +161,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
             <h3 className="text-[14px] font-bold text-foreground mb-4">Widget Configuration</h3>
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-[12px] text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
                   Accent Color
                 </p>
                 <div className="flex items-center gap-3">
@@ -176,11 +176,11 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
                     className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
                     title="Pick a color"
                   />
-                  <span className="text-[12px] text-muted-foreground font-mono">{editColor}</span>
+                  <span className="text-sm text-muted-foreground font-mono">{editColor}</span>
                 </div>
               </div>
               <div>
-                <p className="text-[12px] text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
                   Position
                 </p>
                 <div className="flex gap-2">
@@ -193,7 +193,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
                         color: editPosition === pos ? editColor : "var(--muted-foreground)",
                         background: editPosition === pos ? editColor + "15" : "transparent",
                       }}
-                      className="px-3 py-[7px] rounded-[7px] border text-[12px] font-medium cursor-pointer transition-all"
+                      className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
                     >
                       {pos}
                     </button>

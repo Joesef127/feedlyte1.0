@@ -43,7 +43,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
           <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
             Projects
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 m-0">
+          <p className="text-base text-muted-foreground mt-1 m-0">
             {projects.length} project{projects.length !== 1 ? "s" : ""} total
           </p>
         </div>
@@ -54,13 +54,13 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
       </div>
 
       {isLoading && (
-        <div className="text-center py-20 text-muted-foreground text-[14px]">
+        <div className="text-center py-20 text-muted-foreground text-base">
           Loading projects...
         </div>
       )}
 
       {isError && (
-        <div className="text-center py-20 text-destructive text-[14px]">
+        <div className="text-center py-20 text-destructive text-base">
           Failed to load projects. Please refresh.
         </div>
       )}
@@ -71,8 +71,8 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
           <div className="w-[52px] h-[52px] bg-card rounded-xl flex items-center justify-center mx-auto mb-4">
             <LayoutGrid size={24} className="text-[#d3d0d0]" />
           </div>
-          <p className="text-muted-foreground text-[15px] m-0">No projects yet.</p>
-          <p className="text-[#d3d0d0] text-sm mt-1.5 mb-5">
+          <p className="text-muted-foreground text-base m-0">No projects yet.</p>
+          <p className="text-[#d3d0d0] text-base mt-1.5 mb-5">
             Create one to start collecting feedback.
           </p>
           <Button onClick={() => setShowModal(true)} className="gap-1.5">
@@ -100,7 +100,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
             placeholder="My Website"
           />
           <div>
-            <p className="text-[12px] text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
               Widget Color
             </p>
             <div className="flex items-center gap-3">
@@ -115,11 +115,11 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
                 className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
                 title="Pick a color"
               />
-              <span className="text-[12px] text-muted-foreground font-mono">{color}</span>
+              <span className="text-sm text-muted-foreground font-mono">{color}</span>
             </div>
           </div>
           <div>
-            <p className="text-[12px] text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
               Widget Position
             </p>
             <div className="flex gap-2">
@@ -132,7 +132,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
                     color: position === pos ? color : "var(--muted-foreground)",
                     background: position === pos ? color + "15" : "transparent",
                   }}
-                  className="px-3 py-[7px] rounded-[7px] border text-[12px] font-medium cursor-pointer transition-all"
+                  className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
                 >
                   {pos}
                 </button>
@@ -140,7 +140,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
             </div>
           </div>
           {createProject.isError && (
-            <p className="text-destructive text-sm">
+            <p className="text-destructive text-base">
               {(createProject.error as Error)?.message ?? "Failed to create project."}
             </p>
           )}

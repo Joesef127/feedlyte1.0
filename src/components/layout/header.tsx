@@ -13,7 +13,7 @@ export function Header({ page, project }: HeaderProps) {
 
   return (
     <div className="border-b border-sidebar-border h-[52px] px-9 flex items-center justify-between bg-sidebar shrink-0">
-      <span className="text-sm text-muted-foreground font-medium">
+      <span className="text-base text-muted-foreground font-medium">
         {crumb}
       </span>
       <div className="flex items-center gap-3">

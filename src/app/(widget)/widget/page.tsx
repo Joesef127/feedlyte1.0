@@ -84,6 +84,7 @@ export default function WidgetPage({
         if (!data) return;
         if (data.color) setWidgetColor(data.color);
         if (data.label) setWidgetLabel(data.label);
+        if (data.position) setPosition(data.position);
       })
       .catch(() => {});
   }, [projectId, resolvedParams?.project]);

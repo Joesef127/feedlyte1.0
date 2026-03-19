@@ -12,12 +12,12 @@ export async function GET(req: Request) {
 
   const project = await prisma.project.findUnique({
     where: { id },
-    select: { color: true, label: true },
+    select: { color: true, position: true, label: true },
   });
 
   if (!project) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ color: project.color, label: project.label });
+  return NextResponse.json({ color: project.color, position: project.position, label: project.label });
 }
