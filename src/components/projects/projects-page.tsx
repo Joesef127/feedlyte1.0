@@ -69,10 +69,10 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
       {!isLoading && !isError && projects.length === 0 && (
         <div className="text-center py-20">
           <div className="w-[52px] h-[52px] bg-card rounded-xl flex items-center justify-center mx-auto mb-4">
-            <LayoutGrid size={24} className="text-[#d3d0d0]" />
+            <LayoutGrid size={24} className="" />
           </div>
           <p className="text-muted-foreground text-base m-0">No projects yet.</p>
-          <p className="text-[#d3d0d0] text-base mt-1.5 mb-5">
+          <p className=" text-base mt-1.5 mb-5">
             Create one to start collecting feedback.
           </p>
           <Button onClick={() => setShowModal(true)} className="gap-1.5">

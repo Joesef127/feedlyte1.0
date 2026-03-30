@@ -37,7 +37,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 p-2">
-        <p className="text-[10px] font-semibold text-[#d3d0d0] uppercase tracking-[0.08em] px-2 py-1 mb-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] px-2 py-1 mb-1">
           Navigation
         </p>
         {NAV_ITEMS.map(({ id, label, Icon }) => (

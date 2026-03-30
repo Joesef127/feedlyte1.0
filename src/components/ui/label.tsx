@@ -9,7 +9,7 @@ function Label({
   return (
     <LabelPrimitive.Root
       className={cn(
-        "text-[12px] text-[#737373] font-medium uppercase tracking-[0.04em]",
+        "text-[12px] font-medium uppercase tracking-[0.04em]",
         className
       )}
       {...props}

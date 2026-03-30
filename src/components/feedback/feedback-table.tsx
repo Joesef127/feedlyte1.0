@@ -90,7 +90,7 @@ export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }:
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
           <MessageSquare size={32} className="text-[#2a2a2a] mx-auto" />
-          <p className="text-[#d3d0d0] text-base mt-3">
+          <p className="text-base mt-3">
             No feedback matches your filters.
           </p>
         </div>
