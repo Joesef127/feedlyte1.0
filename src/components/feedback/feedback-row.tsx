@@ -19,11 +19,11 @@ export function FeedbackRow({ fb, onSelect }: FeedbackRowProps) {
           {fb.message}
         </p>
         <div className="flex gap-3 items-center flex-wrap">
-          <span className="text-[11px] text-[#d3d0d0] font-mono">{fb.pageUrl}</span>
+          <span className="text-xs text-[#d3d0d0] font-mono">{fb.pageUrl}</span>
           {fb.email && (
-            <span className="text-[11px] text-muted-foreground">{fb.email}</span>
+            <span className="text-xs text-muted-foreground">{fb.email}</span>
           )}
-          <span className="text-[11px] text-[#d3d0d0]">{fb.createdAt}</span>
+          <span className="text-xs text-[#d3d0d0]">{fb.createdAt}</span>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">

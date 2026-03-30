@@ -69,7 +69,7 @@ export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }:
             <button
               key={id}
               onClick={() => setStatusFilter(id)}
-              className="px-3 py-[7px] rounded-[7px] border text-[12px] font-medium cursor-pointer capitalize transition-all"
+              className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer capitalize transition-all"
               style={{
                 borderColor: statusFilter === id ? "#F59E0B" : "#2A2A2A",
                 background: statusFilter === id ? "#F59E0B10" : "transparent",
@@ -84,13 +84,13 @@ export function FeedbackTable({ feedback, isLoading, onUpdateStatus, onDelete }:
 
       {/* List */}
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground text-[14px]">
+        <div className="text-center py-12 text-muted-foreground text-base">
           Loading feedback...
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
           <MessageSquare size={32} className="text-[#2a2a2a] mx-auto" />
-          <p className="text-[#d3d0d0] text-[14px] mt-3">
+          <p className="text-[#d3d0d0] text-base mt-3">
             No feedback matches your filters.
           </p>
         </div>

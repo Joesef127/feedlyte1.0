@@ -103,7 +103,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
         {stats.map(({ label, value, Icon }) => (
           <Card key={label}>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-muted-foreground font-medium">{label}</span>
+              <span className="text-base text-muted-foreground font-medium">{label}</span>
               <Icon size={14} className="text-[#d3d0d0]" />
             </div>
             <span className="text-[26px] font-bold text-foreground tracking-[-0.04em]">
@@ -120,7 +120,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
             key={id}
             onClick={() => setTab(id)}
             className={[
-              "px-4 py-[9px] border-none bg-transparent text-sm font-semibold cursor-pointer transition-all",
+              "px-4 py-[9px] border-none bg-transparent text-base font-semibold cursor-pointer transition-all",
               "border-b-2 -mb-px",
               tab === id
                 ? "text-primary border-primary"

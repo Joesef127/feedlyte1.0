@@ -28,14 +28,14 @@ export default function MainLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       {/* Anti-FOUC: apply saved theme before first paint */}
+      <body
+        className={`${dmSans.variable} ${dmMono.variable} antialiased font-sans`}
+      >
       <script
         dangerouslySetInnerHTML={{
           __html: `(function(){var t=localStorage.getItem('feedlyte-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()`,
         }}
       />
-      <body
-        className={`${dmSans.variable} ${dmMono.variable} antialiased font-sans`}
-      >
         <Providers>{children}</Providers>
       </body>
     </html>
