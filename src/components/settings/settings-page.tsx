@@ -86,7 +86,7 @@ export function SettingsPage() {
           <p className="text-sm text-muted-foreground mb-3">
             Permanently delete your account and all data.
           </p>
-          <Button variant="danger">Delete Account</Button>
+          <Button variant="destructive">Delete Account</Button>
         </Card>
       </div>
     </div>

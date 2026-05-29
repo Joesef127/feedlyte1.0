@@ -91,7 +91,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
               {project.id}
             </p>
           </div>
-          <Button variant="danger" size="sm" onClick={() => setDeleteModal(true)} className="gap-1.5">
+          <Button variant="destructive" size="sm" onClick={() => setDeleteModal(true)} className="gap-1.5">
             <Trash2 size={14} />
             Delete
           </Button>
@@ -245,7 +245,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             onClick={handleDeleteProject}
             disabled={deleteProject.isPending}
           >

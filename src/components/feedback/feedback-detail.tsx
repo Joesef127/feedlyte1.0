@@ -65,7 +65,7 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
 
       {/* Delete */}
       <div className="flex justify-end">
-        <Button variant="danger" size="sm" onClick={() => onDelete(fb.id)} className="gap-1.5">
+        <Button variant="destructive" size="sm" onClick={() => onDelete(fb.id)} className="gap-1.5">
           <Trash2 size={14} />
           Delete
         </Button>
