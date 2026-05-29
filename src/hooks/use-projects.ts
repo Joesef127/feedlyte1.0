@@ -26,6 +26,22 @@ async function createProject(
   return res.json();
 }
 
+async function updateProject(
+  id: string,
+  data: Partial<Pick<Project, "name" | "color" | "position" | "label">>
+): Promise<Partial<Project>> {
+  const res = await fetch(`/api/projects/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error ?? "Failed to update project");
+  }
+  return res.json();
+}
+
 async function deleteProject(id: string): Promise<void> {
   const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete project");
@@ -41,6 +57,17 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createProject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });
+    },
+  });
+}
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Project, "name" | "color" | "position" | "label">> }) =>
+      updateProject(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });
     },

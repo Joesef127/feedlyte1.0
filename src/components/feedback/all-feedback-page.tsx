@@ -16,7 +16,7 @@ export function AllFeedbackPage() {
         <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
           All Feedback
         </h1>
-        <p className="text-[13px] text-muted-foreground mt-1 m-0">
+        <p className="text-sm text-muted-foreground mt-1 m-0">
           {feedback.length} total entries across {projects.length} project{projects.length !== 1 ? "s" : ""}
         </p>
       </div>

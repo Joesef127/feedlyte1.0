@@ -31,6 +31,18 @@ export const createProjectSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
+export const updateProjectSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
+    .optional(),
+  position: z.enum(["bottom-right", "bottom-left"]).optional(),
+  label: z.string().max(30).optional(),
+});
+
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+
 // ── Feedback ─────────────────────────────────────────────────────────────────
 
 export const projectQuerySchema = z.object({

@@ -68,7 +68,7 @@ export function AuthScreen() {
             Feedlyte
           </span>
         </div>
-        <p className="text-muted-foreground text-[13px]">
+        <p className="text-muted-foreground text-sm">
           Feedback infrastructure for modern products.
         </p>
       </div>
@@ -82,7 +82,7 @@ export function AuthScreen() {
               key={m}
               onClick={() => { setMode(m); setError(""); }}
               className={[
-                "flex-1 py-[7px] rounded-md border-none text-[13px] font-semibold cursor-pointer transition-all",
+                "flex-1 py-[7px] rounded-md border-none text-sm font-semibold cursor-pointer transition-all",
                 mode === m
                   ? "bg-secondary text-foreground"
                   : "bg-transparent text-muted-foreground",
@@ -116,7 +116,7 @@ export function AuthScreen() {
           <button
             onClick={submit}
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground border-none py-[11px] rounded-lg text-[13px] font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
+            className="w-full bg-primary text-primary-foreground border-none py-[11px] rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
           >
             {loading
               ? mode === "register" ? "Creating account..." : "Signing in..."

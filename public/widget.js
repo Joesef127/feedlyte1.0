@@ -31,7 +31,7 @@
     left: position === "bottom-left" ? "24px" : "auto",
     zIndex: "2147483647",
     border: "none",
-    width: "380px",
+    width: "100%",
     height: "68px",
     maxWidth: "calc(100vw - 48px)",
     display: "block",
