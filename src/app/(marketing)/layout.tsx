@@ -1,14 +1,9 @@
-import type { Metadata } from "next";
-import { DM_Sans, Instrument_Serif } from "next/font/google";
+import { Metadata } from "next";
+import { Instrument_Serif } from "next/font/google";
 import "./marketing.css";
-import { Nav } from "@/components/marketing/nav";
+import "../globals.css";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
+// Instrument Serif only used on marketing pages — loaded here, not in root layout
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   subsets: ["latin"],
@@ -16,11 +11,11 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Feedlyte — Feedback infrastructure for modern products",
+  title: "Feedlyte - Feedback infrastructure for modern products",
   description:
     "Drop one script tag into any website and instantly collect user feedback. No SDK, no npm package, no complex setup.",
   openGraph: {
-    title: "Feedlyte — Feedback infrastructure for modern products",
+    title: "Feedlyte - Feedback infrastructure for modern products",
     description:
       "Drop one script tag into any website and instantly collect user feedback.",
     type: "website",
@@ -32,12 +27,14 @@ export default function MarketingLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // No <html> or <body> — root layout owns those.
+  // We just inject the font variable and marketing styles.
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${instrumentSerif.variable}`}>
-        <Nav />
-        {children}
-      </body>
+
+    <body className={`${instrumentSerif.variable} grain`}>
+      {children}
+    </body>
     </html>
   );
 }
