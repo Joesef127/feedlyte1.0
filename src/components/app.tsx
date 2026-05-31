@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import type { Page, Project } from "@/types";
-import { AuthScreen } from "@/components/auth/auth-screen";
+// import { AuthScreen } from "@/components/auth/auth-screen";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { ProjectsPage } from "@/components/projects/projects-page";
@@ -16,6 +17,8 @@ export function App() {
   const [page, setPage] = useState<Page>("projects");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  const router = useRouter();
+
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -25,7 +28,7 @@ export function App() {
   }
 
   if (status === "unauthenticated") {
-    return <AuthScreen />;
+    router.push("/auth");
   }
 
   const handleSetPage = (p: Page) => {
@@ -61,4 +64,3 @@ export function App() {
     </div>
   );
 }
-
