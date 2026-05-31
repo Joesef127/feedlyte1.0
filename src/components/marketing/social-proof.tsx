@@ -11,8 +11,8 @@ const logos = ["Vercel", "Netlify", "Railway", "Supabase", "PlanetScale", "Rende
 
 export function SocialProof() {
   return (
-    <section className="py-16 border-t border-b border-border">
-      <div className="mx-auto max-w-[1120px] px-6">
+    <section className="py-24 bg-background">
+      <div className="mx-auto max-w-7xl px-6">
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border rounded-2xl overflow-hidden border border-border mb-14">

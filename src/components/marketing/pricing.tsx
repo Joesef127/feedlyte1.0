@@ -20,7 +20,7 @@ const plans: Plan[] = [
     price: "$0",
     description: "For personal projects and early exploration.",
     features: [
-      "1 project",
+      "5 project",
       "200 feedback entries/month",
       "7-day data retention",
       "Basic dashboard",
@@ -32,11 +32,11 @@ const plans: Plan[] = [
   },
   {
     name: "Pro",
-    price: "$12",
+    price: "$4",
     period: "/month",
     description: "For indie developers and small teams shipping real products.",
     features: [
-      "10 projects",
+      "20 projects",
       "Unlimited feedback entries",
       "90-day data retention",
       "Advanced filtering and search",
@@ -52,7 +52,7 @@ const plans: Plan[] = [
   },
   {
     name: "Team",
-    price: "$39",
+    price: "$12",
     period: "/month",
     description: "For growing teams that need collaboration and scale.",
     features: [
@@ -83,7 +83,7 @@ function PricingCard({ plan }: { plan: Plan }) {
   return (
     <div
       className={[
-        "relative flex flex-col rounded-2xl border p-9",
+        "relative flex flex-col rounded-2xl border p-9 h-full",
         plan.highlighted
           ? "bg-card border-primary/30 shadow-[0_0_40px_rgba(245,158,11,0.06)]"
           : "bg-card border-border",
@@ -139,7 +139,7 @@ function PricingCard({ plan }: { plan: Plan }) {
 export function Pricing() {
   return (
     <section id="pricing" className="py-24">
-      <div className="mx-auto max-w-[1120px] px-6">
+      <div className="mx-auto max-w-7xl px-6">
 
         <div className="text-center mb-16">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-card mb-5">

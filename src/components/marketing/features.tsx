@@ -171,7 +171,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
         "rounded-xl p-7 border transition-all duration-200 cursor-default group",
         feature.highlight
           ? "bg-primary/10 border-primary/20 hover:border-primary/40"
-          : "bg-card border-border hover:border-border/80",
+          : "bg-background border-border hover:border-border/80",
       ].join(" ")}
     >
       <div
@@ -200,7 +200,7 @@ export function Features() {
       id="features"
       className="py-24 bg-card border-t border-b border-border"
     >
-      <div className="mx-auto max-w-[1120px] px-6">
+      <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="text-center mb-16">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-background mb-5">

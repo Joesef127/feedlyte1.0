@@ -1,31 +1,57 @@
+"use client";
+
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, ArrowUp } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const footerLinks = {
   Product: [
     { label: "Features", href: "#features" },
     { label: "How it works", href: "#how-it-works" },
     { label: "Pricing", href: "#pricing" },
-    { label: "Changelog", href: "/changelog" },
+    { label: "Changelog", href: "#" },
   ],
   Developers: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API Reference", href: "/docs/api" },
-    { label: "Embed guide", href: "/docs/embed" },
-    { label: "Status", href: "/status" },
+    { label: "Documentation", href: "#" },
+    { label: "API Reference", href: "#" },
+    { label: "Embed guide", href: "#" },
+    { label: "Status", href: "#" },
   ],
   Company: [
-    { label: "About", href: "/about" },
-    { label: "Blog", href: "/blog" },
-    { label: "Privacy", href: "/privacy" },
-    { label: "Terms", href: "/terms" },
+    { label: "About", href: "#" },
+    { label: "Blog", href: "#" },
+    { label: "Privacy", href: "#" },
+    { label: "Terms", href: "#" },
   ],
 };
 
 export function Footer() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <footer className="border-t border-border bg-card">
-      <div className="mx-auto max-w-[1120px] px-6 pt-14 pb-10">
+    <>
+      {/* Floating scroll to top button */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className={`fixed bottom-10 right-2 w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:opacity-90 transition-all animate-bounce ${
+          isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        aria-label="Scroll to top"
+      >
+        <ArrowUp size={18} className="text-black" strokeWidth={2.5} />
+      </button>
+
+      <footer className="border-t border-border bg-card">
+        <div className="mx-auto max-w-7xl px-6 pt-14 pb-6">
 
         {/* Top row */}
         <div className="grid grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-12 mb-14">
@@ -97,5 +123,6 @@ export function Footer() {
         </div>
       </div>
     </footer>
+    </>
   );
 }

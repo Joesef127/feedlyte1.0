@@ -12,7 +12,7 @@ import { Footer } from "@/components/marketing/footer";
 
 export default function LandingPage() {
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-background">
       <Nav />
       <main>
         <Hero />
@@ -24,6 +24,6 @@ export default function LandingPage() {
         <CTABanner />
       </main>
       <Footer />
-    </>
+    </div>
   );
 }
