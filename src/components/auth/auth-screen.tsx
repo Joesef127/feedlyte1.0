@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 
 type Mode = "login" | "register";
 
 export function AuthScreen() {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +51,9 @@ export function AuthScreen() {
         setLoading(false);
         return;
       }
-      // Session update handled by useSession in app.tsx — no reload needed
+
+      // Redirect to dashboard on successful sign in
+      router.push("/dashboard");
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
