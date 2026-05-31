@@ -38,7 +38,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
         <span className="text-[12px] text-muted-foreground">
           {project.feedbackCount} responses
         </span>
-        <span className="text-[11px] text-[#3d3d3d]">
+        <span className="text-[11px] text-[#d3d0d0]">
           Since {project.createdAt}
         </span>
       </div>

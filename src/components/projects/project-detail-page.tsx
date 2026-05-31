@@ -6,6 +6,7 @@ import type { Project, ProjectDetailTab } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { FormField } from "@/components/ui/form-field";
 import { WidgetPreview } from "@/components/widget/widget-preview";
 import { FeedbackTable } from "../feedback/feedback-table";
 import { EmbedCode } from "./embed-code";
@@ -14,28 +15,34 @@ import {
   useUpdateFeedbackStatus,
   useDeleteFeedback,
 } from "@/hooks/use-feedback";
-import { useDeleteProject } from "@/hooks/use-projects";
+import { useDeleteProject, useUpdateProject } from "@/hooks/use-projects";
 
 interface ProjectDetailPageProps {
   project: Project;
   onBack: () => void;
+  onUpdate: (project: Project) => void;
 }
 
-const WIDGET_COLORS = ["#F59E0B", "#3B82F6", "#10B981", "#8B5CF6", "#EF4444"];
 const TABS: { id: ProjectDetailTab; label: string }[] = [
   { id: "feedback", label: "Feedback" },
   { id: "embed", label: "Embed Code" },
   { id: "settings", label: "Widget Settings" },
 ];
 
-export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
+export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPageProps) {
   const [tab, setTab] = useState<ProjectDetailTab>("feedback");
   const [deleteModal, setDeleteModal] = useState(false);
+
+  // Widget settings local state — initialised from the current project
+  const [editColor, setEditColor] = useState(project.color);
+  const [editPosition, setEditPosition] = useState(project.position);
+  const [editLabel, setEditLabel] = useState(project.label);
 
   const { data: pFeedback = [], isLoading: feedbackLoading } = useFeedback(project.id);
   const updateStatus = useUpdateFeedbackStatus(project.id);
   const deleteFb = useDeleteFeedback(project.id);
   const deleteProject = useDeleteProject();
+  const updateProject = useUpdateProject();
 
   const stats = [
     { label: "Total Feedback", value: pFeedback.length, Icon: MessageSquare },
@@ -52,13 +59,25 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
     }
   };
 
+  const handleSaveSettings = async () => {
+    try {
+      const updated = await updateProject.mutateAsync({
+        id: project.id,
+        data: { color: editColor, position: editPosition, label: editLabel },
+      });
+      onUpdate({ ...project, ...updated });
+    } catch {
+      // handled by mutation state
+    }
+  };
+
   return (
     <div className="flex-1 px-9 py-8 overflow-y-auto">
       {/* Back + title */}
       <div className="mb-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 bg-transparent border-none text-muted-foreground cursor-pointer text-[13px] mb-4 p-0 hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 bg-transparent border-none text-muted-foreground cursor-pointer text-sm mb-4 p-0 hover:text-foreground transition-colors"
         >
           <ArrowLeft size={14} />
           Back to Projects
@@ -68,11 +87,11 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
             <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
               {project.name}
             </h1>
-            <p className="text-[13px] text-muted-foreground font-mono mt-1 m-0">
+            <p className="text-sm text-muted-foreground font-mono mt-1 m-0">
               {project.id}
             </p>
           </div>
-          <Button variant="danger" size="sm" onClick={() => setDeleteModal(true)} className="gap-1.5">
+          <Button variant="destructive" size="sm" onClick={() => setDeleteModal(true)} className="gap-1.5">
             <Trash2 size={14} />
             Delete
           </Button>
@@ -84,8 +103,8 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
         {stats.map(({ label, value, Icon }) => (
           <Card key={label}>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[12px] text-muted-foreground font-medium">{label}</span>
-              <Icon size={14} className="text-[#3d3d3d]" />
+              <span className="text-base text-muted-foreground font-medium">{label}</span>
+              <Icon size={14} className="text-[#d3d0d0]" />
             </div>
             <span className="text-[26px] font-bold text-foreground tracking-[-0.04em]">
               {feedbackLoading ? "—" : value}
@@ -101,7 +120,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
             key={id}
             onClick={() => setTab(id)}
             className={[
-              "px-4 py-[9px] border-none bg-transparent text-[13px] font-semibold cursor-pointer transition-all",
+              "px-4 py-[9px] border-none bg-transparent text-base font-semibold cursor-pointer transition-all",
               "border-b-2 -mb-px",
               tab === id
                 ? "text-primary border-primary"
@@ -128,7 +147,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           <EmbedCode project={project} />
           <Card>
             <h3 className="text-[14px] font-bold text-foreground mb-2">Widget Preview</h3>
-            <p className="text-[13px] text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               This is how your widget appears on external websites.
             </p>
             <WidgetPreview project={project} />
@@ -140,42 +159,65 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
         <div className="max-w-[480px]">
           <Card>
             <h3 className="text-[14px] font-bold text-foreground mb-4">Widget Configuration</h3>
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-4">
               <div>
-                <p className="text-[12px] text-[#737373] font-medium uppercase tracking-[0.04em] mb-2">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
                   Accent Color
                 </p>
-                <div className="flex gap-2">
-                  {WIDGET_COLORS.map((c) => (
-                    <div
-                      key={c}
-                      style={{
-                        background: c,
-                        border: `3px solid ${project.color === c ? "#E5E5E5" : "transparent"}`,
-                      }}
-                      className="w-6 h-6 rounded-full"
-                    />
-                  ))}
+                <div className="flex items-center gap-3">
+                  <div
+                    style={{ background: editColor }}
+                    className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
+                  />
+                  <input
+                    type="color"
+                    value={editColor}
+                    onChange={(e) => setEditColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                    title="Pick a color"
+                  />
+                  <span className="text-sm text-muted-foreground font-mono">{editColor}</span>
                 </div>
               </div>
               <div>
-                <p className="text-[12px] text-[#737373] font-medium uppercase tracking-[0.04em] mb-2">
+                <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
                   Position
                 </p>
                 <div className="flex gap-2">
                   {(["bottom-right", "bottom-left"] as const).map((pos) => (
                     <button
                       key={pos}
+                      onClick={() => setEditPosition(pos)}
                       style={{
-                        borderColor: project.position === pos ? "#F59E0B" : "#2A2A2A",
-                        color: project.position === pos ? "#F59E0B" : "#525252",
+                        borderColor: editPosition === pos ? editColor : "var(--border)",
+                        color: editPosition === pos ? editColor : "var(--muted-foreground)",
+                        background: editPosition === pos ? editColor + "15" : "transparent",
                       }}
-                      className="px-3 py-[7px] rounded-[7px] border bg-transparent text-[12px] font-medium cursor-pointer"
+                      className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
                     >
                       {pos}
                     </button>
                   ))}
                 </div>
+              </div>
+              <FormField
+                label="Button Label"
+                value={editLabel}
+                onChange={setEditLabel}
+                placeholder="Feedback"
+              />
+              {updateProject.isError && (
+                <p className="text-destructive text-sm">
+                  {(updateProject.error as Error)?.message ?? "Failed to save."}
+                </p>
+              )}
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSaveSettings}
+                  disabled={updateProject.isPending}
+                >
+                  {updateProject.isPending ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             </div>
           </Card>
@@ -194,7 +236,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
           {pFeedback.length} feedback entries. This cannot be undone.
         </p>
         {deleteProject.isError && (
-          <p className="text-destructive text-[13px] mb-4">
+          <p className="text-destructive text-sm mb-4">
             Failed to delete project. Please try again.
           </p>
         )}
@@ -203,7 +245,7 @@ export function ProjectDetailPage({ project, onBack }: ProjectDetailPageProps) {
             Cancel
           </Button>
           <Button
-            variant="danger"
+            variant="destructive"
             onClick={handleDeleteProject}
             disabled={deleteProject.isPending}
           >

@@ -31,13 +31,39 @@ export const createProjectSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
+export const updateProjectSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
+    .optional(),
+  position: z.enum(["bottom-right", "bottom-left"]).optional(),
+  label: z.string().max(30).optional(),
+});
+
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+
 // ── Feedback ─────────────────────────────────────────────────────────────────
 
+export const projectQuerySchema = z.object({
+  project: z.string().min(1, "Project ID is required"),
+});
+
+export type ProjectQueryInput = z.infer<typeof projectQuerySchema>;
+
 export const submitFeedbackSchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
   message: z.string().min(1, "Message is required").max(2000),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
-  pageUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  pageUrl: z
+    .string()
+    .url("Invalid URL")
+    .max(2048, "URL too long")
+    .refine(
+      (url) => /^https?:\/\//i.test(url),
+      "Only http and https URLs are allowed"
+    )
+    .optional()
+    .or(z.literal("")),
   userAgent: z.string().max(300).optional(),
 });
 

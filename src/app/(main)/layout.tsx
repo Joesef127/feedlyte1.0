@@ -16,7 +16,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FeedStack — Feedback infrastructure for modern products",
+  title: "Feedlyte — Feedback infrastructure for modern products",
   description: "Collect and manage feedback from your users with a lightweight embeddable widget.",
 };
 
@@ -26,10 +26,16 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      {/* Anti-FOUC: apply saved theme before first paint */}
       <body
         className={`${dmSans.variable} ${dmMono.variable} antialiased font-sans`}
       >
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){var t=localStorage.getItem('feedlyte-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})()`,
+        }}
+      />
         <Providers>{children}</Providers>
       </body>
     </html>
