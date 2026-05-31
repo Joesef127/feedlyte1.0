@@ -94,7 +94,7 @@ function DashboardVisual() {
 export function HowItWorks() {
   return (
     <section id="how-it-works" className="py-24">
-      <div className="mx-auto max-w-[1120px] px-6">
+      <div className="mx-auto max-w-7xl px-6">
 
         {/* Header */}
         <div className="text-center mb-18">

@@ -17,12 +17,12 @@ const stats = [
 
 export function Hero() {
   return (
-    <section className="relative pt-40 pb-24 overflow-hidden">
+    <section className="relative pt-40 pb-24 overflow-hidden bg-background">
 
       {/* Amber glow */}
-      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-amber-radial pointer-events-none z-0" />
+      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-150 h-100 rounded-full bg-amber-radial pointer-events-none z-0" />
 
-      <div className="relative z-10 mx-auto max-w-[1120px] px-6">
+      <div className="relative z-10 mx-auto max-w-7xl px-6">
 
         {/* Beta badge */}
         <div className="flex justify-center mb-8 anim-fade-up">
@@ -33,7 +33,7 @@ export function Hero() {
         </div>
 
         {/* Headline */}
-        <div className="max-w-[760px] mx-auto text-center">
+        <div className="max-w-190 mx-auto text-center">
           <h1
             className="font-display anim-fade-up-1 text-[clamp(3rem,6vw,5.2rem)] leading-[1.05] tracking-[-0.03em] mb-7 text-foreground"
           >
@@ -73,13 +73,13 @@ export function Hero() {
         </div>
 
         {/* Dashboard preview */}
-        <div className="anim-fade-up-4 relative max-w-[900px] mx-auto mt-18">
+        <div className="anim-fade-up-4 relative max-w-225 mx-auto mt-18">
 
           {/* Bottom fade */}
           <div className="absolute bottom-0 left-0 right-0 h-32 fade-bottom z-20 pointer-events-none rounded-b-2xl" />
 
           {/* Mock browser window */}
-          <div className="bg-card border border-border/70 rounded-2xl overflow-hidden shadow-card-deep">
+          <div className="bg-card border border-border/70 rounded-2xl overflow-hidden shadow-card-foreground">
 
             {/* Window chrome */}
             <div className="h-11 border-b border-border flex items-center px-4 gap-2 bg-card">
@@ -92,10 +92,10 @@ export function Hero() {
             </div>
 
             {/* Dashboard body */}
-            <div className="flex h-[380px]">
+            <div className="flex h-95">
 
               {/* Sidebar mock */}
-              <div className="w-[200px] border-r border-border p-3 flex flex-col gap-1 shrink-0">
+              <div className="w-50 border-r border-border p-3 flex flex-col gap-1 shrink-0">
                 <div className="flex items-center gap-2 px-2.5 py-2 mb-3">
                   <div className="w-[22px] h-[22px] bg-primary rounded-[5px]" />
                   <span className="text-[13px] font-bold text-foreground">Feedlyte</span>
@@ -103,7 +103,7 @@ export function Hero() {
                 {["Projects", "All Feedback", "Settings"].map((item, i) => (
                   <div
                     key={item}
-                    className={`px-2.5 py-1.5 rounded-[7px] text-xs font-medium ${i === 0 ? "text-foreground bg-white/[0.06]" : "text-muted-foreground"}`}
+                    className={`px-2.5 py-1.5 rounded-[7px] text-xs font-medium ${i === 0 ? "text-foreground bg-white/6" : "text-muted-foreground"}`}
                   >
                     {item}
                   </div>
@@ -143,9 +143,9 @@ export function Hero() {
           </div>
 
           {/* Floating widget card */}
-          <div className="absolute bottom-10 -right-5 bg-card border border-border/70 rounded-xl p-3.5 w-[220px] shadow-float z-30">
+          <div className="absolute bottom-10 -right-5 bg-card border border-border/70 rounded-xl p-3.5 w-55 shadow-float z-30">
             <div className="text-xs font-semibold text-foreground mb-2.5">Share Feedback</div>
-            <div className="h-[52px] bg-background rounded-md mb-2 border border-border" />
+            <div className="h-13 bg-background rounded-md mb-2 border border-border" />
             <div className="h-7 bg-primary rounded-md flex items-center justify-center">
               <span className="text-[11px] font-semibold text-primary-foreground">Send Feedback</span>
             </div>

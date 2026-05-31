@@ -25,13 +25,13 @@ export function Nav() {
   return (
     <header
       className={[
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 shadow-sm bg-background border-b border-border",
         scrolled
-          ? "border-b border-border bg-background/88 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent",
+          ? "backdrop-blur-md"
+          : "",
       ].join(" ")}
     >
-      <div className="mx-auto max-w-[1120px] px-6 flex items-center justify-between h-16">
+      <div className="mx-auto max-w-7xl px-6 flex items-center justify-between h-24">
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">

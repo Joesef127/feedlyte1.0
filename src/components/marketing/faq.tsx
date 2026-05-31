@@ -90,7 +90,7 @@ export function FAQ() {
 
   return (
     <section id="faq" className="py-24 bg-card border-t border-border">
-      <div className="mx-auto max-w-[1120px] px-6">
+      <div className="mx-auto max-w-7xl px-6">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-20 items-start">
 
           {/* Left sticky label */}

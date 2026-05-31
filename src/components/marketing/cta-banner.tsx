@@ -5,8 +5,8 @@ import Link from "next/link";
 export function CTABanner() {
   return (
     <section className="py-24 border-t border-border">
-      <div className="mx-auto max-w-[1120px] px-6">
-        <div className="relative bg-card border border-primary/15 rounded-2xl py-20 px-12 text-center overflow-hidden">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="relative bg-card border border-primary/15 rounded-2xl py-20 px-6 sm:px-12 text-center overflow-hidden">
 
           {/* Radial glow */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
