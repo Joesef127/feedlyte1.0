@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 
@@ -10,12 +11,12 @@ type Mode = "login" | "register";
 
 export function AuthScreen() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("login");
-  const [email, setEmail] = useState("");
+  const [mode, setMode]         = useState<Mode>("login");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [name, setName]         = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
 
   const submit = async () => {
     setError("");
@@ -52,7 +53,6 @@ export function AuthScreen() {
         return;
       }
 
-      // Redirect to dashboard on successful sign in
       router.push("/dashboard");
     } catch {
       setError("Something went wrong. Please try again.");
@@ -62,6 +62,7 @@ export function AuthScreen() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-5">
+
       {/* Brand */}
       <div className="mb-10 text-center">
         <div className="flex items-center gap-2 justify-center mb-2">
@@ -79,6 +80,7 @@ export function AuthScreen() {
 
       {/* Card */}
       <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
+
         {/* Mode toggle */}
         <div className="flex gap-1 mb-7 bg-background rounded-lg p-1">
           {(["login", "register"] as Mode[]).map((m) => (
@@ -100,7 +102,12 @@ export function AuthScreen() {
         {/* Form */}
         <div className="flex flex-col gap-3.5">
           {mode === "register" && (
-            <FormField label="Name" value={name} onChange={setName} placeholder="Your name" />
+            <FormField
+              label="Name"
+              value={name}
+              onChange={setName}
+              placeholder="Your name"
+            />
           )}
           <FormField
             label="Email"
@@ -109,14 +116,35 @@ export function AuthScreen() {
             onChange={setEmail}
             placeholder="you@company.com"
           />
-          <FormField
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            placeholder="••••••••"
-          />
-          {error && <p className="text-destructive text-[12px] m-0">{error}</p>}
+
+          {/* Password field with forgot link inline */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Password
+              </label>
+              {mode === "login" && (
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              )}
+            </div>
+            <FormField
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              hideLabel
+            />
+          </div>
+
+          {error && (
+            <p className="text-destructive text-[12px]">{error}</p>
+          )}
+
           <button
             onClick={submit}
             disabled={loading}

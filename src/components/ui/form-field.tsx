@@ -12,6 +12,7 @@ interface FormFieldProps {
   monospace?: boolean;
   className?: string;
   disabled?: boolean;
+  hideLabel?: boolean;
 }
 
 function FormField({
@@ -23,10 +24,11 @@ function FormField({
   monospace,
   className,
   disabled,
+    hideLabel,
 }: FormFieldProps) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      {label && <Label>{label}</Label>}
+      {label && !hideLabel && <Label>{label}</Label>}
       <Input
         type={type}
         value={value}
