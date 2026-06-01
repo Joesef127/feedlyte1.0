@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
+import { MenuIcon, MessageSquare, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navLinks = [
@@ -26,17 +26,18 @@ export function Nav() {
     <header
       className={[
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 shadow-sm bg-background border-b border-border",
-        scrolled
-          ? "backdrop-blur-md"
-          : "",
+        scrolled ? "backdrop-blur-md" : "",
       ].join(" ")}
     >
       <div className="mx-auto max-w-7xl px-6 flex items-center justify-between h-24">
-
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-[30px] h-[30px] bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <MessageSquare size={15} className="text-primary-foreground" strokeWidth={2.2} />
+            <MessageSquare
+              size={15}
+              className="text-primary-foreground"
+              strokeWidth={2.2}
+            />
           </div>
           <span className="font-bold text-[18px] tracking-tight text-foreground">
             Feedlyte
@@ -44,7 +45,7 @@ export function Nav() {
         </Link>
 
         {/* Desktop nav links */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-4 lg:gap-8">
           {navLinks.map((item) => (
             <a
               key={item.label}
@@ -57,21 +58,24 @@ export function Nav() {
         </nav>
 
         {/* Desktop right actions */}
-        <div className="hidden md:flex items-center gap-2.5">
+        <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Link
-            href="/auth"
-            className="inline-flex items-center px-[18px] py-[9px] rounded-lg text-sm font-semibold border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/auth"
-            className="inline-flex items-center px-[18px] py-[9px] rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-amber-glow transition-all"
-          >
-            Get started free
-          </Link>
-        </div>
+          <div className="hidden md:flex items-center gap-2.5">
+            <Link
+              href="/auth"
+              className="inline-flex items-center px-[18px] py-[9px] rounded-lg text-sm font-semibold border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/auth"
+              className="inline-flex items-center px-[18px] py-[9px] rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-amber-glow transition-all"
+            >
+              Get started free
+            </Link>
+          </div>
+
+        {/* <ThemeToggle /> */}
 
         {/* Mobile hamburger */}
         <button
@@ -81,19 +85,17 @@ export function Nav() {
         >
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
             {menuOpen ? (
-              <>
-                <line x1="4" y1="4" x2="18" y2="18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <line x1="18" y1="4" x2="4" y2="18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </>
+              <X size={22} className="text-foreground" strokeWidth={2.5} />
             ) : (
-              <>
-                <line x1="3" y1="7" x2="19" y2="7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <line x1="3" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <line x1="3" y1="17" x2="19" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </>
+              <MenuIcon
+                size={22}
+                className="text-foreground"
+                strokeWidth={2.5}
+              />
             )}
           </svg>
         </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
@@ -104,14 +106,12 @@ export function Nav() {
               key={item.label}
               href={item.href}
               onClick={() => setMenuOpen(false)}
-              className="text-base font-medium text-muted-foreground py-2.5 border-b border-border"
+              className="text-base font-medium text-muted-foreground py-2.5 px-2.5 hover:bg-accent rounded-lg transition-colors"
             >
               {item.label}
             </a>
           ))}
-          <div className="flex items-center justify-between mt-4">
-            <ThemeToggle />
-          </div>
+
           <div className="flex flex-col gap-2.5 mt-2">
             <Link
               href="/auth"

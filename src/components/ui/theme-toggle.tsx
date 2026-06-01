@@ -34,34 +34,12 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        width: "44px",
-        height: "24px",
-        borderRadius: "12px",
-        border: "1px solid var(--sidebar-border)",
-        background: "var(--secondary)",
-        padding: "2px",
-        cursor: "pointer",
-        flexShrink: 0,
-        transition: "background 0.2s",
-      }}
+      className="flex items-center w-11 h-6 rounded-[12px] border border-sidebar-border bg-secondary p-0.5 cursor-pointer shrink-0 transition-colors duration-200"
     >
       <span
-        style={{
-          width: "18px",
-          height: "18px",
-          borderRadius: "50%",
-          background: "var(--primary)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "var(--primary-foreground)",
-          transform: dark ? "translateX(0)" : "translateX(20px)",
-          transition: "transform 0.2s",
-          flexShrink: 0,
-        }}
+        className={`w-[18px] h-[18px] rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-transform duration-200 shrink-0 ${
+          dark ? "translate-x-0" : "translate-x-5"
+        }`}
       >
         {dark ? <Moon size={10} /> : <Sun size={10} />}
       </span>
