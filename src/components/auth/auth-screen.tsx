@@ -5,7 +5,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Eye, EyeOff } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 
 type Mode = "login" | "register";
@@ -20,6 +20,7 @@ export function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState<Status>("default");
+  const [showPassword, setShowPassword] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -216,13 +217,29 @@ export function AuthScreen() {
                 </Link>
               )}
             </div>
-            <FormField
-              type="password"
-              value={password}
-              onChange={setPassword}
-              placeholder="••••••••"
-              hideLabel
-            />
+            <div className="relative">
+              <FormField
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={setPassword}
+                placeholder="••••••••"
+                hideLabel
+              />
+              {password && (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <Eye className="w-4 h-4" />
+                  ) : (
+                    <EyeOff className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
           </div>
 
           {error && <p className="text-destructive text-[12px]">{error}</p>}

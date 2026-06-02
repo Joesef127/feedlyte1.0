@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, ArrowLeft } from "lucide-react";
+import { MessageSquare, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 
 type State = "idle" | "loading" | "success";
@@ -17,6 +17,8 @@ export function ResetPasswordScreen() {
   const [confirm, setConfirm]     = useState("");
   const [state, setState]         = useState<State>("idle");
   const [error, setError]         = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const timeoutRef                = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -139,20 +141,52 @@ export function ResetPasswordScreen() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <FormField
-                label="New password"
-                type="password"
-                value={password}
-                onChange={setPassword}
-                placeholder="••••••••"
-              />
-              <FormField
-                label="Confirm password"
-                type="password"
-                value={confirm}
-                onChange={setConfirm}
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <FormField
+                  label="New password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="••••••••"
+                />
+                {password && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <FormField
+                  label="Confirm password"
+                  type={showConfirm ? "text" : "password"}
+                  value={confirm}
+                  onChange={setConfirm}
+                  placeholder="••••••••"
+                />
+                {confirm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
 
               {error && (
                 <p className="text-destructive text-[12px]">{error}</p>
