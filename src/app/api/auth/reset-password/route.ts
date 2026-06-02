@@ -28,7 +28,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Normalize email for consistent lookups
+    const normalizedEmail = email.toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return NextResponse.json(
         { error: "Account not found." },
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     // Hash and update password
     const passwordHash = await bcrypt.hash(password, 12);
     await prisma.user.update({
-      where: { email },
+      where: { email: normalizedEmail },
       data: { passwordHash },
     });
 

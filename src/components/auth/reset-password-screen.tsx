@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageSquare, ArrowLeft } from "lucide-react";
@@ -17,6 +17,13 @@ export function ResetPasswordScreen() {
   const [confirm, setConfirm]     = useState("");
   const [state, setState]         = useState<State>("idle");
   const [error, setError]         = useState("");
+  const timeoutRef                = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // No token in URL — show an error immediately
   if (!token) {
@@ -79,7 +86,7 @@ export function ResetPasswordScreen() {
 
       setState("success");
       // Redirect to sign in after 2 seconds
-      setTimeout(() => router.push("/auth"), 2000);
+      timeoutRef.current = setTimeout(() => router.push("/auth"), 2000);
     } catch {
       setError("Something went wrong. Please try again.");
       setState("idle");

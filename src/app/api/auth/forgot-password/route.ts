@@ -7,17 +7,18 @@ import { handleError } from "@/lib/api-helpers";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body   = await req.json();
     const parsed = forgotPasswordSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0].message },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const { email } = parsed.data;
+    // Normalize email to lowercase — prevents case mismatch with Resend
+    const email = parsed.data.email.toLowerCase();
 
     // Always return 200 regardless of whether the email exists.
     // This prevents user enumeration attacks.
@@ -29,21 +30,17 @@ export async function POST(req: Request) {
       const rawToken = await createPasswordResetToken(email);
       const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${rawToken}`;
       console.log("[debug] resetUrl:", resetUrl);
-      
+
       const emailResult = await sendPasswordResetEmail(email, resetUrl);
       console.log("[debug] emailResult:", emailResult);
 
       if (!emailResult.success) {
-        console.error(
-          "[forgot-password] Email send failed:",
-          emailResult.error,
-        );
+        console.error("[forgot-password] Email send failed:", emailResult.error);
       }
     }
 
     return NextResponse.json({
-      message:
-        "If an account exists for that email, a reset link has been sent.",
+      message: `A reset link has been sent to ${email}.`,
     });
   } catch (e) {
     return handleError(e, "POST /api/auth/forgot-password");
