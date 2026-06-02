@@ -61,16 +61,16 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
       {/* User + Logout */}
       <div className="p-2 border-t border-sidebar-border">
         <div className="px-2.5 py-2 mb-2">
-          <p className="text-[12px] font-semibold text-foreground m-0 truncate">
+          <p className="text-base font-semibold text-foreground m-0 truncate">
             {name}
           </p>
-          <p className="text-[11px] text-muted-foreground mt-0.5 m-0 truncate">
+          <p className="text-sm text-muted-foreground mt-0.5 m-0 truncate">
             {email}
           </p>
         </div>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg border-none bg-transparent text-muted-foreground text-sm font-medium cursor-pointer hover:text-foreground transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-[9px] mb-6 rounded-lg border-none bg-destructive text-foreground text-sm font-medium cursor-pointer hover:text-foreground transition-colors"
         >
           <LogOut size={15} />
           Sign Out
