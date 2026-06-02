@@ -12,14 +12,14 @@ export function Header({ page, project }: HeaderProps) {
     : page.charAt(0).toUpperCase() + page.slice(1);
 
   return (
-    <div className="border-b border-sidebar-border h-[52px] px-9 flex items-center justify-between bg-sidebar shrink-0">
+    <div className="border-b border-sidebar-border h-13 px-9 flex items-center justify-between bg-sidebar shrink-0">
       <span className="text-base text-muted-foreground font-medium">
         {crumb}
       </span>
       <div className="flex items-center gap-3">
         <ThemeToggle />
         <div className="flex items-center gap-2">
-          <div className="w-[7px] h-[7px] rounded-full bg-success" />
+          <div className="w-1.75 h-1.75 rounded-full bg-success" />
           <span className="text-[12px] text-[#d3d0d0]">All systems operational</span>
         </div>
       </div>

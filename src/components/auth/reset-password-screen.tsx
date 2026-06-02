@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageSquare, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
+import { useAuth } from "@/hooks/useAuth";
 
 type State = "idle" | "loading" | "success";
 
@@ -12,6 +13,7 @@ export function ResetPasswordScreen() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const token        = searchParams.get("token") ?? "";
+  const { resetPassword, resetPasswordIsPending } = useAuth();
 
   const [password, setPassword]   = useState("");
   const [confirm, setConfirm]     = useState("");
@@ -70,28 +72,14 @@ export function ResetPasswordScreen() {
       return;
     }
 
-    setState("loading");
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
-        setState("idle");
-        return;
-      }
-
+      await resetPassword({ token, password });
       setState("success");
       // Redirect to sign in after 2 seconds
       timeoutRef.current = setTimeout(() => router.push("/auth"), 2000);
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setState("idle");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(errorMessage);
     }
   };
 
@@ -114,7 +102,7 @@ export function ResetPasswordScreen() {
       </div>
 
       {/* Card */}
-      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
+      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-95">
         {state === "success" ? (
           <div className="text-center">
             <div className="w-12 h-12 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -195,7 +183,7 @@ export function ResetPasswordScreen() {
               <button
                 onClick={submit}
                 disabled={state === "loading"}
-                className="w-full bg-primary text-primary-foreground py-[11px] rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
+                className="w-full bg-primary text-primary-foreground py-xs rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
               >
                 {state === "loading" ? "Updating password..." : "Update password"}
               </button>

@@ -22,7 +22,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
   const email = session?.user?.email ?? "";
 
   return (
-    <div className="w-[220px] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 h-screen sticky top-0">
+    <div className="w-55 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 h-screen sticky top-0">
       {/* Logo */}
       <div className="px-4 py-5 border-b border-sidebar-border">
         <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
             key={id}
             onClick={() => setPage(id)}
             className={[
-              "w-full flex items-center gap-2.5 px-2.5 py-[9px] rounded-lg border-none",
+              "w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg border-none",
               "text-sm font-medium cursor-pointer transition-all duration-150 mb-0.5 text-left",
               page === id
                 ? "bg-secondary text-foreground"
@@ -70,7 +70,7 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
         </div>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-[9px] mb-6 rounded-lg border-none bg-destructive text-foreground text-sm font-medium cursor-pointer hover:text-foreground transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2.5 mb-6 rounded-lg border-none bg-destructive text-foreground text-sm font-medium cursor-pointer hover:text-foreground transition-colors"
         >
           <LogOut size={15} />
           Sign Out

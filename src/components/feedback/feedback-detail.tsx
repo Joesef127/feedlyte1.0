@@ -22,7 +22,7 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
   return (
     <div className="flex flex-col gap-4">
       {/* Message */}
-      <div className="bg-background rounded-lg px-4 py-[14px]">
+      <div className="bg-background rounded-lg px-4 py-3.5">
         <p className="text-base text-foreground leading-relaxed m-0">{fb.message}</p>
       </div>
 
@@ -30,7 +30,7 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
       <div className="grid grid-cols-2 gap-2.5">
         {META_FIELDS.map(([label, key]) => (
           <div key={label} className="bg-background rounded-[7px] px-3 py-2.5">
-            <p className="text-xs text-[#d3d0d0] font-semibold uppercase tracking-[0.06em] mb-[3px]">
+            <p className="text-xs text-[#d3d0d0] font-semibold uppercase tracking-[0.06em] mb-1">
               {label}
             </p>
             <p className="text-xs text-[#737373] font-mono break-all m-0">
@@ -50,7 +50,7 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
             <button
               key={s}
               onClick={() => onUpdateStatus(fb.id, s)}
-              className="flex items-center gap-1.5 px-3 py-[6px] rounded-[7px] border bg-transparent text-sm font-medium cursor-pointer capitalize transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] border bg-transparent text-sm font-medium cursor-pointer capitalize transition-all"
               style={{
                 borderColor: fb.status === s ? "#F59E0B" : "#2A2A2A",
                 color: fb.status === s ? "#F59E0B" : "#525252",

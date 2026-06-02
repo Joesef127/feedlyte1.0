@@ -2,22 +2,23 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageSquare, Eye, EyeOff } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
+import { useAuth } from "@/hooks/useAuth";
 
 type Mode = "login" | "register";
 type Status = "default" | "checking-email";
 
 export function AuthScreen() {
   const router = useRouter();
+  const { register, login, registerIsPending, loginIsPending } = useAuth();
+  
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState<Status>("default");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,46 +30,21 @@ export function AuthScreen() {
       return;
     }
 
-    setLoading(true);
     try {
       if (mode === "register") {
         // Register — verification email will be sent
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          setError(data.error ?? "Registration failed.");
-          setLoading(false);
-          return;
-        }
-
+        await register({ name, email, password });
         // Show "check your email" message — don't verify here
         setStatus("checking-email");
-        setLoading(false);
         return;
       }
 
       // Login flow
-      const result = await signIn("credentials", {
-        email: email.toLowerCase(),
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Invalid email or password.");
-        setLoading(false);
-        return;
-      }
-
+      await login({ email: email.toLowerCase(), password });
       router.push("/dashboard");
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setLoading(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(errorMessage);
     }
   };
 
@@ -94,7 +70,7 @@ export function AuthScreen() {
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px] text-center">
+        <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-95 text-center">
           <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mx-auto mb-5">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
@@ -156,7 +132,7 @@ export function AuthScreen() {
       </div>
 
       {/* Card */}
-      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
+      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-95">
         {/* Mode toggle */}
         <div className="flex gap-1 mb-7 bg-background rounded-lg p-1">
           {(["login", "register"] as Mode[]).map((m) => (
@@ -167,7 +143,7 @@ export function AuthScreen() {
                 setError("");
               }}
               className={[
-                "flex-1 py-[7px] rounded-md border-none text-sm font-semibold cursor-pointer transition-all",
+                "flex-1 py-2 rounded-md border-none text-sm font-semibold cursor-pointer transition-all",
                 mode === m
                   ? "bg-secondary text-foreground"
                   : "bg-transparent text-muted-foreground",
@@ -246,10 +222,10 @@ export function AuthScreen() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-primary-foreground border-none py-[11px] rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
+            disabled={registerIsPending || loginIsPending}
+            className="w-full bg-primary text-primary-foreground border-none py-3 rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
           >
-            {loading
+            {registerIsPending || loginIsPending
               ? mode === "register"
                 ? "Creating account..."
                 : "Signing in..."
