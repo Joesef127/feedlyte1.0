@@ -4,16 +4,16 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { Page, Project } from "@/types";
-// import { AuthScreen } from "@/components/auth/auth-screen";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { ProjectsPage } from "@/components/projects/projects-page";
 import { ProjectDetailPage } from "@/components/projects/project-detail-page";
 import { AllFeedbackPage } from "@/components/feedback/all-feedback-page";
 import { SettingsPage } from "@/components/settings/settings-page";
+import { VerificationBanner } from "@/components/ui/verification-banner";
 
 export function App() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [page, setPage] = useState<Page>("projects");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
@@ -36,6 +36,10 @@ export function App() {
     setSelectedProject(null);
   };
 
+  // Show banner only when session is loaded and email is not verified
+  const showVerificationBanner =
+    status === "authenticated" && !session?.user?.emailVerified;
+
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       <Sidebar
@@ -44,6 +48,7 @@ export function App() {
         onLogout={() => signOut({ redirect: false })}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
+        {showVerificationBanner && <VerificationBanner />}
         <Header page={page} project={selectedProject} />
         <div className="flex-1 overflow-hidden flex flex-col">
           {selectedProject ? (

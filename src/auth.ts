@@ -1,47 +1,51 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { loginSchema } from "@/lib/validations";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/", // keep users on the SPA — auth-screen handles the UI
-  },
+  pages: { signIn: "/auth" },
   providers: [
     Credentials({
-      name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email:    { label: "Email",    type: "email"    },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        const email    = (credentials?.email    as string | undefined)?.toLowerCase();
+        const password =  credentials?.password as string | undefined;
 
-        const { email, password } = parsed.data;
-        // Normalize email to lowercase for consistent lookups
-        const normalizedEmail = email.toLowerCase();
-        const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+        if (!email || !password) return null;
+
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.passwordHash) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: user.id, name: user.name, email: user.email };
+        return {
+          id:            user.id,
+          name:          user.name,
+          email:         user.email,
+          emailVerified: user.emailVerified,
+        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id            = user.id;
+        token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified ?? null;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (token?.id) session.user.id = token.id as string;
+      if (token && session.user) {
+        session.user.id            = token.id as string;
+        session.user.emailVerified = token.emailVerified as Date | null;
+      }
       return session;
     },
   },
