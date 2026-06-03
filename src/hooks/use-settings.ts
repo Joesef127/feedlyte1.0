@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+
 import { useSession } from "next-auth/react";
 import { useCurrentUser, useUsers } from "@/hooks";
 
@@ -8,8 +9,29 @@ export function useSettings() {
   const { data: user } = useCurrentUser();
   const { update } = useSession();
 
+  // (kept for backwards compatibility; no longer used)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const accountSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const passwordSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (accountSaveTimerRef.current)
+        clearTimeout(accountSaveTimerRef.current);
+      if (passwordSaveTimerRef.current)
+        clearTimeout(passwordSaveTimerRef.current);
+    };
+  }, []);
+
   const {
     updateProfile,
+
     updateProfileIsPending,
     updatePassword,
     updatePasswordIsPending,
@@ -21,15 +43,10 @@ export function useSettings() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [accountState, setAccountState] =
-    useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [accountState, setAccountState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [accountError, setAccountError] = useState("");
-
-  useEffect(() => {
-    if (!user) return;
-    setName(user.name ?? "");
-    setEmail(user.email ?? "");
-  }, [user]);
 
   const saveAccount = async () => {
     setAccountError("");
@@ -43,11 +60,18 @@ export function useSettings() {
         email: updated.email,
       });
 
+      // React Query cache is updated via useUsers() invalidation.
       setAccountState("saved");
-      setTimeout(() => setAccountState("idle"), 2500);
+
+      if (accountSaveTimerRef.current) {
+        clearTimeout(accountSaveTimerRef.current);
+      }
+      accountSaveTimerRef.current = setTimeout(() => {
+        setAccountState("idle");
+      }, 2500);
     } catch (err) {
       setAccountError(
-        err instanceof Error ? err.message : "Failed to update profile"
+        err instanceof Error ? err.message : "Failed to update profile",
       );
       setAccountState("error");
     }
@@ -68,8 +92,9 @@ export function useSettings() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [passwordState, setPasswordState] =
-    useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [passwordState, setPasswordState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [passwordError, setPasswordError] = useState("");
 
   const changePassword = async () => {
@@ -103,10 +128,16 @@ export function useSettings() {
       setConfirm("");
 
       setPasswordState("saved");
-      setTimeout(() => setPasswordState("idle"), 2500);
+
+      if (passwordSaveTimerRef.current) {
+        clearTimeout(passwordSaveTimerRef.current);
+      }
+      passwordSaveTimerRef.current = setTimeout(() => {
+        setPasswordState("idle");
+      }, 2500);
     } catch (err) {
       setPasswordError(
-        err instanceof Error ? err.message : "Failed to update password"
+        err instanceof Error ? err.message : "Failed to update password",
       );
       setPasswordState("error");
     }
@@ -130,8 +161,9 @@ export function useSettings() {
 
   const [modal, setModal] = useState(false);
   const [input, setInput] = useState("");
-  const [dangerState, setDangerState] =
-    useState<"idle" | "deleting" | "error">("idle");
+  const [dangerState, setDangerState] = useState<"idle" | "deleting" | "error">(
+    "idle",
+  );
   const [dangerError, setDangerError] = useState("");
 
   const confirmed = input.toLowerCase() === "delete my account";
@@ -146,7 +178,7 @@ export function useSettings() {
       await deleteAccount(user.id);
     } catch (err) {
       setDangerError(
-        err instanceof Error ? err.message : "Failed to delete account"
+        err instanceof Error ? err.message : "Failed to delete account",
       );
       setDangerState("error");
     }
