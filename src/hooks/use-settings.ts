@@ -8,29 +8,18 @@ export function useSettings() {
   const { data: user } = useCurrentUser();
   const { update } = useSession();
 
-  // (kept for backwards compatibility; no longer used)
-  // const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const accountSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const passwordSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const accountSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passwordSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      // if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      if (accountSaveTimerRef.current)
-        clearTimeout(accountSaveTimerRef.current);
-      if (passwordSaveTimerRef.current)
-        clearTimeout(passwordSaveTimerRef.current);
+      if (accountSaveTimerRef.current) clearTimeout(accountSaveTimerRef.current);
+      if (passwordSaveTimerRef.current) clearTimeout(passwordSaveTimerRef.current);
     };
   }, []);
 
   const {
     updateProfile,
-
     updateProfileIsPending,
     updatePassword,
     updatePasswordIsPending,
@@ -40,12 +29,18 @@ export function useSettings() {
 
   // ── Account state ─────────────────────────────
 
-  const [name, setName] = useState("");
+  const [name,  setName]  = useState("");
   const [email, setEmail] = useState("");
-  const [accountState, setAccountState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
+  const [accountState, setAccountState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [accountError, setAccountError] = useState("");
+
+  // Sync name and email once user data loads from the server
+  useEffect(() => {
+    if (user) {
+      setName(user.name  ?? "");
+      setEmail(user.email ?? "");
+    }
+  }, [user]);
 
   const saveAccount = async () => {
     setAccountError("");
@@ -55,45 +50,41 @@ export function useSettings() {
       const updated = await updateProfile({ name, email });
 
       await update({
-        name: updated.name,
+        name:  updated.name,
         email: updated.email,
       });
 
-      // React Query cache is updated via useUsers() invalidation.
       setAccountState("saved");
 
-      if (accountSaveTimerRef.current) {
-        clearTimeout(accountSaveTimerRef.current);
-      }
+      if (accountSaveTimerRef.current) clearTimeout(accountSaveTimerRef.current);
       accountSaveTimerRef.current = setTimeout(() => {
         setAccountState("idle");
       }, 2500);
     } catch (err) {
       setAccountError(
-        err instanceof Error ? err.message : "Failed to update profile",
+        err instanceof Error ? err.message : "Failed to update profile"
       );
       setAccountState("error");
     }
   };
 
   const resetAccount = () => {
-    setName(user?.name ?? "");
+    setName(user?.name   ?? "");
     setEmail(user?.email ?? "");
     setAccountError("");
     setAccountState("idle");
   };
 
   const isAccountDirty =
-    name !== (user?.name ?? "") || email !== (user?.email ?? "");
+    name  !== (user?.name  ?? "") ||
+    email !== (user?.email ?? "");
 
   // ── Password state ────────────────────────────
 
   const [current, setCurrent] = useState("");
-  const [next, setNext] = useState("");
+  const [next,    setNext]    = useState("");
   const [confirm, setConfirm] = useState("");
-  const [passwordState, setPasswordState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
+  const [passwordState, setPasswordState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [passwordError, setPasswordError] = useState("");
 
   const changePassword = async () => {
@@ -103,12 +94,10 @@ export function useSettings() {
       setPasswordError("All fields required");
       return;
     }
-
     if (next !== confirm) {
       setPasswordError("Passwords do not match");
       return;
     }
-
     if (next.length < 8) {
       setPasswordError("Password too short");
       return;
@@ -117,26 +106,20 @@ export function useSettings() {
     setPasswordState("saving");
 
     try {
-      await updatePassword({
-        currentPassword: current,
-        newPassword: next,
-      });
+      await updatePassword({ currentPassword: current, newPassword: next });
 
       setCurrent("");
       setNext("");
       setConfirm("");
-
       setPasswordState("saved");
 
-      if (passwordSaveTimerRef.current) {
-        clearTimeout(passwordSaveTimerRef.current);
-      }
+      if (passwordSaveTimerRef.current) clearTimeout(passwordSaveTimerRef.current);
       passwordSaveTimerRef.current = setTimeout(() => {
         setPasswordState("idle");
       }, 2500);
     } catch (err) {
       setPasswordError(
-        err instanceof Error ? err.message : "Failed to update password",
+        err instanceof Error ? err.message : "Failed to update password"
       );
       setPasswordState("error");
     }
@@ -158,11 +141,9 @@ export function useSettings() {
 
   // ── Danger state ──────────────────────────────
 
-  const [modal, setModal] = useState(false);
-  const [input, setInput] = useState("");
-  const [dangerState, setDangerState] = useState<"idle" | "deleting" | "error">(
-    "idle",
-  );
+  const [modal,      setModal]      = useState(false);
+  const [input,      setInput]      = useState("");
+  const [dangerState, setDangerState] = useState<"idle" | "deleting" | "error">("idle");
   const [dangerError, setDangerError] = useState("");
 
   const confirmed = input.toLowerCase() === "delete my account";
@@ -177,7 +158,7 @@ export function useSettings() {
       await deleteAccount(user.id);
     } catch (err) {
       setDangerError(
-        err instanceof Error ? err.message : "Failed to delete account",
+        err instanceof Error ? err.message : "Failed to delete account"
       );
       setDangerState("error");
     }
