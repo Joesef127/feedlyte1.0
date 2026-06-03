@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useCurrentUser, useUsers } from "@/hooks";
 
@@ -10,7 +9,7 @@ export function useSettings() {
   const { update } = useSession();
 
   // (kept for backwards compatibility; no longer used)
-  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const accountSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -21,7 +20,7 @@ export function useSettings() {
 
   useEffect(() => {
     return () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      // if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       if (accountSaveTimerRef.current)
         clearTimeout(accountSaveTimerRef.current);
       if (passwordSaveTimerRef.current)
