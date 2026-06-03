@@ -1,53 +1,77 @@
-/**
- * In-memory rate limiter.
- * Limits requests per unique key (e.g. IP address) within a time window.
- *
- * Note: Resets on server restart. Not suitable for multi-instance deployments
- * without a shared store (e.g. Redis). For MVP this is sufficient.
- */
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-interface RateLimitRecord {
-  count: number;
-  resetAt: number;
-}
+// ── Vercel KV client ──────────────────────────────────────────────────────────
+// Vercel KV automatically injects KV_REST_API_URL and KV_REST_API_TOKEN
+// when you add a KV database to your project in the Vercel dashboard.
+// Pull them locally with: vercel env pull .env.local
 
-const store = new Map<string, RateLimitRecord>();
+const redis = new Redis({
+  url:   process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
-export interface RateLimitOptions {
-  /** Max requests allowed in the window */
-  limit: number;
-  /** Window duration in milliseconds */
-  windowMs: number;
-}
+// ── Widget submission limiter ─────────────────────────────────────────────────
+// 10 submissions per project per 60 seconds, sliding window.
+// Key: project ID — each project has its own independent counter.
+
+const widgetLimiter = new Ratelimit({
+  redis,
+  limiter:   Ratelimit.slidingWindow(10, "60 s"),
+  prefix:    "feedlyte:widget",
+  analytics: false,
+});
+
+// ── Auth limiter ──────────────────────────────────────────────────────────────
+// 5 attempts per IP per 15 minutes on sensitive auth endpoints.
+// Key: IP address.
+
+const authLimiter = new Ratelimit({
+  redis,
+  limiter:   Ratelimit.slidingWindow(5, "15 m"),
+  prefix:    "feedlyte:auth",
+  analytics: false,
+});
+
+// ── Public interface ──────────────────────────────────────────────────────────
 
 export interface RateLimitResult {
-  success: boolean;
+  success:   boolean;
+  limit:     number;
   remaining: number;
-  resetAt: number;
+  reset:     number;
 }
 
-export function rateLimit(key: string, options: RateLimitOptions): RateLimitResult {
-  const now = Date.now();
-  const record = store.get(key);
+/**
+ * Rate limit widget submissions by project ID.
+ */
+export async function checkWidgetRateLimit(
+  projectId: string
+): Promise<RateLimitResult> {
+  const { success, limit, remaining, reset } = await widgetLimiter.limit(projectId);
+  return { success, limit, remaining, reset };
+}
 
-  if (!record || now > record.resetAt) {
-    const resetAt = now + options.windowMs;
-    store.set(key, { count: 1, resetAt });
-    return { success: true, remaining: options.limit - 1, resetAt };
-  }
+/**
+ * Rate limit auth endpoints by IP address.
+ */
+export async function checkAuthRateLimit(
+  ip: string
+): Promise<RateLimitResult> {
+  const key = ip || "anonymous";
+  const { success, limit, remaining, reset } = await authLimiter.limit(key);
+  return { success, limit, remaining, reset };
+}
 
-  if (record.count >= options.limit) {
-    return { success: false, remaining: 0, resetAt: record.resetAt };
-  }
-
-  record.count++;
+/**
+ * Build rate limit headers to include in API responses.
+ */
+export function rateLimitHeaders(
+  result: RateLimitResult
+): Record<string, string> {
   return {
-    success: true,
-    remaining: options.limit - record.count,
-    resetAt: record.resetAt,
+    "X-RateLimit-Limit":     String(result.limit),
+    "X-RateLimit-Remaining": String(result.remaining),
+    "X-RateLimit-Reset":     String(result.reset),
   };
 }
-
-// Feedback endpoint: 10 submissions per 15 minutes per IP
-export const feedbackRateLimit = (key: string) =>
-  rateLimit(key, { limit: 10, windowMs: 15 * 60 * 1000 });
