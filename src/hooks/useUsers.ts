@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as usersAPI from "@/services/api/users";
 import { useRouter } from "next/navigation";
 
@@ -25,9 +25,13 @@ export function useUser(id: string) {
 
 export function useUsers() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const updateProfileMutation = useMutation({
     mutationFn: usersAPI.updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
+    }
   });
 
   const updatePasswordMutation = useMutation({

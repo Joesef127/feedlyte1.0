@@ -40,7 +40,7 @@ export function DangerCard(props: DangerCardProps) {
         title="Delete Account"
       >
         <p className="text-sm mb-4">
-          Type delete my account
+          Type &quot;delete my account&quot;
         </p>
 
         <FormField

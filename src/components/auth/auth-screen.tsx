@@ -33,7 +33,7 @@ export function AuthScreen() {
     try {
       if (mode === "register") {
         // Register — verification email will be sent
-        await register({ name, email, password });
+        await register({ name, email: email.toLowerCase(), password });
         // Show "check your email" message — don't verify here
         setStatus("checking-email");
         return;

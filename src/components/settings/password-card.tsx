@@ -53,9 +53,9 @@ export function PasswordCard(props: PasswordCardProps) {
               tabIndex={-1}
             >
               {showCurrent ? (
-                <Eye className="w-4 h-4" />
-              ) : (
                 <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
               )}
             </button>
           )}
@@ -77,9 +77,9 @@ export function PasswordCard(props: PasswordCardProps) {
               tabIndex={-1}
             >
               {showNext ? (
-                <Eye className="w-4 h-4" />
-              ) : (
                 <EyeOff className="w-4 h-4" />
+              ) : (
+              <Eye className="w-4 h-4" />
               )}
             </button>
           )}
@@ -101,9 +101,9 @@ export function PasswordCard(props: PasswordCardProps) {
               tabIndex={-1}
             >
               {showConfirm ? (
-                <Eye className="w-4 h-4" />
-              ) : (
                 <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
               )}
             </button>
           )}
@@ -116,11 +116,12 @@ export function PasswordCard(props: PasswordCardProps) {
         )}
 
         <div className="flex justify-end gap-2.5">
-          <Button variant="secondary" onClick={props.resetPassword}>
+          <Button type="button" variant="secondary" onClick={props.resetPassword}>
             Clear
           </Button>
 
           <Button
+            type="submit"
             disabled={
               !props.isPasswordValid ||
               props.passwordState === "saving" ||

@@ -182,12 +182,11 @@ export function ResetPasswordScreen() {
 
               <button
                 onClick={submit}
-                disabled={state === "loading"}
+                disabled={resetPasswordIsPending}
                 className="w-full bg-primary text-primary-foreground py-xs rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
               >
-                {state === "loading" ? "Updating password..." : "Update password"}
-              </button>
-            </div>
+                {resetPasswordIsPending ? "Updating password..." : "Update password"}
+              </button>            </div>
 
             <div className="mt-5 pt-5 border-t border-border text-center">
               <Link

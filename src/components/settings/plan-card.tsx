@@ -27,7 +27,7 @@ export function PlanCard() {
         ))}
       </div>
 
-      <Button variant="secondary">Manage Billing</Button>
+      <Button variant="secondary" disabled>Manage Billing</Button>
     </Card>
   );
 }
