@@ -12,7 +12,9 @@ interface EmbedCodeProps {
 export function EmbedCode({ project }: EmbedCodeProps) {
   const [copied, setCopied] = useState(false);
 
-  const embedCode = `<script src="https://feedlyte.vercel.app/widget.js" data-project="${project.id}"></script>`;
+  const prodUrl = process.env.PROD_URL || "https://feedlyte.vercel.app";
+
+  const embedCode = `<script src="${prodUrl}/widget.js" data-project="${project.id}"></script>`;
 
   const copy = () => {
     navigator.clipboard.writeText(embedCode).catch(() => {});
@@ -27,7 +29,7 @@ export function EmbedCode({ project }: EmbedCodeProps) {
         Paste this script before the closing{" "}
         <code className="font-mono text-[12px]">&lt;/body&gt;</code> tag on your website.
       </p>
-      <div className="bg-background border border-[#2a2a2a] rounded-lg px-4 py-[14px] flex items-center justify-between gap-3">
+      <div className="bg-background border border-[#2a2a2a] rounded-lg px-4 py-3.5 flex items-center justify-between gap-3">
         <code className="font-mono text-[12px] text-success break-all flex-1">
           {embedCode}
         </code>

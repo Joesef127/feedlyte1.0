@@ -4,10 +4,13 @@ import { useState } from "react";
 import { MessageSquare, ArrowLeft } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 type State = "idle" | "loading" | "sent";
 
 export function ForgotPasswordScreen() {
+  const { requestPasswordReset, requestPasswordResetIsPending } = useAuth();
+  
   const [email, setEmail]   = useState("");
   const [state, setState]   = useState<State>("idle");
   const [error, setError]   = useState("");
@@ -19,25 +22,12 @@ export function ForgotPasswordScreen() {
       return;
     }
 
-    setState("loading");
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Something went wrong.");
-        setState("idle");
-        return;
-      }
-
+      await requestPasswordReset({ email });
       setState("sent");
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setState("idle");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(errorMessage);
     }
   };
 
@@ -117,10 +107,10 @@ export function ForgotPasswordScreen() {
 
               <button
                 onClick={submit}
-                disabled={state === "loading"}
+                disabled={requestPasswordResetIsPending}
                 className="w-full bg-primary text-primary-foreground py-2.75 rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
               >
-                {state === "loading" ? "Sending link..." : "Send reset link"}
+                {requestPasswordResetIsPending ? "Sending link..." : "Send reset link"}
               </button>
             </div>
 

@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { MessageSquare, ArrowLeft } from "lucide-react";
+import { MessageSquare, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
+import { useAuth } from "@/hooks/useAuth";
 
 type State = "idle" | "loading" | "success";
 
@@ -12,11 +13,14 @@ export function ResetPasswordScreen() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const token        = searchParams.get("token") ?? "";
+  const { resetPassword, resetPasswordIsPending } = useAuth();
 
   const [password, setPassword]   = useState("");
   const [confirm, setConfirm]     = useState("");
   const [state, setState]         = useState<State>("idle");
   const [error, setError]         = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const timeoutRef                = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -68,28 +72,14 @@ export function ResetPasswordScreen() {
       return;
     }
 
-    setState("loading");
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
-        setState("idle");
-        return;
-      }
-
+      await resetPassword({ token, password });
       setState("success");
       // Redirect to sign in after 2 seconds
       timeoutRef.current = setTimeout(() => router.push("/auth"), 2000);
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setState("idle");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(errorMessage);
     }
   };
 
@@ -112,7 +102,7 @@ export function ResetPasswordScreen() {
       </div>
 
       {/* Card */}
-      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
+      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-95">
         {state === "success" ? (
           <div className="text-center">
             <div className="w-12 h-12 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -139,20 +129,52 @@ export function ResetPasswordScreen() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <FormField
-                label="New password"
-                type="password"
-                value={password}
-                onChange={setPassword}
-                placeholder="••••••••"
-              />
-              <FormField
-                label="Confirm password"
-                type="password"
-                value={confirm}
-                onChange={setConfirm}
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <FormField
+                  label="New password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="••••••••"
+                />
+                {password && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <FormField
+                  label="Confirm password"
+                  type={showConfirm ? "text" : "password"}
+                  value={confirm}
+                  onChange={setConfirm}
+                  placeholder="••••••••"
+                />
+                {confirm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-8 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
 
               {error && (
                 <p className="text-destructive text-[12px]">{error}</p>
@@ -160,12 +182,11 @@ export function ResetPasswordScreen() {
 
               <button
                 onClick={submit}
-                disabled={state === "loading"}
-                className="w-full bg-primary text-primary-foreground py-[11px] rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
+                disabled={resetPasswordIsPending}
+                className="w-full bg-primary text-primary-foreground py-xs rounded-lg text-sm font-bold cursor-pointer mt-1 tracking-[0.02em] transition-opacity disabled:opacity-70 disabled:cursor-wait"
               >
-                {state === "loading" ? "Updating password..." : "Update password"}
-              </button>
-            </div>
+                {resetPasswordIsPending ? "Updating password..." : "Update password"}
+              </button>            </div>
 
             <div className="mt-5 pt-5 border-t border-border text-center">
               <Link
