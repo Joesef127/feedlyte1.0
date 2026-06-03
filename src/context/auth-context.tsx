@@ -8,28 +8,33 @@
 import { createContext, useContext, ReactNode, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
+import type { Session } from "next-auth";
+import type {
+  RegisterPayload,
+  RegisterResponse,
+  PasswordResetPayload,
+  PasswordResetTokenPayload,
+  VerifyEmailPayload,
+} from "@/services/api/auth";
 
 export interface AuthContextType {
   // Session state
-  session: any;
+  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
 
   // Auth methods
-  register: (data: {
-    name: string;
-    email: string;
-    password: string;
-  }) => Promise<any>;
-  login: (credentials: { email: string; password: string }) => Promise<any>;
-  logout: () => Promise<void>;
+  register: (data: RegisterPayload) => Promise<RegisterResponse>;
+  login: (credentials: { email: string; password: string }) => Promise<unknown>;
+  logout: () => Promise<unknown>;
 
   // Password recovery
-  requestPasswordReset: (data: { email: string }) => Promise<any>;
-  resetPassword: (data: { token: string; password: string }) => Promise<any>;
+  requestPasswordReset: (data: PasswordResetPayload) => Promise<{ message: string }>;
+  resetPassword: (data: PasswordResetTokenPayload) => Promise<{ message: string }>;
+
 
   // Email verification
-  verifyEmail: (token: string) => Promise<any>;
+  verifyEmail: (token: VerifyEmailPayload["token"] | string) => Promise<{ message: string }>;
 
   // Loading states
   isRegisteringPending: boolean;
