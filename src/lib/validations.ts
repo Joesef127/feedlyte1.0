@@ -33,10 +33,16 @@ const originSchema = z
   .string()
   .url("Allowed origin must be a valid URL")
   .regex(/^https?:\/\//, "Origin must start with http:// or https://")
+  .refine(
+    (val) => {
+      const url = new URL(val);
+      return url.pathname === "/" && !url.search && !url.hash;
+    },
+    "Origin must not include path, query, or fragment"
+  )
   .transform((val) => val.replace(/\/$/, "")) // strip trailing slash
   .optional()
   .nullable();
-
 export const createProjectSchema = z.object({
   name:          z.string().min(1, "Project name is required").max(80),
   color:         z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional().default("#F59E0B"),

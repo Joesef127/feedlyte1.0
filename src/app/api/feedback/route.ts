@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
-
 import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { checkWidgetRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { handleError } from "@/lib/api-helpers";
@@ -16,7 +15,10 @@ const FALLBACK_ORIGINS = [
   "http://localhost:3000",
 ];
 
-function isOriginAllowed(origin: string, projectOrigin: string | null): boolean {
+function isOriginAllowed(
+  origin: string,
+  projectOrigin: string | null,
+): boolean {
   if (projectOrigin) {
     // Normalize both sides — strip trailing slash, compare lowercase
     const normalize = (o: string) => o.replace(/\/$/, "").toLowerCase();
@@ -25,15 +27,20 @@ function isOriginAllowed(origin: string, projectOrigin: string | null): boolean 
   return FALLBACK_ORIGINS.includes(origin);
 }
 
-function getCorsHeaders(req: Request, projectOrigin: string | null): Record<string, string> {
+function getCorsHeaders(
+  req: Request,
+  projectOrigin: string | null,
+): Record<string, string> {
   const origin = req.headers.get("origin") ?? "";
   const allowed = isOriginAllowed(origin, projectOrigin);
 
   return {
-    "Access-Control-Allow-Origin": allowed ? origin : projectOrigin ?? FALLBACK_ORIGINS[0],
+    "Access-Control-Allow-Origin": allowed
+      ? origin
+      : (projectOrigin ?? FALLBACK_ORIGINS[0]),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Vary": "Origin",
+    Vary: "Origin",
   };
 }
 
@@ -96,18 +103,25 @@ export async function GET(req: Request) {
       userAgent: f.userAgent ?? "",
       status: f.status,
       createdAt: f.createdAt.toISOString(),
-    }))
+    })),
   );
 }
 
 // POST /api/feedback — public widget submission endpoint
 export async function POST(req: Request) {
+  let corsHeaders: Record<string, string> | undefined;
   try {
+
     const reqUrl = new URL(req.url);
-    const queryParsed = projectQuerySchema.safeParse(Object.fromEntries(reqUrl.searchParams));
+    const queryParsed = projectQuerySchema.safeParse(
+      Object.fromEntries(reqUrl.searchParams),
+    );
 
     if (!queryParsed.success) {
-      return NextResponse.json({ error: queryParsed.error.issues[0].message }, { status: 400 });
+      return NextResponse.json(
+        { error: queryParsed.error.issues[0].message },
+        { status: 400, headers: getCorsHeaders(req, null) },
+      );
     }
 
     const { project: projectId } = queryParsed.data;
@@ -120,15 +134,21 @@ export async function POST(req: Request) {
     });
 
     if (!project) {
-      return NextResponse.json({ error: "Project not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Project not found." },
+        { status: 404, headers: getCorsHeaders(req, null) },
+      );
     }
 
-    const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
+    corsHeaders = getCorsHeaders(req, project.allowedOrigin);
 
     // Validate origin against project's allowed origin
     const origin = req.headers.get("origin") ?? "";
     if (!isOriginAllowed(origin, project.allowedOrigin)) {
-      return NextResponse.json({ error: "Origin not allowed." }, { status: 403, headers: corsHeaders });
+      return NextResponse.json(
+        { error: "Origin not allowed." },
+        { status: 403, headers: corsHeaders },
+      );
     }
 
     // Rate limit by project ID
@@ -136,7 +156,10 @@ export async function POST(req: Request) {
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
-        { status: 429, headers: { ...corsHeaders, ...rateLimitHeaders(rateLimit) } }
+        {
+          status: 429,
+          headers: { ...corsHeaders, ...rateLimitHeaders(rateLimit) },
+        },
       );
     }
 
@@ -144,7 +167,10 @@ export async function POST(req: Request) {
     const parsed = submitFeedbackSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400, headers: corsHeaders });
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400, headers: corsHeaders },
+      );
     }
 
     const { message, email, pageUrl, userAgent } = parsed.data;
@@ -162,10 +188,16 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { id: feedback.id, message: "Feedback received. Thank you!" },
-      { status: 201, headers: corsHeaders }
+      { status: 201, headers: corsHeaders },
     );
   } catch (e) {
+    if (corsHeaders) {
+      // Return error with CORS headers so widget can read it
+      return NextResponse.json(
+        { error: "An unexpected error occurred." },
+        { status: 500, headers: corsHeaders },
+      );
+    }
     return handleError(e, "feedback/POST");
   }
 }
-
