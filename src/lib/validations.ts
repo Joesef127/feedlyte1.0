@@ -3,13 +3,13 @@ import { z } from "zod";
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(80),
-  email: z.string().email("Invalid email address"),
+  name:     z.string().min(2, "Name must be at least 2 characters").max(80),
+  email:    z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters").max(100),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email:    z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -18,7 +18,7 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Token is required"),
+  token:    z.string().min(1, "Token is required"),
   password: z.string().min(8, "Password must be at least 8 characters").max(100),
 });
 
@@ -29,29 +29,31 @@ export type ResetPasswordInput  = z.infer<typeof resetPasswordSchema>;
 
 // ── Projects ─────────────────────────────────────────────────────────────────
 
+const originSchema = z
+  .string()
+  .url("Allowed origin must be a valid URL")
+  .regex(/^https?:\/\//, "Origin must start with http:// or https://")
+  .transform((val) => val.replace(/\/$/, "")) // strip trailing slash
+  .optional()
+  .nullable();
+
 export const createProjectSchema = z.object({
-  name: z.string().min(1, "Project name is required").max(80),
-  color: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
-    .optional()
-    .default("#F59E0B"),
-  position: z.enum(["bottom-right", "bottom-left"]).optional().default("bottom-right"),
-  label: z.string().max(30).optional().default("Feedback"),
+  name:          z.string().min(1, "Project name is required").max(80),
+  color:         z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional().default("#F59E0B"),
+  position:      z.enum(["bottom-right", "bottom-left"]).optional().default("bottom-right"),
+  label:         z.string().max(30).optional().default("Feedback"),
+  allowedOrigin: originSchema,
+});
+
+export const updateProjectSchema = z.object({
+  name:          z.string().min(1).max(80).optional(),
+  color:         z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional(),
+  position:      z.enum(["bottom-right", "bottom-left"]).optional(),
+  label:         z.string().max(30).optional(),
+  allowedOrigin: originSchema,
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
-
-export const updateProjectSchema = z.object({
-  name: z.string().min(1).max(80).optional(),
-  color: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
-    .optional(),
-  position: z.enum(["bottom-right", "bottom-left"]).optional(),
-  label: z.string().max(30).optional(),
-});
-
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
 // ── Feedback ─────────────────────────────────────────────────────────────────
@@ -63,9 +65,9 @@ export const projectQuerySchema = z.object({
 export type ProjectQueryInput = z.infer<typeof projectQuerySchema>;
 
 export const submitFeedbackSchema = z.object({
-  message: z.string().min(1, "Message is required").max(2000),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  pageUrl: z
+  message:   z.string().min(1, "Message is required").max(2000),
+  email:     z.string().email("Invalid email").optional().or(z.literal("")),
+  pageUrl:   z
     .string()
     .url("Invalid URL")
     .max(2048, "URL too long")

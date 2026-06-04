@@ -120,7 +120,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
             key={id}
             onClick={() => setTab(id)}
             className={[
-              "px-4 py-[9px] border-none bg-transparent text-base font-semibold cursor-pointer transition-all",
+              "px-4 py-2.5 border-none bg-transparent text-base font-semibold cursor-pointer transition-all",
               "border-b-2 -mb-px",
               tab === id
                 ? "text-primary border-primary"
@@ -143,7 +143,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
       )}
 
       {tab === "embed" && (
-        <div className="max-w-[600px] space-y-4">
+        <div className="max-w-150 space-y-4">
           <EmbedCode project={project} />
           <Card>
             <h3 className="text-[14px] font-bold text-foreground mb-2">Widget Preview</h3>
@@ -156,7 +156,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
       )}
 
       {tab === "settings" && (
-        <div className="max-w-[480px]">
+        <div className="max-w-120">
           <Card>
             <h3 className="text-[14px] font-bold text-foreground mb-4">Widget Configuration</h3>
             <div className="flex flex-col gap-4">
@@ -193,7 +193,7 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
                         color: editPosition === pos ? editColor : "var(--muted-foreground)",
                         background: editPosition === pos ? editColor + "15" : "transparent",
                       }}
-                      className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
+                      className="px-3 py-2 rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
                     >
                       {pos}
                     </button>
