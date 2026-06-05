@@ -12,29 +12,27 @@ export async function GET() {
 
   try {
     const projects = await prisma.project.findMany({
-      where: { userId: session.user.id },
+      where:   { userId: session.user.id },
       orderBy: { createdAt: "desc" },
       include: {
-        _count: { select: { feedback: true } },
-        feedback: {
-          where: { status: "new" },
-          select: { id: true },
-        },
+        _count:   { select: { feedback: true } },
+        feedback: { where: { status: "new" }, select: { id: true } },
       },
     });
 
-    const result = projects.map((p) => ({
-      id: p.id,
-      name: p.name,
-      color: p.color,
-      position: p.position,
-      label: p.label,
-      createdAt: p.createdAt.toISOString(),
-      feedbackCount: p._count.feedback,
-      newCount: p.feedback.length,
-    }));
-
-    return NextResponse.json(result);
+    return NextResponse.json(
+      projects.map((p) => ({
+        id:            p.id,
+        name:          p.name,
+        color:         p.color,
+        position:      p.position,
+        label:         p.label,
+        allowedOrigin: p.allowedOrigin ?? null,
+        createdAt:     p.createdAt.toISOString(),
+        feedbackCount: p._count.feedback,
+        newCount:      p.feedback.length,
+      }))
+    );
   } catch (e) {
     return handleError(e, "projects/GET");
   }
@@ -47,7 +45,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body   = await req.json();
     const parsed = createProjectSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -58,22 +56,20 @@ export async function POST(req: Request) {
     }
 
     const project = await prisma.project.create({
-      data: {
-        ...parsed.data,
-        userId: session.user.id,
-      },
+      data: { ...parsed.data, userId: session.user.id },
     });
 
     return NextResponse.json(
       {
-        id: project.id,
-        name: project.name,
-        color: project.color,
-        position: project.position,
-        label: project.label,
-        createdAt: project.createdAt.toISOString(),
+        id:            project.id,
+        name:          project.name,
+        color:         project.color,
+        position:      project.position,
+        label:         project.label,
+        allowedOrigin: project.allowedOrigin ?? null,
+        createdAt:     project.createdAt.toISOString(),
         feedbackCount: 0,
-        newCount: 0,
+        newCount:      0,
       },
       { status: 201 }
     );

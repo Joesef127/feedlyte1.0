@@ -14,9 +14,9 @@ export async function GET(
   }
 
   try {
-    const { id } = await params;
+    const { id }  = await params;
     const project = await prisma.project.findFirst({
-      where: { id, userId: session.user.id },
+      where:   { id, userId: session.user.id },
       include: { _count: { select: { feedback: true } } },
     });
 
@@ -25,14 +25,15 @@ export async function GET(
     }
 
     return NextResponse.json({
-      id: project.id,
-      name: project.name,
-      color: project.color,
-      position: project.position,
-      label: project.label,
-      createdAt: project.createdAt.toISOString(),
+      id:            project.id,
+      name:          project.name,
+      color:         project.color,
+      position:      project.position,
+      label:         project.label,
+      allowedOrigin: project.allowedOrigin ?? null,
+      createdAt:     project.createdAt.toISOString(),
       feedbackCount: project._count.feedback,
-      newCount: 0,
+      newCount:      0,
     });
   } catch (e) {
     return handleError(e, "projects/[id]/GET");
@@ -49,7 +50,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = await params;
+    const { id }  = await params;
     const project = await prisma.project.findFirst({
       where: { id, userId: session.user.id },
     });
@@ -75,9 +76,9 @@ export async function PATCH(
   }
 
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const parsed = updateProjectSchema.safeParse(body);
+    const { id }  = await params;
+    const body    = await req.json();
+    const parsed  = updateProjectSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -95,15 +96,16 @@ export async function PATCH(
 
     const updated = await prisma.project.update({
       where: { id },
-      data: parsed.data,
+      data:  parsed.data,
     });
 
     return NextResponse.json({
-      id: updated.id,
-      name: updated.name,
-      color: updated.color,
-      position: updated.position,
-      label: updated.label,
+      id:            updated.id,
+      name:          updated.name,
+      color:         updated.color,
+      position:      updated.position,
+      label:         updated.label,
+      allowedOrigin: updated.allowedOrigin ?? null,
     });
   } catch (e) {
     return handleError(e, "projects/[id]/PATCH");

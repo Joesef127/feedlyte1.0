@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Feedback, Status } from "@/types";
+import type { Status } from "@/types";
 import * as feedbackAPI from "@/services/api/feedback";
 
 const feedbackKey = (projectId?: string) =>

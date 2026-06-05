@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Trash2, Bell, MessageSquare, Check } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import type { Project, ProjectDetailTab } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { FormField } from "@/components/ui/form-field";
-import { WidgetPreview } from "@/components/widget/widget-preview";
-import { FeedbackTable } from "../feedback/feedback-table";
-import { EmbedCode } from "./embed-code";
+import { ProjectStats } from "./project-stats";
+import { ProjectTabs } from "./project-tabs";
+import { FeedbackTab } from "./tabs/feedback-tab";
+import { EmbedTab } from "./tabs/embed-tab";
+import { SettingsTab } from "./tabs/settings-tab";
 import {
   useFeedback,
   useUpdateFeedbackStatus,
@@ -18,61 +18,57 @@ import {
 import { useDeleteProject, useUpdateProject } from "@/hooks/use-projects";
 
 interface ProjectDetailPageProps {
-  project: Project;
-  onBack: () => void;
+  project:  Project;
+  onBack:   () => void;
   onUpdate: (project: Project) => void;
 }
 
-const TABS: { id: ProjectDetailTab; label: string }[] = [
-  { id: "feedback", label: "Feedback" },
-  { id: "embed", label: "Embed Code" },
-  { id: "settings", label: "Widget Settings" },
-];
-
-export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPageProps) {
-  const [tab, setTab] = useState<ProjectDetailTab>("feedback");
+export function ProjectDetailPage({
+  project,
+  onBack,
+  onUpdate,
+}: ProjectDetailPageProps) {
+  const [tab,         setTab]         = useState<ProjectDetailTab>("feedback");
   const [deleteModal, setDeleteModal] = useState(false);
 
-  // Widget settings local state — initialised from the current project
-  const [editColor, setEditColor] = useState(project.color);
-  const [editPosition, setEditPosition] = useState(project.position);
-  const [editLabel, setEditLabel] = useState(project.label);
-
   const { data: pFeedback = [], isLoading: feedbackLoading } = useFeedback(project.id);
-  const updateStatus = useUpdateFeedbackStatus(project.id);
-  const deleteFb = useDeleteFeedback(project.id);
+  const updateStatus  = useUpdateFeedbackStatus(project.id);
+  const deleteFb      = useDeleteFeedback(project.id);
   const deleteProject = useDeleteProject();
   const updateProject = useUpdateProject();
-
-  const stats = [
-    { label: "Total Feedback", value: pFeedback.length, Icon: MessageSquare },
-    { label: "Unreviewed", value: pFeedback.filter((f) => f.status === "new").length, Icon: Bell },
-    { label: "Resolved", value: pFeedback.filter((f) => f.status === "resolved").length, Icon: Check },
-  ];
 
   const handleDeleteProject = async () => {
     try {
       await deleteProject.mutateAsync(project.id);
       onBack();
     } catch {
-      // handled by mutation state
+      // error shown inside modal via deleteProject.isError
     }
   };
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (data: {
+    color:         string;
+    position:      string;
+    label:         string;
+    allowedOrigin: string;
+  }) => {
     try {
       const updated = await updateProject.mutateAsync({
-        id: project.id,
-        data: { color: editColor, position: editPosition, label: editLabel },
+        id:   project.id,
+        data: {
+          ...data,
+          allowedOrigin: data.allowedOrigin || null,
+        },
       });
       onUpdate({ ...project, ...updated });
     } catch {
-      // handled by mutation state
+      // error surfaced via updateProject.isError
     }
   };
 
   return (
     <div className="flex-1 px-9 py-8 overflow-y-auto">
+
       {/* Back + title */}
       <div className="mb-6">
         <button
@@ -91,7 +87,12 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
               {project.id}
             </p>
           </div>
-          <Button variant="destructive" size="sm" onClick={() => setDeleteModal(true)} className="gap-1.5">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteModal(true)}
+            className="gap-1.5"
+          >
             <Trash2 size={14} />
             Delete
           </Button>
@@ -99,42 +100,14 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {stats.map(({ label, value, Icon }) => (
-          <Card key={label}>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-base text-muted-foreground font-medium">{label}</span>
-              <Icon size={14} className="text-[#d3d0d0]" />
-            </div>
-            <span className="text-[26px] font-bold text-foreground tracking-[-0.04em]">
-              {feedbackLoading ? "—" : value}
-            </span>
-          </Card>
-        ))}
-      </div>
+      <ProjectStats feedback={pFeedback} isLoading={feedbackLoading} />
 
       {/* Tabs */}
-      <div className="flex gap-0.5 mb-5 border-b border-sidebar-border">
-        {TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={[
-              "px-4 py-2.5 border-none bg-transparent text-base font-semibold cursor-pointer transition-all",
-              "border-b-2 -mb-px",
-              tab === id
-                ? "text-primary border-primary"
-                : "text-muted-foreground border-transparent",
-            ].join(" ")}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <ProjectTabs active={tab} onChange={setTab} />
 
       {/* Tab content */}
       {tab === "feedback" && (
-        <FeedbackTable
+        <FeedbackTab
           feedback={pFeedback}
           isLoading={feedbackLoading}
           onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
@@ -143,85 +116,18 @@ export function ProjectDetailPage({ project, onBack, onUpdate }: ProjectDetailPa
       )}
 
       {tab === "embed" && (
-        <div className="max-w-150 space-y-4">
-          <EmbedCode project={project} />
-          <Card>
-            <h3 className="text-[14px] font-bold text-foreground mb-2">Widget Preview</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              This is how your widget appears on external websites.
-            </p>
-            <WidgetPreview project={project} />
-          </Card>
-        </div>
+        <EmbedTab project={project} />
       )}
 
       {tab === "settings" && (
-        <div className="max-w-120">
-          <Card>
-            <h3 className="text-[14px] font-bold text-foreground mb-4">Widget Configuration</h3>
-            <div className="flex flex-col gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
-                  Accent Color
-                </p>
-                <div className="flex items-center gap-3">
-                  <div
-                    style={{ background: editColor }}
-                    className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
-                  />
-                  <input
-                    type="color"
-                    value={editColor}
-                    onChange={(e) => setEditColor(e.target.value)}
-                    className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
-                    title="Pick a color"
-                  />
-                  <span className="text-sm text-muted-foreground font-mono">{editColor}</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
-                  Position
-                </p>
-                <div className="flex gap-2">
-                  {(["bottom-right", "bottom-left"] as const).map((pos) => (
-                    <button
-                      key={pos}
-                      onClick={() => setEditPosition(pos)}
-                      style={{
-                        borderColor: editPosition === pos ? editColor : "var(--border)",
-                        color: editPosition === pos ? editColor : "var(--muted-foreground)",
-                        background: editPosition === pos ? editColor + "15" : "transparent",
-                      }}
-                      className="px-3 py-2 rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
-                    >
-                      {pos}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <FormField
-                label="Button Label"
-                value={editLabel}
-                onChange={setEditLabel}
-                placeholder="Feedback"
-              />
-              {updateProject.isError && (
-                <p className="text-destructive text-sm">
-                  {(updateProject.error as Error)?.message ?? "Failed to save."}
-                </p>
-              )}
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleSaveSettings}
-                  disabled={updateProject.isPending}
-                >
-                  {updateProject.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <SettingsTab
+          project={project}
+          onUpdate={onUpdate}
+          isSaving={updateProject.isPending}
+          isError={updateProject.isError}
+          errorMsg={(updateProject.error as Error)?.message ?? "Failed to save."}
+          onSave={handleSaveSettings}
+        />
       )}
 
       {/* Delete modal */}

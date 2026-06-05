@@ -5,7 +5,7 @@
 
 import type { Project } from "@/types";
 
-export type ProjectPayload = Partial<Pick<Project, "name" | "color" | "position" | "label">>;
+export type ProjectPayload = Partial<Pick<Project, "name" | "color" | "position" | "label" | "allowedOrigin">>;
 
 // ─── Fetch ───────────────────────────────────────────────────────────────────
 

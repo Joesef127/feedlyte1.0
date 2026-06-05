@@ -23,7 +23,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Project, "name" | "color" | "position" | "label">> }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Project, "name" | "color" | "position" | "label" | "allowedOrigin">> }) =>
       projectsAPI.updateProject(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });

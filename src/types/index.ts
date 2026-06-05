@@ -13,6 +13,7 @@ export interface Project {
   color: string;
   position: WidgetPosition;
   label: string;
+  allowedOrigin?: string | null
 }
 
 export interface Feedback {
