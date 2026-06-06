@@ -6,15 +6,16 @@ import { useProjects } from "@/hooks/use-projects";
 import { useAllFeedback } from "@/hooks/use-feedback";
 import { Card } from "@/components/ui/card";
 import { User, Mail, Calendar, LayoutGrid, MessageSquare, CheckCircle, Shield } from "lucide-react";
+import Link from "next/link";
 
 function Avatar({ name, size = 72 }: { name: string; size?: number }) {
   const initials = name
     .split(" ")
+    .filter((n) => n.length > 0)
     .map((n) => n[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
-
   return (
     <div
       className="rounded-full bg-primary/15 border-2 border-primary/30 flex items-center justify-center shrink-0 font-bold text-primary"
@@ -35,7 +36,7 @@ function StatCard({
   icon: React.FC<{ size?: number; className?: string }>;
 }) {
   return (
-    <Card>
+    <Card className="w-full">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
           {label}
@@ -80,7 +81,7 @@ export function ProfilePage() {
         </p>
       </div>
 
-      <div className="max-w-[680px] flex flex-col gap-4">
+      <div className="max-w-full xl:max-w-4/5 flex flex-col gap-4">
 
         {/* Identity card */}
         <Card>
@@ -119,7 +120,7 @@ export function ProfilePage() {
 
         {/* Account details */}
         <Card>
-          <h3 className="text-[13px] font-bold text-foreground mb-4 uppercase tracking-widest text-muted-foreground">
+          <h3 className="text-[13px] font-bold mb-4 uppercase tracking-widest text-muted-foreground">
             Account Details
           </h3>
           <div className="flex flex-col gap-4">
@@ -148,7 +149,7 @@ export function ProfilePage() {
           <h3 className="text-[13px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
             Usage Overview
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Projects"  value={projects.length}  icon={LayoutGrid} />
             <StatCard label="Total Feedback" value={feedback.length} icon={MessageSquare} />
             <StatCard label="Resolved"  value={resolvedCount}    icon={CheckCircle} />
@@ -168,7 +169,7 @@ export function ProfilePage() {
               { label: "Manage billing",      href: "/dashboard/settings" },
               { label: "Go to projects",      href: "/dashboard/projects" },
             ].map(({ label, href }) => (
-              <a
+              <Link
                 key={label}
                 href={href}
                 className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-accent transition-colors group"
@@ -189,9 +190,8 @@ export function ProfilePage() {
                     strokeLinejoin="round"
                   />
                 </svg>
-              </a>
-            ))}
-          </div>
+              </Link>
+            ))}          </div>
         </Card>
       </div>
     </div>

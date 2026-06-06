@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, Plus } from "lucide-react";
-import type { Project } from "@/types";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
@@ -66,7 +65,7 @@ export function ProjectsPage() {
 
       {!isLoading && !isError && projects.length === 0 && (
         <div className="text-center py-20">
-          <div className="w-[52px] h-[52px] bg-card rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-13 h-13 bg-card rounded-xl flex items-center justify-center mx-auto mb-4">
             <LayoutGrid size={24} />
           </div>
           <p className="text-muted-foreground text-base m-0">No projects yet.</p>
@@ -81,7 +80,7 @@ export function ProjectsPage() {
       )}
 
       {!isLoading && !isError && projects.length > 0 && (
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]">
+        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
           {projects.map((p) => (
             <ProjectCard
               key={p.id}
@@ -133,7 +132,7 @@ export function ProjectsPage() {
                     color:       position === pos ? color : "var(--muted-foreground)",
                     background:  position === pos ? color + "15" : "transparent",
                   }}
-                  className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
+                  className="px-3 py-1.75 rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
                 >
                   {pos}
                 </button>

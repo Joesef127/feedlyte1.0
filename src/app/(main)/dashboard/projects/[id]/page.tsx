@@ -12,9 +12,25 @@ export default function ProjectDetailRoute({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: projects = [] } = useProjects();
+  const { data: projects = [], isLoading, error } = useProjects();
 
   const project = projects.find((p) => p.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-destructive text-sm">Failed to load projects.</p>
+      </div>
+    );
+  }
 
   if (!project) {
     return (

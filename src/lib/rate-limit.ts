@@ -11,9 +11,18 @@ import { Redis } from "@upstash/redis";
 const hasKvConfig =
   !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 
+if (!hasKvConfig) {
+  const msg =
+    "Rate limiting disabled: KV_REST_API_URL or KV_REST_API_TOKEN missing";
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(msg);
+  }
+  console.warn(`⚠️  ${msg}`);
+}
+
 const redis = hasKvConfig
   ? new Redis({
-      url:   process.env.KV_REST_API_URL!,
+      url: process.env.KV_REST_API_URL!,
       token: process.env.KV_REST_API_TOKEN!,
     })
   : null;
@@ -21,8 +30,8 @@ const redis = hasKvConfig
 const widgetLimiter = redis
   ? new Ratelimit({
       redis,
-      limiter:   Ratelimit.slidingWindow(10, "60 s"),
-      prefix:    "feedlyte:widget",
+      limiter: Ratelimit.slidingWindow(10, "60 s"),
+      prefix: "feedlyte:widget",
       analytics: false,
     })
   : null;
@@ -30,8 +39,8 @@ const widgetLimiter = redis
 const authLimiter = redis
   ? new Ratelimit({
       redis,
-      limiter:   Ratelimit.slidingWindow(5, "15 m"),
-      prefix:    "feedlyte:auth",
+      limiter: Ratelimit.slidingWindow(5, "15 m"),
+      prefix: "feedlyte:auth",
       analytics: false,
     })
   : null;
@@ -39,31 +48,30 @@ const authLimiter = redis
 // ── Public interface ──────────────────────────────────────────────────────────
 
 export interface RateLimitResult {
-  success:   boolean;
-  limit:     number;
+  success: boolean;
+  limit: number;
   remaining: number;
-  reset:     number;
+  reset: number;
 }
 
 // Permissive result used when KV is not configured (dev / missing env vars)
 const BYPASS: RateLimitResult = {
-  success:   true,
-  limit:     999,
+  success: true,
+  limit: 999,
   remaining: 999,
-  reset:     0,
+  reset: 0,
 };
 
 export async function checkWidgetRateLimit(
-  projectId: string
+  projectId: string,
 ): Promise<RateLimitResult> {
   if (!widgetLimiter) return BYPASS;
-  const { success, limit, remaining, reset } = await widgetLimiter.limit(projectId);
+  const { success, limit, remaining, reset } =
+    await widgetLimiter.limit(projectId);
   return { success, limit, remaining, reset };
 }
 
-export async function checkAuthRateLimit(
-  ip: string
-): Promise<RateLimitResult> {
+export async function checkAuthRateLimit(ip: string): Promise<RateLimitResult> {
   if (!authLimiter) return BYPASS;
   const key = ip || "anonymous";
   const { success, limit, remaining, reset } = await authLimiter.limit(key);
@@ -71,11 +79,11 @@ export async function checkAuthRateLimit(
 }
 
 export function rateLimitHeaders(
-  result: RateLimitResult
+  result: RateLimitResult,
 ): Record<string, string> {
   return {
-    "X-RateLimit-Limit":     String(result.limit),
+    "X-RateLimit-Limit": String(result.limit),
     "X-RateLimit-Remaining": String(result.remaining),
-    "X-RateLimit-Reset":     String(result.reset),
+    "X-RateLimit-Reset": String(result.reset),
   };
 }

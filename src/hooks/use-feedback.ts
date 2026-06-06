@@ -5,16 +5,22 @@ import * as feedbackAPI from "@/services/api/feedback";
 const feedbackKey = (projectId?: string) =>
   projectId ? ["feedback", projectId] : ["feedback"];
 
-// ── Hooks ─────────────────────────────────────────────────────────────────────
-
 export function useFeedback(
   projectId: string,
   filters?: { status?: string; q?: string }
 ) {
   return useQuery({
     queryKey: [...feedbackKey(projectId), filters],
-    queryFn: () => feedbackAPI.fetchFeedback(projectId, filters),
-    enabled: !!projectId,
+    queryFn:  () => feedbackAPI.fetchFeedback(projectId, filters),
+    enabled:  !!projectId,
+  });
+}
+
+export function useFeedbackItem(id: string) {
+  return useQuery({
+    queryKey: ["feedback", "item", id],
+    queryFn:  () => feedbackAPI.fetchFeedbackItem(id),
+    enabled:  !!id,
   });
 }
 
@@ -23,8 +29,10 @@ export function useUpdateFeedbackStatus(projectId?: string) {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: Status }) =>
       feedbackAPI.updateFeedbackStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: feedbackKey(projectId) });
+      queryClient.invalidateQueries({ queryKey: ["feedback", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["feedback", "all"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
@@ -36,16 +44,15 @@ export function useDeleteFeedback(projectId?: string) {
     mutationFn: (id: string) => feedbackAPI.deleteFeedback(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: feedbackKey(projectId) });
+      queryClient.invalidateQueries({ queryKey: ["feedback", "all"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 }
 
-// ── All-feedback hook (cross-project, authenticated) ──────────────────────────
-
 export function useAllFeedback(filters?: { status?: string; q?: string }) {
   return useQuery({
     queryKey: ["feedback", "all", filters],
-    queryFn: () => feedbackAPI.fetchAllFeedback(filters),
+    queryFn:  () => feedbackAPI.fetchAllFeedback(filters),
   });
 }
