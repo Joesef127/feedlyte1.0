@@ -14,7 +14,7 @@ interface SettingsTabProps {
   errorMsg: string;
   onSave:   (data: {
     color:         string;
-    position:      WidgetPosition;
+    position:      string;
     label:         string;
     allowedOrigin: string;
   }) => void;
@@ -28,7 +28,7 @@ export function SettingsTab({
   onSave,
 }: SettingsTabProps) {
   const [color,         setColor]         = useState(project.color);
-  const [position,      setPosition]      = useState<WidgetPosition>(project.position);
+  const [position,      setPosition]      = useState<string>(project.position);
   const [label,         setLabel]         = useState(project.label);
   const [allowedOrigin, setAllowedOrigin] = useState(project.allowedOrigin ?? "");
 

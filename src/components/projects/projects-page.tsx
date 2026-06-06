@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, Plus } from "lucide-react";
 import type { Project } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -9,27 +10,25 @@ import { Modal } from "@/components/ui/modal";
 import { ProjectCard } from "./project-card";
 import { useProjects, useCreateProject } from "@/hooks/use-projects";
 
-interface ProjectsPageProps {
-  onSelectProject: (project: Project) => void;
-}
-
-export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
+export function ProjectsPage() {
+  const router = useRouter();
   const { data: projects = [], isLoading, isError } = useProjects();
   const createProject = useCreateProject();
 
   const [showModal, setShowModal] = useState(false);
-  const [name, setName] = useState("");
-  const [color, setColor] = useState("#F59E0B");
+  const [name,     setName]     = useState("");
+  const [color,    setColor]    = useState("#F59E0B");
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
 
   const create = async () => {
     if (!name.trim()) return;
     try {
-      await createProject.mutateAsync({ name: name.trim(), color, position });
+      const project = await createProject.mutateAsync({ name: name.trim(), color, position });
       setShowModal(false);
       setName("");
       setColor("#F59E0B");
       setPosition("bottom-right");
+      router.push(`/dashboard/projects/${project.id}`);
     } catch {
       // error handled by mutation state
     }
@@ -65,14 +64,13 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
         </div>
       )}
 
-      {/* Empty state */}
       {!isLoading && !isError && projects.length === 0 && (
         <div className="text-center py-20">
           <div className="w-[52px] h-[52px] bg-card rounded-xl flex items-center justify-center mx-auto mb-4">
-            <LayoutGrid size={24} className="" />
+            <LayoutGrid size={24} />
           </div>
           <p className="text-muted-foreground text-base m-0">No projects yet.</p>
-          <p className=" text-base mt-1.5 mb-5">
+          <p className="text-base mt-1.5 mb-5">
             Create one to start collecting feedback.
           </p>
           <Button onClick={() => setShowModal(true)} className="gap-1.5">
@@ -85,12 +83,15 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
       {!isLoading && !isError && projects.length > 0 && (
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]">
           {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} onClick={() => onSelectProject(p)} />
+            <ProjectCard
+              key={p.id}
+              project={p}
+              onClick={() => router.push(`/dashboard/projects/${p.id}`)}
+            />
           ))}
         </div>
       )}
 
-      {/* Create modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Create Project">
         <div className="flex flex-col gap-4">
           <FormField
@@ -129,8 +130,8 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
                   onClick={() => setPosition(pos)}
                   style={{
                     borderColor: position === pos ? color : "var(--border)",
-                    color: position === pos ? color : "var(--muted-foreground)",
-                    background: position === pos ? color + "15" : "transparent",
+                    color:       position === pos ? color : "var(--muted-foreground)",
+                    background:  position === pos ? color + "15" : "transparent",
                   }}
                   className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
                 >
@@ -140,7 +141,7 @@ export function ProjectsPage({ onSelectProject }: ProjectsPageProps) {
             </div>
           </div>
           {createProject.isError && (
-            <p className="text-destructive text-base">
+            <p className="text-destructive text-sm">
               {(createProject.error as Error)?.message ?? "Failed to create project."}
             </p>
           )}

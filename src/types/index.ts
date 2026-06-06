@@ -1,34 +1,36 @@
-export type Status = "new" | "reviewed" | "resolved";
-export type Page = "projects" | "feedback" | "settings";
+export type Status         = "new" | "reviewed" | "resolved";
+export type Page           = "projects" | "feedback" | "settings" | "profile";
 export type ProjectDetailTab = "feedback" | "embed" | "settings";
 export type WidgetPosition = "bottom-right" | "bottom-left";
 
 export interface Project {
-  id: string;
-  name: string;
-  apiKey: string;
-  createdAt: string;
+  id:            string;
+  name:          string;
+  createdAt:     string;
   feedbackCount: number;
-  newCount: number;
-  color: string;
-  position: WidgetPosition;
-  label: string;
-  allowedOrigin?: string | null
+  newCount:      number;
+  color:         string;
+  position:      string;
+  label:         string;
+  allowedOrigin?: string | null;
 }
 
 export interface Feedback {
-  id: string;
+  id:        string;
   projectId: string;
-  message: string;
-  email: string;
-  pageUrl: string;
+  message:   string;
+  email:     string;
+  pageUrl:   string;
   userAgent: string;
-  status: Status;
+  status:    Status;
   createdAt: string;
 }
 
 export interface User {
-  name: string;
-  email: string;
-  plan: string;
+  id?:        string;
+  name:      string;
+  email:     string;
+  image?:    string | null;
+  createdAt?: string;
+  plan?: string;
 }

@@ -10,7 +10,6 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: "proj_a1b2c3",
     name: "Acme Storefront",
-    apiKey: "proj_a1b2c3",
     createdAt: "2025-11-04",
     feedbackCount: 47,
     newCount: 12,
@@ -21,7 +20,6 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: "proj_d4e5f6",
     name: "Internal Portal",
-    apiKey: "proj_d4e5f6",
     createdAt: "2025-12-18",
     feedbackCount: 14,
     newCount: 3,
@@ -32,7 +30,6 @@ export const MOCK_PROJECTS: Project[] = [
   {
     id: "proj_g7h8i9",
     name: "Docs Site",
-    apiKey: "proj_g7h8i9",
     createdAt: "2026-01-22",
     feedbackCount: 6,
     newCount: 1,

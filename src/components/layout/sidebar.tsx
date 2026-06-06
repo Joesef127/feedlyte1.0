@@ -1,24 +1,34 @@
 "use client";
 
-import { LayoutGrid, MessageSquare, Settings, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LayoutGrid, MessageSquare, Settings, LogOut, User } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { Page } from "@/types";
 
 interface SidebarProps {
-  page: Page;
-  setPage: (page: Page) => void;
+  page:     Page;
+  setPage:  (page: Page) => void;
   onLogout: () => void;
 }
 
 const NAV_ITEMS: { id: Page; label: string; Icon: React.FC<{ size?: number }> }[] = [
-  { id: "projects", label: "Projects", Icon: LayoutGrid },
-  { id: "feedback", label: "All Feedback", Icon: MessageSquare },
-  { id: "settings", label: "Settings", Icon: Settings },
+  { id: "projects",  label: "Projects",     Icon: LayoutGrid },
+  { id: "feedback",  label: "All Feedback", Icon: MessageSquare },
+  { id: "settings",  label: "Settings",     Icon: Settings },
+  { id: "profile",   label: "Profile",      Icon: User },
 ];
 
-export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
+const PAGE_ROUTES: Record<Page, string> = {
+  projects: "/dashboard/projects",
+  feedback: "/dashboard/feedback",
+  settings: "/dashboard/settings",
+  profile:  "/dashboard/profile",
+};
+
+export function Sidebar({ page, onLogout }: SidebarProps) {
+  const router  = useRouter();
   const { data: session } = useSession();
-  const name = session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "Account";
+  const name  = session?.user?.name  ?? session?.user?.email?.split("@")[0] ?? "Account";
   const email = session?.user?.email ?? "";
 
   return (
@@ -37,13 +47,13 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 p-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] px-2 py-1 mb-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] px-2 py-1 mb-1 text-muted-foreground/50">
           Navigation
         </p>
         {NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
-            onClick={() => setPage(id)}
+            onClick={() => router.push(PAGE_ROUTES[id])}
             className={[
               "w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg border-none",
               "text-sm font-medium cursor-pointer transition-all duration-150 mb-0.5 text-left",
@@ -60,17 +70,20 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
 
       {/* User + Logout */}
       <div className="p-2 border-t border-sidebar-border">
-        <div className="px-2.5 py-2 mb-2">
-          <p className="text-base font-semibold text-foreground m-0 truncate">
+        <button
+          onClick={() => router.push("/dashboard/profile")}
+          className="w-full px-2.5 py-2 mb-2 text-left hover:bg-accent rounded-lg transition-colors"
+        >
+          <p className="text-sm font-semibold text-foreground m-0 truncate">
             {name}
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5 m-0 truncate">
+          <p className="text-xs text-muted-foreground mt-0.5 m-0 truncate">
             {email}
           </p>
-        </div>
+        </button>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2.5 mb-6 rounded-lg border-none bg-destructive text-foreground text-sm font-medium cursor-pointer hover:text-foreground transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2.5 mb-3 rounded-lg border-none bg-transparent text-muted-foreground text-sm font-medium cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
         >
           <LogOut size={15} />
           Sign Out
@@ -79,4 +92,3 @@ export function Sidebar({ page, setPage, onLogout }: SidebarProps) {
     </div>
   );
 }
-
