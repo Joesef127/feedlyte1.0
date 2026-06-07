@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { VerificationBanner } from "@/components/ui/verification-banner";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export default function DashboardLayout({
   children,
@@ -13,7 +14,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -30,9 +31,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (status === "unauthenticated") {
-    return null;
-  }
+  if (status === "unauthenticated") return null;
 
   const showVerificationBanner =
     status === "authenticated" && !session?.user?.emailVerified;
@@ -40,33 +39,28 @@ export default function DashboardLayout({
   const activePage = pathname.startsWith("/dashboard/feedback")
     ? "feedback"
     : pathname.startsWith("/dashboard/settings")
-      ? "settings"
-      : pathname.startsWith("/dashboard/profile")
-        ? "profile"
-        : "projects";
+    ? "settings"
+    : pathname.startsWith("/dashboard/profile")
+    ? "profile"
+    : "projects";
 
   return (
-    <div className="h-screen bg-background text-foreground overflow-hidden">
-      <div className="flex h-full">
-        <Sidebar
-          page={activePage}
-          setPage={(page) =>
-            router.push(`/dashboard/${page === "projects" ? "" : page}`)
-          }
-          onLogout={() =>
-            signOut({
-              callbackUrl: "/",
-            })
-          }
-        />
-
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden pt-16 md:pt-0">
-          {showVerificationBanner && <VerificationBanner />}
-
-          <Header pathname={pathname} />
-
-          <div className="flex-1 overflow-y-auto">{children}</div>
-        </main>
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+      <Sidebar
+        page={activePage}
+        setPage={(page) =>
+          router.push(`/dashboard/${page === "projects" ? "projects" : page}`)
+        }
+        onLogout={() => signOut({ callbackUrl: "/" })}
+      />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {showVerificationBanner && <VerificationBanner />}
+        <Header pathname={pathname} />
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <ErrorBoundary context={pathname}>
+            {children}
+          </ErrorBoundary>
+        </div>
       </div>
     </div>
   );

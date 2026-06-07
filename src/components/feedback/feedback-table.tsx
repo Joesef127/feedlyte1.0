@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare, Search, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import type { Feedback, Status } from "@/types";
 import { FeedbackRow } from "./feedback-row";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface FeedbackTableProps {
   feedback:       Feedback[];
@@ -21,16 +22,12 @@ const STATUS_FILTERS: { id: "all" | Status; label: string }[] = [
 
 const PAGE_SIZE = 10;
 
-export function FeedbackTable({
-  feedback,
-  isLoading,
-}: FeedbackTableProps) {
+export function FeedbackTable({ feedback, isLoading }: FeedbackTableProps) {
   const [search,       setSearch]       = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [page,         setPage]         = useState(1);
 
-  // Reset to page 1 whenever filters change
-  const handleSearch = (v: string) => { setSearch(v);       setPage(1); };
+  const handleSearch = (v: string) => { setSearch(v);        setPage(1); };
   const handleFilter = (v: "all" | Status) => { setStatusFilter(v); setPage(1); };
 
   const filtered = feedback.filter((f) => {
@@ -39,7 +36,7 @@ export function FeedbackTable({
     const matchSearch =
       !search ||
       f.message.toLowerCase().includes(q) ||
-      (f.email && f.email.toLowerCase().includes(q)) ||
+      (f.email   && f.email.toLowerCase().includes(q))   ||
       (f.pageUrl && f.pageUrl.toLowerCase().includes(q));
     return matchStatus && matchSearch;
   });
@@ -49,12 +46,13 @@ export function FeedbackTable({
   const paginated   = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
   const showingTo   = Math.min(safePage * PAGE_SIZE, filtered.length);
+  const hasFilters  = search || statusFilter !== "all";
 
   return (
     <div>
       {/* Controls */}
       <div className="flex gap-2.5 mb-4 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-50">
           <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             <Search size={14} className="text-muted-foreground" />
           </div>
@@ -84,28 +82,38 @@ export function FeedbackTable({
         </div>
       </div>
 
-      {/* List */}
+      {/* Content */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
           Loading feedback...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <MessageSquare size={32} className="text-border mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">
-            {search || statusFilter !== "all"
-              ? "No feedback matches your filters."
-              : "No feedback yet."}
-          </p>
-        </div>
+        hasFilters ? (
+          <EmptyState
+            icon={<SlidersHorizontal size={22} />}
+            title="No results"
+            description="No feedback matches your current filters. Try adjusting your search or status filter."
+            action={
+              <button
+                onClick={() => { handleSearch(""); handleFilter("all"); }}
+                className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Clear filters
+              </button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={<MessageSquare size={22} />}
+            title="No feedback yet"
+            description="Once users submit feedback through your widget, it will appear here."
+          />
+        )
       ) : (
         <>
           <div className="flex flex-col gap-2 mb-4">
             {paginated.map((fb) => (
-              <FeedbackRow
-                key={fb.id}
-                fb={fb}
-              />
+              <FeedbackRow key={fb.id} fb={fb} />
             ))}
           </div>
 
@@ -124,13 +132,8 @@ export function FeedbackTable({
                   <ChevronLeft size={14} />
                 </button>
 
-                {/* Page number pills */}
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) =>
-                    p === 1 ||
-                    p === totalPages ||
-                    Math.abs(p - safePage) <= 1
-                  )
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
                   .reduce<(number | "...")[]>((acc, p, i, arr) => {
                     if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("...");
                     acc.push(p);

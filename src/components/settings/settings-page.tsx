@@ -19,7 +19,7 @@ export function SettingsPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 max-w-140">
+      <div className="flex flex-col gap-4 max-w-3/4">
         <AccountCard {...settings} />
         <PasswordCard {...settings} />
         <PlanCard />

@@ -16,8 +16,8 @@ export function Header({ pathname }: HeaderProps) {
   const crumb = getCrumb(pathname);
 
   return (
-    <div className="border-b border-sidebar-border h-13 px-9 flex items-center justify-between bg-sidebar shrink-0">
-      <span className="text-base text-muted-foreground font-medium">
+    <div className="border-b border-sidebar-border h-13 px-9 py-5 flex items-center justify-between bg-sidebar shrink-0">
+      <span className="text-xl text-muted-foreground font-medium">
         {crumb}
       </span>
       <div className="flex items-center gap-3">

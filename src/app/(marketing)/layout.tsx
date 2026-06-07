@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-sync-scripts */
 import { Metadata } from "next";
 import { Instrument_Serif } from "next/font/google";
 import "./marketing.css";
@@ -32,6 +33,7 @@ export default function MarketingLayout({
   return (
     <html lang="en">
 
+    <script src="https://feedlyte.vercel.app/widget.js" data-project="cmq3ra9pv0000nkmzuw2phm54"></script>
     <body className={`${instrumentSerif.variable} grain`}>
       {children}
     </body>
