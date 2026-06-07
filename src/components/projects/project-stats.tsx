@@ -27,7 +27,7 @@ export function ProjectStats({ feedback, isLoading }: ProjectStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
       {stats.map(({ label, value, Icon }) => (
         <Card key={label}>
           <div className="flex justify-between items-center mb-2">
