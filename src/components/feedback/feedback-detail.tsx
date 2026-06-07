@@ -46,7 +46,7 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
           Update Status
         </p>
         <div className="flex gap-1.5 flex-wrap">
-          {(["new", "reviewed", "resolved"] as Status[]).map((s) => (
+          {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
             <button
               key={s}
               onClick={() => onUpdateStatus(fb.id, s)}

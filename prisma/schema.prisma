@@ -7,8 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ── NextAuth.js Required Tables ──────────────────────────────────────────────
-
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -65,8 +63,6 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// ── Feedlyte Models ─────────────────────────────────────────────────────────
-
 model Project {
   id            String   @id @default(cuid())
   name          String
@@ -90,7 +86,7 @@ model Feedback {
   email     String?
   pageUrl   String?
   userAgent String?
-  status    String   @default("new")
+  status    String   @default("unreviewed")
   createdAt DateTime @default(now())
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

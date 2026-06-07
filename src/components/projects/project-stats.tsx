@@ -16,7 +16,7 @@ export function ProjectStats({ feedback, isLoading }: ProjectStatsProps) {
     },
     {
       label: "Unreviewed",
-      value: feedback.filter((f) => f.status === "new").length,
+      value: feedback.filter((f) => f.status === "unreviewed").length,
       Icon:  Bell,
     },
     {

@@ -36,9 +36,9 @@ export function EmbedCode({ project }: EmbedCodeProps) {
         <button
           onClick={copy}
           style={{
-            background: copied ? "#10B98120" : "#1F1F1F",
-            borderColor: copied ? "#10B981" : "#2A2A2A",
-            color: copied ? "#10B981" : "#737373",
+            background: copied ? "#10B98120" : "#949494",
+            borderColor: copied ? "#10B981" : "#949494",
+            color: copied ? "#10B981" : "#ffffff",
           }}
           className="border rounded-md px-2.5 py-1.5 flex items-center gap-1.5 text-[12px] font-medium cursor-pointer shrink-0 transition-all"
         >

@@ -6,7 +6,7 @@ import Link from "next/link";
 const feedbackRows = [
   {
     msg: "Checkout fails on mobile Safari. Cart empties after payment.",
-    tag: "new",
+    tag: "unreviewed",
     tagColor: "text-primary bg-primary/10",
   },
   {
@@ -16,7 +16,7 @@ const feedbackRows = [
   },
   {
     msg: "Can you add CSV export for the reports section?",
-    tag: "new",
+    tag: "unreviewed",
     tagColor: "text-primary bg-primary/10",
   },
   {

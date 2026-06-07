@@ -14,7 +14,7 @@ interface SettingsTabProps {
   errorMsg: string;
   onSave:   (data: {
     color:         string;
-    position:      string;
+    position:      WidgetPosition;
     label:         string;
     allowedOrigin: string;
   }) => void;
@@ -28,7 +28,7 @@ export function SettingsTab({
   onSave,
 }: SettingsTabProps) {
   const [color,         setColor]         = useState(project.color);
-  const [position,      setPosition]      = useState<string>(project.position);
+  const [position,      setPosition]      = useState<WidgetPosition>(project.position);
   const [label,         setLabel]         = useState(project.label);
   const [allowedOrigin, setAllowedOrigin] = useState(project.allowedOrigin ?? "");
 
@@ -37,7 +37,7 @@ export function SettingsTab({
   };
 
   return (
-    <div className="max-w-120">
+    <div className="xl:max-w-4/5 2xl:max-w-3/5">
       <Card>
         <h3 className="text-[14px] font-bold text-foreground mb-4">
           Widget Configuration

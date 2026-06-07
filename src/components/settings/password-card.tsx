@@ -63,7 +63,7 @@ export function PasswordCard(props: PasswordCardProps) {
 
         <div className="relative">
           <FormField
-            label="New"
+            label="Unreviewed"
             type={showNext ? "text" : "password"}
             value={props.next}
             onChange={props.setNext}

@@ -9,7 +9,7 @@ interface EmbedTabProps {
 
 export function EmbedTab({ project }: EmbedTabProps) {
   return (
-    <div className="max-w-150 space-y-4">
+    <div className="xl:max-w-4/5 2xl:max-w-3/5 space-y-4">
       <EmbedCode project={project} />
       <Card>
         <h3 className="text-[14px] font-bold text-foreground mb-2">

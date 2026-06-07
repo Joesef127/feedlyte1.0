@@ -68,7 +68,7 @@ export function ProfilePage() {
 
   const isVerified   = !!session?.user?.emailVerified;
   const resolvedCount = feedback.filter((f) => f.status === "resolved").length;
-  const newCount      = feedback.filter((f) => f.status === "new").length;
+  const newCount      = feedback.filter((f) => f.status === "unreviewed").length;
 
   return (
     <div className="flex-1 px-9 py-8 overflow-y-auto">

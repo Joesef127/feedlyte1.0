@@ -156,7 +156,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             Status
           </h3>
           <div className="flex gap-2 flex-wrap">
-            {(["new", "reviewed", "resolved"] as Status[]).map((s) => (
+            {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
               <button
                 key={s}
                 onClick={() => updateStatus.mutate({ id: feedback.id, status: s })}

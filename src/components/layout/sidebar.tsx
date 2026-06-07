@@ -10,9 +10,11 @@ import {
   User,
   Menu,
   X,
+  LayoutDashboard,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { Page } from "@/types";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 interface SidebarProps {
   page: Page;
@@ -25,13 +27,15 @@ const NAV_ITEMS: {
   label: string;
   Icon: React.FC<{ size?: number }>;
 }[] = [
-  { id: "projects", label: "Projects", Icon: LayoutGrid },
+  { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { id: "feedback", label: "All Feedback", Icon: MessageSquare },
+  { id: "projects", label: "Projects", Icon: LayoutGrid },
   { id: "settings", label: "Settings", Icon: Settings },
   { id: "profile", label: "Profile", Icon: User },
 ];
 
 const PAGE_ROUTES: Record<Page, string> = {
+  dashboard: "/dashboard",
   projects: "/dashboard/projects",
   feedback: "/dashboard/feedback",
   settings: "/dashboard/settings",
@@ -57,7 +61,7 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-16 bg-background border-b border-sidebar-border flex items-center px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-18 bg-background border-b border-sidebar-border flex items-center px-4">
         <button
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
           className="p-2 rounded-lg hover:bg-accent transition-colors"
@@ -65,16 +69,22 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
           {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
 
-        <div className="flex items-center gap-2 ml-3">
-          <div className="w-7 h-7 bg-primary rounded-[7px] flex items-center justify-center">
-            <MessageSquare
-              size={14}
-              className="text-primary-foreground"
-              strokeWidth={2}
-            />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2 ml-3">
+            <div className="w-7 h-7 bg-primary rounded-[7px] flex items-center justify-center">
+              <MessageSquare
+                size={14}
+                className="text-primary-foreground"
+                strokeWidth={2}
+              />
+            </div>
+
+            <span className="text-lg font-bold tracking-[-0.02em]">
+              Feedlyte
+            </span>
           </div>
 
-          <span className="text-lg font-bold tracking-[-0.02em]">Feedlyte</span>
+          <ThemeToggle />
         </div>
       </div>
 
@@ -101,7 +111,7 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
         ].join(" ")}
       >
         {/* Logo */}
-        <div className="px-4 py-5 border-b border-sidebar-border">
+        <div className="px-4 py-5 h-18 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-primary rounded-[7px] flex items-center justify-center shrink-0">
               <MessageSquare
@@ -126,7 +136,10 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
           {NAV_ITEMS.map(({ id, label, Icon }) => (
             <button
               key={id}
-              onClick={() => navigate(PAGE_ROUTES[id])}
+              onClick={() => {
+                navigate(PAGE_ROUTES[id])
+                console.log(PAGE_ROUTES[id])
+              }}
               className={[
                 "w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg border-none",
                 "text-sm font-medium cursor-pointer transition-all duration-150 mb-0.5 text-left",

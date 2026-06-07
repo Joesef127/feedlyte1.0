@@ -15,7 +15,7 @@ interface FeedbackTableProps {
 
 const STATUS_FILTERS: { id: "all" | Status; label: string }[] = [
   { id: "all",      label: "All" },
-  { id: "new",      label: "New" },
+  { id: "unreviewed",      label: "Unreviewed" },
   { id: "reviewed", label: "Reviewed" },
   { id: "resolved", label: "Resolved" },
 ];

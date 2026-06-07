@@ -72,7 +72,7 @@ function ProjectVisual() {
 
 function DashboardVisual() {
   const items = [
-    { msg: "Checkout fails on mobile Safari", status: "new", cls: "text-primary bg-primary/10" },
+    { msg: "Checkout fails on mobile Safari", status: "unreviewed", cls: "text-primary bg-primary/10" },
     { msg: "Can you add CSV export?", status: "reviewed", cls: "text-info bg-info/10" },
     { msg: "Love the new onboarding flow!", status: "resolved", cls: "text-success bg-success/10" },
   ];

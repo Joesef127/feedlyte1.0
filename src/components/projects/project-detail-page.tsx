@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import type { Project, ProjectDetailTab } from "@/types";
+import type { Project, ProjectDetailTab, WidgetPosition } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ProjectStats } from "./project-stats";
@@ -48,7 +48,7 @@ export function ProjectDetailPage({
 
   const handleSaveSettings = async (data: {
     color:         string;
-    position:      string;
+    position:      WidgetPosition;
     label:         string;
     allowedOrigin: string;
   }) => {

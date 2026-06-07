@@ -129,8 +129,8 @@ export function ProjectsPage() {
               placeholder="My Website"
             />
             <div>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
-                Widget Color
+              <p className="text-sm text-muted-foreground font-medium  tracking-[0.04em] mb-2">
+                Tap on the rectangle to pick a color for your widget
               </p>
               <div className="flex items-center gap-3">
                 <div
@@ -141,7 +141,7 @@ export function ProjectsPage() {
                   type="color"
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                  className="w-12 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
                   title="Pick a color"
                 />
                 <span className="text-sm text-muted-foreground font-mono">
