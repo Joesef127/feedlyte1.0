@@ -285,7 +285,10 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: feedback.project.color + "20" }}
+              style={{ 
+                  background: feedback.project.color,
+                  opacity: 0.125
+                }}
             >
               <Globe size={15} style={{ color: feedback.project.color }} />
             </div>

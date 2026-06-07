@@ -14,7 +14,6 @@ export default function ProjectDetailRoute({
   const router = useRouter();
   const { data: projects = [], isLoading, error } = useProjects();
 
-  const project = projects.find((p) => p.id === id);
 
   if (isLoading) {
     return (
@@ -31,6 +30,8 @@ export default function ProjectDetailRoute({
       </div>
     );
   }
+
+  const project = projects.find((p) => p.id === id);
 
   if (!project) {
     return (
