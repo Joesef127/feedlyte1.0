@@ -6,7 +6,7 @@ import { ChevronDown, Check } from "lucide-react";
 export interface FilterOption {
   id: string;
   label: string;
-  dot?: string; // optional color dot (hex)
+  dot?: string;
 }
 
 interface FilterDropdownProps {
@@ -14,7 +14,7 @@ interface FilterDropdownProps {
   options: FilterOption[];
   value: string;
   onChange: (value: string) => void;
-  allLabel?: string; // label for the "all" / default option
+  allLabel?: string;
 }
 
 export function FilterDropdown({
@@ -25,15 +25,12 @@ export function FilterDropdown({
   allLabel = "All",
 }: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
+
   const ref = useRef<HTMLDivElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  const placementRef = useRef<"left" | "right">("right");
-  const [placement, setPlacement] = useState<"left" | "right">("right");
-
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const allOptions: FilterOption[] = [{ id: "", label: allLabel }, ...options];
-
 
   const selected = allOptions.find((o) => o.id === value) ?? allOptions[0];
 
@@ -43,27 +40,40 @@ export function FilterDropdown({
         setOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    const buttonEl = ref.current;
-    const popEl = popoverRef.current;
-    if (!buttonEl || !popEl) return;
 
-    const rect = buttonEl.getBoundingClientRect();
-    const popWidth = popEl.getBoundingClientRect().width || 160;
-    const spaceRight = window.innerWidth - rect.right;
+    const calculatePosition = () => {
+      if (!ref.current || !dropdownRef.current) return;
 
-    const next = spaceRight < popWidth ? "left" : "right";
-    // Avoid React state update churn: only update when it actually changes
-    setPlacement(next);
+      const triggerRect = ref.current.getBoundingClientRect();
+      const dropdownRect = dropdownRef.current.getBoundingClientRect();
 
-  }, [open, options.length]);
+      const screenPadding = 12;
 
+      const wouldOverflowRight =
+        triggerRect.left + dropdownRect.width >
+        window.innerWidth - screenPadding;
 
+      setAlignRight(wouldOverflowRight);
+    };
+
+    calculatePosition();
+
+    window.addEventListener("resize", calculatePosition);
+
+    return () => {
+      window.removeEventListener("resize", calculatePosition);
+    };
+  }, [open]);
 
   return (
     <div ref={ref} className="relative">
@@ -83,7 +93,9 @@ export function FilterDropdown({
             style={{ background: selected.dot }}
           />
         )}
+
         <span>{value ? selected.label : label}</span>
+
         <ChevronDown
           size={13}
           className={`transition-transform ${open ? "rotate-180" : ""}`}
@@ -92,15 +104,12 @@ export function FilterDropdown({
 
       {open && (
         <div
-          ref={popoverRef}
-          className="absolute top-full mt-1.5 z-50 min-w-40 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1"
-          style={
-            placement === "left"
-              ? ({ right: 0 } as React.CSSProperties)
-              : ({ left: 0 } as React.CSSProperties)
-          }
+          ref={dropdownRef}
+          className={[
+            "absolute top-full mt-1.5 z-50 min-w-40 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1",
+            alignRight ? "right-0" : "left-0",
+          ].join(" ")}
         >
-
           {allOptions.map((option) => (
             <button
               key={option.id}
@@ -121,7 +130,9 @@ export function FilterDropdown({
                   style={{ background: option.dot }}
                 />
               )}
+
               <span className="flex-1">{option.label}</span>
+
               {option.id === value && (
                 <Check size={13} className="text-primary shrink-0" />
               )}
