@@ -21,8 +21,10 @@ export async function checkAuthRateLimit(
   ip: string,
 ): Promise<RateLimitResult> {
   try {
-    const result = await authLimiter.consume(ip || "anonymous");
-
+    if (!ip) {
+      return { success: false, limit: 5, remaining: 0, reset: Math.ceil(Date.now() / 1000) };
+    }
+    const result = await authLimiter.consume(ip);
     return {
       success: true,
       limit: 5,
