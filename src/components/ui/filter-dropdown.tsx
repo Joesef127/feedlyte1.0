@@ -74,7 +74,7 @@ export function FilterDropdown({
           className="absolute top-full mt-1.5 z-50 min-w-40 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1"
           style={{
             left: "auto",
-            right: 0,
+            right: "auto",
           }}
         >
 
