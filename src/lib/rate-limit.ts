@@ -1,51 +1,4 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
-// ── Vercel KV client ──────────────────────────────────────────────────────────
-// KV_REST_API_URL and KV_REST_API_TOKEN are injected by Vercel when a KV
-// database is linked. Pull locally with: vercel env pull .env.local
-//
-// In development without KV configured, rate limiting is bypassed gracefully
-// rather than crashing the app.
-
-const hasKvConfig =
-  !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
-
-const redis = hasKvConfig
-  ? new Redis({
-      url: process.env.KV_REST_API_URL!,
-      token: process.env.KV_REST_API_TOKEN!,
-    })
-  : null;
-
-// NOTE: Do not throw during module evaluation.
-// Missing KV config must never break `next build`.
-if (!hasKvConfig) {
-  console.warn(
-    "⚠️  Rate limiting KV config not found (KV_REST_API_URL/KV_REST_API_TOKEN). Using safe bypass.",
-  );
-}
-
-const widgetLimiter = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(10, "60 s"),
-      prefix: "feedlyte:widget",
-      analytics: false,
-    })
-  : null;
-
-const authLimiter = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(5, "15 m"),
-      prefix: "feedlyte:auth",
-      analytics: false,
-    })
-  : null;
-
-
-// ── Public interface ──────────────────────────────────────────────────────────
+import { RateLimiterMemory } from "rate-limiter-flexible";
 
 export interface RateLimitResult {
   success: boolean;
@@ -54,28 +7,58 @@ export interface RateLimitResult {
   reset: number;
 }
 
-// Permissive result used when KV is not configured (dev / missing env vars)
-const BYPASS: RateLimitResult = {
-  success: true,
-  limit: 999,
-  remaining: 999,
-  reset: 0,
-};
+const authLimiter = new RateLimiterMemory({
+  points: 5,
+  duration: 60 * 15, // 15 min
+});
+
+const widgetLimiter = new RateLimiterMemory({
+  points: 10,
+  duration: 60, // 1 min
+});
+
+export async function checkAuthRateLimit(
+  ip: string,
+): Promise<RateLimitResult> {
+  try {
+    const result = await authLimiter.consume(ip || "anonymous");
+
+    return {
+      success: true,
+      limit: 5,
+      remaining: result.remainingPoints,
+      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+    };
+  } catch (result: any) {
+    return {
+      success: false,
+      limit: 5,
+      remaining: 0,
+      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+    };
+  }
+}
 
 export async function checkWidgetRateLimit(
   projectId: string,
 ): Promise<RateLimitResult> {
-  if (!widgetLimiter) return BYPASS;
-  const { success, limit, remaining, reset } =
-    await widgetLimiter.limit(projectId);
-  return { success, limit, remaining, reset };
-}
+  try {
+    const result = await widgetLimiter.consume(projectId);
 
-export async function checkAuthRateLimit(ip: string): Promise<RateLimitResult> {
-  if (!authLimiter) return BYPASS;
-  const key = ip || "anonymous";
-  const { success, limit, remaining, reset } = await authLimiter.limit(key);
-  return { success, limit, remaining, reset };
+    return {
+      success: true,
+      limit: 10,
+      remaining: result.remainingPoints,
+      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+    };
+  } catch (result: any) {
+    return {
+      success: false,
+      limit: 10,
+      remaining: 0,
+      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+    };
+  }
 }
 
 export function rateLimitHeaders(
