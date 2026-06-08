@@ -95,7 +95,7 @@ function PricingCard({ plan }: { plan: Plan }) {
         </div>
       )}
 
-      <div className={`text-xs font-bold uppercase tracking-widest mb-3 ${plan.highlighted ? "text-primary" : "text-muted-foreground"}`}>
+      <div className={`text-sm font-bold uppercase tracking-widest mb-3 ${plan.highlighted ? "text-primary" : "text-muted-foreground"}`}>
         {plan.name}
       </div>
 
@@ -142,7 +142,7 @@ export function Pricing() {
       <div className="mx-auto max-w-7xl px-6">
 
         <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-card mb-5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-card mb-5">
             Pricing
           </span>
           <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] tracking-tight mb-4 text-foreground">
@@ -159,7 +159,7 @@ export function Pricing() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-muted-foreground/40 mt-9">
+        <p className="text-center text-sm text-muted-foreground/40 mt-9">
           All paid tiers include a 14-day free trial. No credit card required to start.
         </p>
       </div>

@@ -1,88 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Search, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { MessageSquare, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import type { Feedback, Status } from "@/types";
 import { FeedbackRow } from "./feedback-row";
+import { FeedbackCard } from "./feedback-card";
+import { FilterBar, applyFeedbackFilters, type FeedbackFilters, type LayoutMode } from "./filter-bar";
 import { EmptyState } from "@/components/ui/empty-state";
+import type { FilterOption } from "@/components/ui/filter-dropdown";
 
 interface FeedbackTableProps {
   feedback:       Feedback[];
   isLoading?:     boolean;
   onUpdateStatus: (id: string, status: Status) => void;
   onDelete:       (id: string) => void;
+  projects?:      FilterOption[];
+  projectMap?:    Record<string, { name: string; color: string }>;
 }
-
-const STATUS_FILTERS: { id: "all" | Status; label: string }[] = [
-  { id: "all",      label: "All" },
-  { id: "new",      label: "New" },
-  { id: "reviewed", label: "Reviewed" },
-  { id: "resolved", label: "Resolved" },
-];
 
 const PAGE_SIZE = 10;
 
-export function FeedbackTable({ feedback, isLoading }: FeedbackTableProps) {
-  const [search,       setSearch]       = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
-  const [page,         setPage]         = useState(1);
+const DEFAULT_FILTERS: FeedbackFilters = {
+  search:    "",
+  status:    "",
+  timeRange: "",
+  projectId: "",
+};
 
-  const handleSearch = (v: string) => { setSearch(v);        setPage(1); };
-  const handleFilter = (v: "all" | Status) => { setStatusFilter(v); setPage(1); };
+export function FeedbackTable({
+  feedback,
+  isLoading,
+  onUpdateStatus,
+  onDelete,
+  projects,
+  projectMap,
+}: FeedbackTableProps) {
+  const [filters,  setFilters]  = useState<FeedbackFilters>(DEFAULT_FILTERS);
+  const [layout,   setLayout]   = useState<LayoutMode>("list");
+  const [page,     setPage]     = useState(1);
 
-  const filtered = feedback.filter((f) => {
-    const matchStatus = statusFilter === "all" || f.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchSearch =
-      !search ||
-      f.message.toLowerCase().includes(q) ||
-      (f.email   && f.email.toLowerCase().includes(q))   ||
-      (f.pageUrl && f.pageUrl.toLowerCase().includes(q));
-    return matchStatus && matchSearch;
-  });
+  const handleFiltersChange = (f: FeedbackFilters) => {
+    setFilters(f);
+    setPage(1);
+  };
 
+  const filtered    = applyFeedbackFilters(feedback, filters);
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage    = Math.min(page, totalPages);
   const paginated   = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
   const showingTo   = Math.min(safePage * PAGE_SIZE, filtered.length);
-  const hasFilters  = search || statusFilter !== "all";
+  const hasFilters  = filters.search || filters.status || filters.timeRange || filters.projectId;
 
   return (
     <div>
-      {/* Controls */}
-      <div className="flex gap-2.5 mb-4 flex-wrap">
-        <div className="relative flex-1 min-w-50">
-          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <Search size={14} className="text-muted-foreground" />
-          </div>
-          <input
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search feedback..."
-            className="w-full bg-card border border-border rounded-lg py-2 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary transition-colors"
-          />
-        </div>
+      <FilterBar
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        layout={layout}
+        onLayoutChange={setLayout}
+        projects={projects}
+      />
 
-        <div className="flex gap-1.5 flex-wrap">
-          {STATUS_FILTERS.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => handleFilter(id)}
-              className={[
-                "px-3 py-2 rounded-[7px] border text-sm font-medium cursor-pointer capitalize transition-all",
-                statusFilter === id
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-transparent text-muted-foreground hover:text-foreground",
-              ].join(" ")}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
           Loading feedback...
@@ -92,10 +71,10 @@ export function FeedbackTable({ feedback, isLoading }: FeedbackTableProps) {
           <EmptyState
             icon={<SlidersHorizontal size={22} />}
             title="No results"
-            description="No feedback matches your current filters. Try adjusting your search or status filter."
+            description="No feedback matches your current filters. Try adjusting your search or filters."
             action={
               <button
-                onClick={() => { handleSearch(""); handleFilter("all"); }}
+                onClick={() => handleFiltersChange(DEFAULT_FILTERS)}
                 className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer"
               >
                 Clear filters
@@ -111,11 +90,37 @@ export function FeedbackTable({ feedback, isLoading }: FeedbackTableProps) {
         )
       ) : (
         <>
-          <div className="flex flex-col gap-2 mb-4">
-            {paginated.map((fb) => (
-              <FeedbackRow key={fb.id} fb={fb} />
-            ))}
-          </div>
+          {/* List layout */}
+          {layout === "list" && (
+            <div className="flex flex-col gap-2 mb-4">
+              {paginated.map((fb) => (
+                <FeedbackRow
+                  key={fb.id}
+                  fb={fb}
+                  onUpdateStatus={onUpdateStatus}
+                  onDelete={onDelete}
+                  projectName={projectMap?.[fb.projectId]?.name}
+                  projectColor={projectMap?.[fb.projectId]?.color}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Card layout */}
+          {layout === "card" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 mb-4">
+              {paginated.map((fb) => (
+                <FeedbackCard
+                  key={fb.id}
+                  fb={fb}
+                  onUpdateStatus={onUpdateStatus}
+                  onDelete={onDelete}
+                  projectName={projectMap?.[fb.projectId]?.name}
+                  projectColor={projectMap?.[fb.projectId]?.color}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -141,9 +146,7 @@ export function FeedbackTable({ feedback, isLoading }: FeedbackTableProps) {
                   }, [])
                   .map((p, i) =>
                     p === "..." ? (
-                      <span key={`ellipsis-${i}`} className="text-xs text-muted-foreground/40 px-1">
-                        …
-                      </span>
+                      <span key={`ellipsis-${i}`} className="text-xs text-muted-foreground/40 px-1">…</span>
                     ) : (
                       <button
                         key={p}
@@ -152,7 +155,7 @@ export function FeedbackTable({ feedback, isLoading }: FeedbackTableProps) {
                           "w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all",
                           safePage === p
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-transparent text-muted-foreground hover:text-foreground hover:border-border/80",
+                            : "border-border bg-transparent text-muted-foreground hover:text-foreground",
                         ].join(" ")}
                       >
                         {p}

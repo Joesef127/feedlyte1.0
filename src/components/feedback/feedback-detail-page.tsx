@@ -96,7 +96,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
   const { browser, os } = parseUserAgent(feedback.userAgent);
 
   return (
-    <div className="flex-1 px-9 py-8 overflow-y-auto">
+    <div className="flex-1 px-5 sm:px-9 py-8 overflow-y-auto">
 
       {/* Back */}
       <button
@@ -111,7 +111,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
         {/* Header card */}
         <Card>
-          <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-3">
               <div
                 className="w-2.5 h-2.5 rounded-full shrink-0 mt-1"
@@ -120,13 +120,13 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
               <div>
                 <Link
                   href={`/dashboard/projects/${feedback.project.id}`}
-                  className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
+                  className="text-sm lg:text-base font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
                 >
                   {feedback.project.name}
                 </Link>
                 <div className="flex items-center gap-2 mt-1">
                   <StatusBadge status={feedback.status} />
-                  <span className="text-xs text-muted-foreground/50">
+                  <span className="text-sm text-muted-foreground/50">
                     {timeAgo(feedback.createdAt)}
                   </span>
                 </div>
@@ -143,8 +143,8 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             </Button>
           </div>
 
-          <div className="bg-background border border-border rounded-xl px-5 py-4">
-            <p className="text-base text-foreground leading-relaxed m-0 whitespace-pre-wrap">
+          <div className="bg-background border border-border rounded-xl px-3 sm:px-5 py-4">
+            <p className="text-sm sm:text-base text-foreground leading-relaxed m-0 whitespace-pre-wrap">
               {feedback.message}
             </p>
           </div>
@@ -152,17 +152,17 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
         {/* Status management */}
         <Card>
-          <h3 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3">
             Status
           </h3>
           <div className="flex gap-2 flex-wrap">
-            {(["new", "reviewed", "resolved"] as Status[]).map((s) => (
+            {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
               <button
                 key={s}
                 onClick={() => updateStatus.mutate({ id: feedback.id, status: s })}
                 disabled={feedback.status === s || updateStatus.isPending}
                 className={[
-                  "px-4 py-2 rounded-lg border text-sm font-semibold cursor-pointer transition-all capitalize",
+                  "px-4 py-2 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all capitalize",
                   feedback.status === s
                     ? "border-primary bg-primary/10 text-primary cursor-default"
                     : "border-border bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground disabled:opacity-50",
@@ -176,7 +176,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
         {/* Metadata */}
         <Card>
-          <h3 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
             Submission Details
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -241,7 +241,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                 <Clock size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">User Agent</p>
-                  <p className="text-xs text-muted-foreground font-mono break-all leading-relaxed">{feedback.userAgent}</p>
+                  <p className="text-sm text-muted-foreground font-mono break-all leading-relaxed">{feedback.userAgent}</p>
                 </div>
               </div>
             )}
@@ -251,7 +251,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
         {/* Similar feedback */}
         {feedback.similar.length > 0 && (
           <Card>
-            <h3 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
               Other Feedback from This Page
             </h3>
             <div className="flex flex-col gap-2">
@@ -266,7 +266,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                   </p>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <StatusBadge status={s.status} />
-                    <span className="text-xs text-muted-foreground/50">{timeAgo(s.createdAt)}</span>
+                    <span className="text-sm text-muted-foreground/50">{timeAgo(s.createdAt)}</span>
                   </div>
                 </Link>
               ))}
@@ -276,7 +276,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
         {/* Project context */}
         <Card>
-          <h3 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
             Project
           </h3>
           <Link
@@ -296,7 +296,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
               <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
                 {feedback.project.name}
               </p>
-              <p className="text-xs text-muted-foreground font-mono truncate">
+              <p className="text-sm text-muted-foreground font-mono truncate">
                 {feedback.project.id}
               </p>
             </div>

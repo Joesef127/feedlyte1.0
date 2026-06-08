@@ -1,3 +1,5 @@
+"use client";
+
 import type { Feedback, Status } from "@/types";
 import { FeedbackTable } from "@/components/feedback/feedback-table";
 
@@ -20,6 +22,7 @@ export function FeedbackTab({
       isLoading={isLoading}
       onUpdateStatus={onUpdateStatus}
       onDelete={onDelete}
+      // No projects prop — project filter not shown inside project detail
     />
   );
 }

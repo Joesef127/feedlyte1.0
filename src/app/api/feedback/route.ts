@@ -111,7 +111,6 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   let corsHeaders: Record<string, string> | undefined;
   try {
-
     const reqUrl = new URL(req.url);
     const queryParsed = projectQuerySchema.safeParse(
       Object.fromEntries(reqUrl.searchParams),

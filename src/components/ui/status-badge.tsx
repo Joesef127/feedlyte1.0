@@ -1,30 +1,29 @@
-import * as React from "react";
 import type { Status } from "@/types";
 import { cn } from "@/lib/utils";
 
-const statusConfig: Record<
-  Status,
-  { bg: string; text: string; dot: string }
-> = {
-  new: {
-    bg: "bg-[#FEF3C7]",
-    text: "text-[#92400E]",
-    dot: "bg-[#F59E0B]",
+const statusConfig: Record<Status, { bg: string; text: string; dot: string; label: string }> = {
+  unreviewed: {
+    bg:    "bg-amber-50 dark:bg-amber-950/30",
+    text:  "text-amber-800 dark:text-amber-400",
+    dot:   "bg-amber-500",
+    label: "Unreviewed",
   },
   reviewed: {
-    bg: "bg-[#EFF6FF]",
-    text: "text-[#1E40AF]",
-    dot: "bg-[#3B82F6]",
+    bg:    "bg-blue-50 dark:bg-blue-950/30",
+    text:  "text-blue-800 dark:text-blue-400",
+    dot:   "bg-blue-500",
+    label: "Reviewed",
   },
   resolved: {
-    bg: "bg-[#F0FDF4]",
-    text: "text-[#166534]",
-    dot: "bg-[#22C55E]",
+    bg:    "bg-green-50 dark:bg-green-950/30",
+    text:  "text-green-800 dark:text-green-400",
+    dot:   "bg-green-500",
+    label: "Resolved",
   },
 };
 
 function StatusBadge({ status }: { status: Status }) {
-  const config = statusConfig[status];
+  const config = statusConfig[status] ?? statusConfig.unreviewed;
   return (
     <span
       className={cn(
@@ -34,10 +33,8 @@ function StatusBadge({ status }: { status: Status }) {
         config.text
       )}
     >
-      <span
-        className={cn("size-[5px] rounded-full inline-block shrink-0", config.dot)}
-      />
-      {status}
+      <span className={cn("size-1.5 rounded-full inline-block shrink-0", config.dot)} />
+      {config.label}
     </span>
   );
 }

@@ -85,7 +85,7 @@ export function VerifyEmailScreen() {
             >
               Go to dashboard
             </Link>
-            <p className="text-xs text-muted-foreground/50 mt-1">
+            <p className="text-sm text-muted-foreground/50 mt-1">
               You can resend the verification email from your dashboard.
             </p>
           </div>
@@ -184,7 +184,7 @@ export function VerifyEmailScreen() {
               >
                 Go to dashboard
               </Link>
-              <p className="text-xs text-muted-foreground/50 mt-1">
+              <p className="text-sm text-muted-foreground/50 mt-1">
                 You can resend the verification email from your dashboard.
               </p>
             </div>

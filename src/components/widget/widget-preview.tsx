@@ -40,7 +40,7 @@ export function WidgetPreview({ project }: WidgetPreviewProps) {
       className="bg-background border border-sidebar-border rounded-[10px] relative overflow-hidden flex items-center justify-center"
       style={{ height: 240 }}
     >
-      <span className="text-[#2a2a2a] text-[12px]">Your website here</span>
+      <span className="text-muted-foreground text-sm">Your website here</span>
 
       {/* Floating widget */}
       <div className="absolute bottom-4 right-4">
@@ -51,13 +51,13 @@ export function WidgetPreview({ project }: WidgetPreviewProps) {
               background: color,
               boxShadow: `0 4px 20px ${color}50`,
             }}
-            className="border-none rounded-[20px] px-4 py-[9px] text-white text-[12px] font-semibold cursor-pointer flex items-center gap-1.5"
+            className="border-none rounded-3xl px-4 py-2.5 text-white text-sm font-semibold cursor-pointer flex items-center gap-1.5"
           >
             <MessageSquare size={13} strokeWidth={2} />
             {project.label || "Feedback"}
           </button>
         ) : (
-          <div className="bg-card border border-[#2a2a2a] rounded-xl p-3.5 w-[240px] shadow-2xl">
+          <div className="bg-card border border-[#2a2a2a] rounded-xl p-3.5 w-60 shadow-2xl">
             {submitted ? (
               <div className="text-center py-3">
                 <div
@@ -74,7 +74,7 @@ export function WidgetPreview({ project }: WidgetPreviewProps) {
                 </p>
                 <button
                   onClick={reset}
-                  className="bg-transparent border-none text-muted-foreground text-[12px] cursor-pointer"
+                  className="bg-transparent border-none text-muted-foreground text-sm cursor-pointer"
                 >
                   Close
                 </button>
@@ -96,19 +96,19 @@ export function WidgetPreview({ project }: WidgetPreviewProps) {
                   value={msg}
                   onChange={(e) => setMsg(e.target.value)}
                   placeholder="Tell us what you think..."
-                  className="h-[72px] mb-2 text-[12px]"
+                  className="h-[72px] mb-2 text-sm"
                 />
                 <Input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email (optional)"
-                  className="h-8 text-[12px] mb-2"
+                  className="h-8 text-sm mb-2"
                 />
                 <button
                   onClick={submit}
                   disabled={!msg.trim() || submitting}
                   style={{ background: color, opacity: !msg.trim() || submitting ? 0.6 : 1 }}
-                  className="w-full border-none rounded-[7px] py-2 text-white text-[12px] font-semibold cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full border-none rounded-[7px] py-2 text-white text-sm font-semibold cursor-pointer disabled:cursor-not-allowed"
                 >
                   {submitting ? "Sending..." : "Send Feedback"}
                 </button>

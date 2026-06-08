@@ -120,7 +120,7 @@ model Feedback {
   email     String?
   pageUrl   String?
   userAgent String?
-  status    String  @default("new")  // "new" | "reviewed" | "resolved"
+  status    String  @default("unreviewed")  // "unreviewed" | "reviewed" | "resolved"
 }
 ```
 

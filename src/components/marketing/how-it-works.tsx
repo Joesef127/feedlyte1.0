@@ -72,7 +72,7 @@ function ProjectVisual() {
 
 function DashboardVisual() {
   const items = [
-    { msg: "Checkout fails on mobile Safari", status: "new", cls: "text-primary bg-primary/10" },
+    { msg: "Checkout fails on mobile Safari", status: "unreviewed", cls: "text-primary bg-primary/10" },
     { msg: "Can you add CSV export?", status: "reviewed", cls: "text-info bg-info/10" },
     { msg: "Love the new onboarding flow!", status: "resolved", cls: "text-success bg-success/10" },
   ];
@@ -81,7 +81,7 @@ function DashboardVisual() {
     <div className="mt-5 bg-background border border-border/70 rounded-xl p-5 flex flex-col gap-2">
       {items.map((item, i) => (
         <div key={i} className="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-card border border-border rounded-lg">
-          <span className="text-xs text-muted-foreground flex-1 truncate">{item.msg}</span>
+          <span className="text-sm text-muted-foreground flex-1 truncate">{item.msg}</span>
           <span className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0 ${item.cls}`}>
             {item.status}
           </span>
@@ -98,7 +98,7 @@ export function HowItWorks() {
 
         {/* Header */}
         <div className="text-center mb-18">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-card mb-5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-card mb-5">
             How it works
           </span>
           <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] tracking-tight mb-4 text-foreground">

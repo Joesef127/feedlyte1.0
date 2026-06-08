@@ -1,5 +1,5 @@
-export type Status         = "new" | "reviewed" | "resolved";
-export type Page           = "projects" | "feedback" | "settings" | "profile";
+export type Status         = "unreviewed" | "reviewed" | "resolved";
+export type Page           = "dashboard" | "projects" | "feedback" | "settings" | "profile";
 export type ProjectDetailTab = "feedback" | "embed" | "settings";
 export type WidgetPosition = "bottom-right" | "bottom-left";
 
@@ -10,7 +10,7 @@ export interface Project {
   feedbackCount: number;
   newCount:      number;
   color:         string;
-  position:      string;
+  position:      WidgetPosition;
   label:         string;
   allowedOrigin?: string | null;
 }
@@ -34,3 +34,6 @@ export interface User {
   createdAt?: string;
   plan?: string;
 }
+
+
+export type BannerState = "idle" | "sending" | "sent" | "error";

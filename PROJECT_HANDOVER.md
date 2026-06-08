@@ -399,7 +399,7 @@ Relations:
     "email": "user@example.com",
     "pageUrl": "https://example.com/page",
     "userAgent": "Mozilla/5.0...",
-    "status": "new",
+    "status": "unreviewed",
     "createdAt": "2024-01-15T10:30:00Z"
   }
 ]

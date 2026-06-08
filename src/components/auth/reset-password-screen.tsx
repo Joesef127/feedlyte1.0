@@ -177,7 +177,7 @@ export function ResetPasswordScreen() {
               </div>
 
               {error && (
-                <p className="text-destructive text-[12px]">{error}</p>
+                <p className="text-destructive text-sm">{error}</p>
               )}
 
               <button

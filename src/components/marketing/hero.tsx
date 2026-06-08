@@ -6,7 +6,7 @@ import Link from "next/link";
 const feedbackRows = [
   {
     msg: "Checkout fails on mobile Safari. Cart empties after payment.",
-    tag: "new",
+    tag: "unreviewed",
     tagColor: "text-primary bg-primary/10",
   },
   {
@@ -16,7 +16,7 @@ const feedbackRows = [
   },
   {
     msg: "Can you add CSV export for the reports section?",
-    tag: "new",
+    tag: "unreviewed",
     tagColor: "text-primary bg-primary/10",
   },
   {
@@ -41,7 +41,7 @@ export function Hero() {
       <div className="relative z-10 mx-auto max-w-7xl px-6">
         {/* Beta badge */}
         <div className="flex justify-center mb-8 anim-fade-up">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-primary/30 text-primary bg-primary/10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-primary/30 text-primary bg-primary/10">
             <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
             Now in public beta
           </span>
@@ -86,7 +86,7 @@ export function Hero() {
             </a>
           </div>
 
-          <p className="anim-fade-up-4 text-xs text-muted-foreground/50 tracking-wide">
+          <p className="anim-fade-up-4 text-sm text-muted-foreground/50 tracking-wide">
             Free to start. No credit card required.
           </p>
         </div>
@@ -132,7 +132,7 @@ export function Hero() {
                 {["Projects", "All Feedback", "Settings"].map((item, i) => (
                   <div
                     key={item}
-                    className={`px-2.5 py-1.5 rounded-[7px] text-xs font-medium ${i === 0 ? "text-foreground bg-white/6" : "text-muted-foreground"}`}
+                    className={`px-2.5 py-1.5 rounded-[7px] text-sm font-medium ${i === 0 ? "text-foreground bg-white/6" : "text-muted-foreground"}`}
                   >
                     {item}
                   </div>
@@ -145,7 +145,7 @@ export function Hero() {
                   <div className="text-base font-bold text-foreground mb-1">
                     All Feedback
                   </div>
-                  <div className="text-xs text-muted-foreground/50">
+                  <div className="text-sm text-muted-foreground/50">
                     24 entries across 3 projects
                   </div>
                 </div>
@@ -174,7 +174,7 @@ export function Hero() {
                       key={i}
                       className="bg-background border border-border rounded-lg px-3.5 py-2.5 flex items-center justify-between gap-3"
                     >
-                      <span className="text-xs text-muted-foreground flex-1 truncate">
+                      <span className="text-sm text-muted-foreground flex-1 truncate">
                         {item.msg}
                       </span>
                       <span
@@ -191,7 +191,7 @@ export function Hero() {
 
           {/* Floating widget card */}
           <div className="absolute bottom-10 -right-5 bg-card border border-border/70 rounded-xl p-3.5 w-55 shadow-float z-30">
-            <div className="text-xs font-semibold text-foreground mb-2.5">
+            <div className="text-sm font-semibold text-foreground mb-2.5">
               Share Feedback
             </div>
             <div className="h-13 bg-background rounded-md mb-2 border border-border" />

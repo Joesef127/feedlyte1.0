@@ -14,7 +14,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -36,13 +36,15 @@ export default function DashboardLayout({
   const showVerificationBanner =
     status === "authenticated" && !session?.user?.emailVerified;
 
-  const activePage = pathname.startsWith("/dashboard/feedback")
-    ? "feedback"
-    : pathname.startsWith("/dashboard/settings")
-    ? "settings"
-    : pathname.startsWith("/dashboard/profile")
-    ? "profile"
-    : "projects";
+  const activePage = pathname.startsWith("/dashboard/projects")
+    ? "projects"
+    : pathname.startsWith("/dashboard/feedback")
+      ? "feedback"
+      : pathname.startsWith("/dashboard/settings")
+        ? "settings"
+        : pathname.startsWith("/dashboard/profile")
+          ? "profile"
+          : "dashboard";
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -54,12 +56,10 @@ export default function DashboardLayout({
         onLogout={() => signOut({ callbackUrl: "/" })}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {showVerificationBanner && <VerificationBanner />}
+        {showVerificationBanner && <VerificationBanner  />}
         <Header pathname={pathname} />
         <div className="flex-1 overflow-hidden flex flex-col">
-          <ErrorBoundary context={pathname}>
-            {children}
-          </ErrorBoundary>
+          <ErrorBoundary context={pathname}>{children}</ErrorBoundary>
         </div>
       </div>
     </div>

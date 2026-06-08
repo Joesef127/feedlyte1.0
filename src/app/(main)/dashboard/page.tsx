@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import { DashboardScreen } from "@/components/dashboard/dashboard-page";
 
-// Default dashboard route redirects to projects
 export default function DashboardPage() {
-  redirect("/dashboard/projects");
+  return <DashboardScreen />
 }

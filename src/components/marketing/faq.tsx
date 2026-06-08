@@ -95,7 +95,7 @@ export function FAQ() {
 
           {/* Left sticky label */}
           <div className="md:sticky md:top-24">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-background mb-5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-background mb-5">
               FAQ
             </span>
             <h2 className="font-display text-[clamp(2rem,3vw,2.8rem)] tracking-tight mb-4 text-foreground">

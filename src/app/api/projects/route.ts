@@ -16,7 +16,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       include: {
         _count:   { select: { feedback: true } },
-        feedback: { where: { status: "new" }, select: { id: true } },
+        feedback: { where: { status: "unreviewed" }, select: { id: true } },
       },
     });
 

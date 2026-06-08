@@ -13,7 +13,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   return (
     <Card
       onClick={onClick}
-      className="transition-[border-color] hover:border-border/60"
+      className="transition-[border-color] hover:border-border/60 cursor-pointer"
     >
       <div className="flex justify-between items-start mb-4">
         <div
@@ -23,23 +23,23 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           <Globe size={18} style={{ color: project.color }} />
         </div>
         {project.newCount > 0 && (
-          <span className="bg-primary text-primary-foreground text-[11px] font-bold px-[7px] py-[2px] rounded-full">
+          <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
             {project.newCount} new
           </span>
         )}
       </div>
-      <h3 className="text-[15px] font-bold text-foreground tracking-[-0.02em] mb-1">
+      <h3 className="text-base font-bold text-foreground tracking-[-0.02em]">
         {project.name}
       </h3>
-      <p className="text-[12px] text-muted-foreground font-mono mb-4">
+      {/* <p className="text-sm text-muted-foreground font-mono">
         {project.id}
-      </p>
-      <div className="flex justify-between items-center">
-        <span className="text-[12px] text-muted-foreground">
+      </p> */}
+      <div className="flex flex-wrap items-center justify-between">
+        <span className="text-sm text-muted-foreground">
           {project.feedbackCount} responses
         </span>
-        <span className="text-[11px] text-[#d3d0d0]">
-          Since {project.createdAt}
+        <span className="text-xs text-shadow-muted">
+          Since {project.createdAt.slice(0, 16).replace("T", " ")}
         </span>
       </div>
     </Card>

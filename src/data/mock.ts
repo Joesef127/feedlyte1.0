@@ -45,7 +45,7 @@ const RAW_FEEDBACK = [
     e: "sue@email.com",
     url: "/checkout",
     ua: "Safari/17 iOS",
-    s: "new" as const,
+    s: "unreviewed" as const,
     d: "2026-03-12 14:22",
   },
   {
@@ -61,7 +61,7 @@ const RAW_FEEDBACK = [
     e: "dev@corp.io",
     url: "/reports",
     ua: "Firefox/124 Win",
-    s: "new" as const,
+    s: "unreviewed" as const,
     d: "2026-03-11 08:01",
   },
   {
@@ -93,7 +93,7 @@ const RAW_FEEDBACK = [
     e: "qa@test.dev",
     url: "/feedback",
     ua: "Chrome/122 Linux",
-    s: "new" as const,
+    s: "unreviewed" as const,
     d: "2026-03-07 16:48",
   },
 ];
