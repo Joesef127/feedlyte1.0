@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { VerificationBanner } from "@/components/ui/verification-banner";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import type { Page } from "@/types";
 
 export default function DashboardLayout({
   children,
@@ -36,7 +37,7 @@ export default function DashboardLayout({
   const showVerificationBanner =
     status === "authenticated" && !session?.user?.emailVerified;
 
-  const activePage = pathname.startsWith("/dashboard/projects")
+  const activePage: Page = pathname.startsWith("/dashboard/projects")
     ? "projects"
     : pathname.startsWith("/dashboard/feedback")
       ? "feedback"
