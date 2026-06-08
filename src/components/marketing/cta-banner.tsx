@@ -45,7 +45,7 @@ export function CTABanner() {
               </Link>
             </div>
 
-            <p className="text-xs text-muted-foreground/40 mt-6">
+            <p className="text-sm text-muted-foreground/40 mt-6">
               No credit card required. Free plan includes one project.
             </p>
           </div>

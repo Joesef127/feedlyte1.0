@@ -42,11 +42,15 @@ const PAGE_ROUTES: Record<Page, string> = {
   profile: "/dashboard/profile",
 };
 
-export function Sidebar({ page, onLogout }: SidebarProps) {
+export function Sidebar({
+  page,
+  onLogout,
+}: SidebarProps) {
   const router = useRouter();
   const { data: session } = useSession();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
 
   const name =
     session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "Account";
@@ -61,7 +65,9 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-18 bg-background border-b border-sidebar-border flex items-center px-4">
+      <div
+        className={`md:hidden fixed top-0 left-0 right-0 z-30 h-18 bg-background border-b border-sidebar-border flex items-center px-4`}
+      >
         <button
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
           className="p-2 rounded-lg hover:bg-accent transition-colors"
@@ -137,8 +143,8 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
             <button
               key={id}
               onClick={() => {
-                navigate(PAGE_ROUTES[id])
-                console.log(PAGE_ROUTES[id])
+                navigate(PAGE_ROUTES[id]);
+                console.log(PAGE_ROUTES[id]);
               }}
               className={[
                 "w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg border-none",
@@ -164,7 +170,7 @@ export function Sidebar({ page, onLogout }: SidebarProps) {
               {name}
             </p>
 
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">
               {email}
             </p>
           </button>

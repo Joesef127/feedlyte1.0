@@ -203,7 +203,7 @@ export function Features() {
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-background mb-5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-background mb-5">
             Features
           </span>
           <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] tracking-tight mb-4 text-foreground">

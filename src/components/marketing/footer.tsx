@@ -95,7 +95,7 @@ export function Footer() {
 
         {/* Bottom row */}
         <div className="flex items-center justify-between pt-6 flex-wrap gap-3">
-          <p className="text-xs text-muted-foreground/40">
+          <p className="text-sm text-muted-foreground/40">
             © {new Date().getFullYear()} Feedlyte. All rights reserved.
           </p>
           <div className="flex items-center gap-5">

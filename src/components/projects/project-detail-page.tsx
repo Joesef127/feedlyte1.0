@@ -67,7 +67,7 @@ export function ProjectDetailPage({
   };
 
   return (
-    <div className="flex-1 px-9 py-8 overflow-y-auto">
+    <div className="flex-1 px-5 sm:px-9 py-8 overflow-y-auto">
 
       {/* Back + title */}
       <div className="mb-6">
@@ -78,7 +78,7 @@ export function ProjectDetailPage({
           <ArrowLeft size={14} />
           Back to Projects
         </button>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-start gap-3">
           <div>
             <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
               {project.name}
@@ -136,7 +136,7 @@ export function ProjectDetailPage({
         onClose={() => setDeleteModal(false)}
         title="Delete Project"
       >
-        <p className="text-secondary-foreground text-[14px] mb-6">
+        <p className="text-secondary-foreground text-sm mb-6">
           This will permanently delete{" "}
           <strong className="text-foreground">{project.name}</strong> and all{" "}
           {pFeedback.length} feedback entries. This cannot be undone.

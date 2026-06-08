@@ -47,14 +47,14 @@ export function ProjectsPage() {
 
   return (
     <ErrorBoundary context="projects-page">
-      <div className="flex-1 px-9 py-8 overflow-y-auto">
+      <div className="flex-1 px-4 sm:px-9 py-8 overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-7">
           <div>
             <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0">
               Projects
             </h1>
-            <p className="text-sm text-muted-foreground mt-1 m-0">
+            <p className="text-sm sm:text-base text-muted-foreground mt-1 m-0">
               {projects.length} project{projects.length !== 1 ? "s" : ""} total
             </p>
           </div>
@@ -121,7 +121,7 @@ export function ProjectsPage() {
           }}
           title="Create Project"
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-6">
             <FormField
               label="Project Name"
               value={name}
@@ -129,14 +129,10 @@ export function ProjectsPage() {
               placeholder="My Website"
             />
             <div>
-              <p className="text-sm text-muted-foreground font-medium  tracking-[0.04em] mb-2">
-                Tap on the rectangle to pick a color for your widget
+              <p className="text-sm text-muted-foreground uppercase font-medium  tracking-[0.04em] mb-2">
+                Accent Color
               </p>
               <div className="flex items-center gap-3">
-                <div
-                  style={{ background: color }}
-                  className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
-                />
                 <input
                   type="color"
                   value={color}
@@ -180,7 +176,7 @@ export function ProjectsPage() {
               </p>
             )}
 
-            <div className="flex gap-2 justify-end mt-2">
+            <div className="grid grid-cols-2 sm:flex gap-2 justify-end mt-2">
               <Button
                 variant="secondary"
                 onClick={() => {

@@ -21,7 +21,7 @@ export function SocialProof() {
               <div className="font-display text-[clamp(1.8rem,3vw,2.6rem)] text-primary tracking-tight mb-1">
                 {stat.value}
               </div>
-              <div className="text-xs font-medium text-muted-foreground/50">
+              <div className="text-sm font-medium text-muted-foreground/50">
                 {stat.label}
               </div>
             </div>

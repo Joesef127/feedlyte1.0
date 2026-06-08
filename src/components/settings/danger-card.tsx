@@ -21,11 +21,11 @@ export function DangerCard(props: DangerCardProps) {
   return (
     <>
       <Card className="border-destructive/30">
-        <h3 className="text-[14px] font-bold text-destructive mb-1">
+        <h3 className="text-sm sm:text-base font-bold text-destructive">
           Danger Zone
         </h3>
 
-        <p className="text-sm text-muted-foreground mb-3">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Delete account permanently
         </p>
 
@@ -49,7 +49,7 @@ export function DangerCard(props: DangerCardProps) {
         />
 
         {props.dangerError && (
-          <p className="text-xs text-destructive">
+          <p className="text-sm text-destructive">
             {props.dangerError}
           </p>
         )}

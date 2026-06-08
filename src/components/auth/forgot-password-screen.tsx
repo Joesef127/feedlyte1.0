@@ -67,7 +67,7 @@ export function ForgotPasswordScreen() {
               <span className="text-foreground font-medium">{email}</span>,
               you will receive a password reset link shortly.
             </p>
-            <p className="text-xs text-muted-foreground/50 mb-6">
+            <p className="text-sm text-muted-foreground/50 mb-6">
               The link expires in 1 hour. Check your spam folder if you
               don&apos;t see it.
             </p>
@@ -102,7 +102,7 @@ export function ForgotPasswordScreen() {
               />
 
               {error && (
-                <p className="text-destructive text-[12px]">{error}</p>
+                <p className="text-destructive text-sm">{error}</p>
               )}
 
               <button

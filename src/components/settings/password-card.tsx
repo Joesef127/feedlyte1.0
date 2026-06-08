@@ -28,7 +28,7 @@ export function PasswordCard(props: PasswordCardProps) {
 
   return (
     <Card>
-      <h3 className="text-[14px] font-bold mb-4">Password</h3>
+      <h3 className="text-sm font-bold">Password</h3>
 
       <form
         onSubmit={(e) => {
@@ -110,7 +110,7 @@ export function PasswordCard(props: PasswordCardProps) {
         </div>
 
         {props.passwordError && (
-          <p className="text-xs text-destructive">
+          <p className="text-sm text-destructive">
             {props.passwordError}
           </p>
         )}

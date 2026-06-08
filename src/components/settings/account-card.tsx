@@ -20,7 +20,7 @@ export interface AccountCardProps {
 export function AccountCard(props: AccountCardProps) {
   return (
     <Card>
-      <h3 className="text-[14px] font-bold mb-4">Account</h3>
+      <h3 className="text-sm font-bold">Account</h3>
 
       <div className="flex flex-col gap-3">
         <FormField
@@ -36,13 +36,13 @@ export function AccountCard(props: AccountCardProps) {
         />
 
         {props.accountError && (
-          <p className="text-xs text-destructive">
+          <p className="text-sm text-destructive">
             {props.accountError}
           </p>
         )}
 
         {props.accountState === "saved" && (
-          <p className="text-xs text-success">Saved</p>
+          <p className="text-sm text-success">Saved</p>
         )}
 
         <div className="flex justify-end gap-2.5">

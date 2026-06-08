@@ -39,7 +39,7 @@ export function SettingsTab({
   return (
     <div className="xl:max-w-4/5 2xl:max-w-3/5">
       <Card>
-        <h3 className="text-[14px] font-bold text-foreground mb-4">
+        <h3 className="text-sm font-bold text-foreground">
           Widget Configuration
         </h3>
         <div className="flex flex-col gap-4">
@@ -50,15 +50,11 @@ export function SettingsTab({
               Accent Color
             </p>
             <div className="flex items-center gap-3">
-              <div
-                style={{ background: color }}
-                className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
-              />
               <input
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                className="w-12 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
                 title="Pick a color"
               />
               <span className="text-sm text-muted-foreground font-mono">
@@ -106,7 +102,7 @@ export function SettingsTab({
               onChange={setAllowedOrigin}
               placeholder="https://yoursite.com"
             />
-            <p className="text-xs text-muted-foreground/60 mt-1.5">
+            <p className="text-sm text-muted-foreground/60 mt-1.5">
               The domain your widget is embedded on. Only submissions from this
               origin will be accepted. Leave blank to use the default allowlist.
             </p>

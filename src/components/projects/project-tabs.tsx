@@ -13,13 +13,13 @@ interface ProjectTabsProps {
 
 export function ProjectTabs({ active, onChange }: ProjectTabsProps) {
   return (
-    <div className="flex gap-0.5 mb-5 border-b border-sidebar-border overflow-x-scroll overflow-y-hidden">
+    <div className="flex gap-4 sm:gap-6 mb-5 border-b border-sidebar-border overflow-x-scroll overflow-y-hidden no-scrollbar">
       {TABS.map(({ id, label }) => (
         <button
           key={id}
           onClick={() => onChange(id)}
           className={[
-            "px-4 py-2.5 border-none bg-transparent text-base font-semibold cursor-pointer transition-all",
+            "py-2.5 border-none bg-transparent text-sm sm:text-base font-semibold cursor-pointer transition-all",
             "border-b-2 -mb-px text-nowrap",
             active === id
               ? "text-primary border-primary"

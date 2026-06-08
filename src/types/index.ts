@@ -34,3 +34,6 @@ export interface User {
   createdAt?: string;
   plan?: string;
 }
+
+
+export type BannerState = "idle" | "sending" | "sent" | "error";

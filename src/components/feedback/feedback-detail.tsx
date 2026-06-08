@@ -30,10 +30,10 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
       <div className="grid grid-cols-2 gap-2.5">
         {META_FIELDS.map(([label, key]) => (
           <div key={label} className="bg-background rounded-[7px] px-3 py-2.5">
-            <p className="text-xs text-[#d3d0d0] font-semibold uppercase tracking-[0.06em] mb-1">
+            <p className="text-sm text-[#d3d0d0] font-semibold uppercase tracking-[0.06em] mb-1">
               {label}
             </p>
-            <p className="text-xs text-[#737373] font-mono break-all m-0">
+            <p className="text-sm text-[#737373] font-mono break-all m-0">
               {(fb[key] as string) || "Not provided"}
             </p>
           </div>

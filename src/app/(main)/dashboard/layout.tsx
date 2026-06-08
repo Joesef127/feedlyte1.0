@@ -56,7 +56,7 @@ export default function DashboardLayout({
         onLogout={() => signOut({ callbackUrl: "/" })}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {showVerificationBanner && <VerificationBanner />}
+        {showVerificationBanner && <VerificationBanner  />}
         <Header pathname={pathname} />
         <div className="flex-1 overflow-hidden flex flex-col">
           <ErrorBoundary context={pathname}>{children}</ErrorBoundary>

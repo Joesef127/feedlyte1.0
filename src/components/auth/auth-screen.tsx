@@ -102,7 +102,7 @@ export function AuthScreen() {
           >
             Back to Sign In
           </button>
-          <p className="text-xs text-muted-foreground/50 mt-4">
+          <p className="text-sm text-muted-foreground/50 mt-4">
             Didn't receive the email? Check your spam folder or contact support.
           </p>
         </div>
@@ -181,13 +181,13 @@ export function AuthScreen() {
           {/* Password field with forgot link inline */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                 Password
               </label>
               {mode === "login" && (
                 <Link
                   href="/auth/change-password"
-                  className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -218,7 +218,7 @@ export function AuthScreen() {
             </div>
           </div>
 
-          {error && <p className="text-destructive text-[12px]">{error}</p>}
+          {error && <p className="text-destructive text-sm">{error}</p>}
 
           <button
             type="submit"
