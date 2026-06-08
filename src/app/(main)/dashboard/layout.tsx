@@ -58,7 +58,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col overflow-hidden">
         {showVerificationBanner && <VerificationBanner  />}
         <Header pathname={pathname} />
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col pt-14 md:pt-0">
           <ErrorBoundary context={pathname}>{children}</ErrorBoundary>
         </div>
       </div>

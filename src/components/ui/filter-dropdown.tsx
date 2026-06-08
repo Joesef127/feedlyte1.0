@@ -70,7 +70,14 @@ export function FilterDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1.5 z-50 min-w-[160px] bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1">
+        <div
+          className="absolute top-full mt-1.5 z-50 min-w-40 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1"
+          style={{
+            left: "auto",
+            right: 0,
+          }}
+        >
+
           {allOptions.map((option) => (
             <button
               key={option.id}
