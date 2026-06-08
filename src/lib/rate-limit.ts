@@ -11,21 +11,20 @@ import { Redis } from "@upstash/redis";
 const hasKvConfig =
   !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 
-if (!hasKvConfig) {
-  const msg =
-    "Rate limiting disabled: KV_REST_API_URL or KV_REST_API_TOKEN missing";
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(msg);
-  }
-  console.warn(`⚠️  ${msg}`);
-}
-
 const redis = hasKvConfig
   ? new Redis({
       url: process.env.KV_REST_API_URL!,
       token: process.env.KV_REST_API_TOKEN!,
     })
   : null;
+
+// NOTE: Do not throw during module evaluation.
+// Missing KV config must never break `next build`.
+if (!hasKvConfig) {
+  console.warn(
+    "⚠️  Rate limiting KV config not found (KV_REST_API_URL/KV_REST_API_TOKEN). Using safe bypass.",
+  );
+}
 
 const widgetLimiter = redis
   ? new Ratelimit({
@@ -44,6 +43,7 @@ const authLimiter = redis
       analytics: false,
     })
   : null;
+
 
 // ── Public interface ──────────────────────────────────────────────────────────
 
