@@ -34,6 +34,7 @@ export function useUpdateFeedbackStatus(projectId?: string) {
       queryClient.invalidateQueries({ queryKey: ["feedback", "item", id] });
       queryClient.invalidateQueries({ queryKey: ["feedback", "all"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -46,6 +47,7 @@ export function useDeleteFeedback(projectId?: string) {
       queryClient.invalidateQueries({ queryKey: feedbackKey(projectId) });
       queryClient.invalidateQueries({ queryKey: ["feedback", "all"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

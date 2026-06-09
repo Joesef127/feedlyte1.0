@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ProjectCard } from "./project-card";
 import { useProjects, useCreateProject } from "@/hooks/use-projects";
+import { ProjectFilterBar, ProjectFilters } from "./project-filter-bar";
+import { applyProjectFilters } from "./filtering-helper";
 
 export function ProjectsPage() {
   const router = useRouter();
@@ -22,6 +24,13 @@ export function ProjectsPage() {
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">(
     "bottom-right",
   );
+
+  const [filters, setFilters] = useState<ProjectFilters>({
+    search: "",
+    position: "",
+    sortBy: "newest",
+  });
+  const filteredProjects = applyProjectFilters(projects, filters);
 
   const resetForm = () => {
     setName("");
@@ -64,6 +73,8 @@ export function ProjectsPage() {
           </Button>
         </div>
 
+        <ProjectFilterBar filters={filters} onFiltersChange={setFilters} />
+
         {isLoading && (
           <div className="text-center py-20 text-muted-foreground text-sm">
             Loading projects...
@@ -102,7 +113,7 @@ export function ProjectsPage() {
 
         {!isLoading && !isError && projects.length > 0 && (
           <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
-            {projects.map((p) => (
+            {filteredProjects.map((p) => (
               <ProjectCard
                 key={p.id}
                 project={p}

@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/modal";
 import { ProjectStats } from "./project-stats";
 import { ProjectTabs } from "./project-tabs";
 import { FeedbackTab } from "./tabs/feedback-tab";
+import { AnalyticsTab } from "./tabs/analytics-tab";
 import { EmbedTab } from "./tabs/embed-tab";
 import { SettingsTab } from "./tabs/settings-tab";
 import {
@@ -112,6 +113,13 @@ export function ProjectDetailPage({
           isLoading={feedbackLoading}
           onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
           onDelete={(id) => deleteFb.mutate(id)}
+        />
+      )}
+
+      {tab === "analytics" && (
+        <AnalyticsTab
+          projectId={project.id}
+          projectColor={project.color}
         />
       )}
 

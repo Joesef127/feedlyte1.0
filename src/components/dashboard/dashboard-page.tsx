@@ -1,17 +1,31 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  LayoutGrid, MessageSquare, CheckCircle,
-  Eye, Plus, ArrowRight, TrendingUp,
+  LayoutGrid,
+  MessageSquare,
+  CheckCircle,
+  Eye,
+  Plus,
+  ArrowRight,
+  TrendingUp,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/status-badge";
-import type { Status } from "@/types";
+import { Modal } from "@/components/ui/modal";
+import { FormField } from "@/components/ui/form-field";
+import { FeedbackRow } from "@/components/feedback/feedback-row";
+import StatCard from "@/components/ui/StatCard";
 import { useDashboard } from "@/hooks/use-dashboard";
-import StatCard from "../ui/StatCard";
+import { useCreateProject } from "@/hooks/use-projects";
+import {
+  useUpdateFeedbackStatus,
+  useDeleteFeedback,
+} from "@/hooks/use-feedback";
+import type { Status } from "@/types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -22,20 +36,13 @@ function greeting(): string {
   return "Good evening";
 }
 
-function timeAgo(iso: string): string {
-  const diff  = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
-  const hours = Math.floor(mins / 60);
-  const days  = Math.floor(hours / 24);
-  if (days  > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (mins  > 0) return `${mins}m ago`;
-  return "Just now";
-}
-
-function SectionHeader({ title, href, linkLabel = "View all" }: {
-  title:      string;
-  href:       string;
+function SectionHeader({
+  title,
+  href,
+  linkLabel = "View all",
+}: {
+  title: string;
+  href: string;
   linkLabel?: string;
 }) {
   return (
@@ -57,21 +64,77 @@ function SectionHeader({ title, href, linkLabel = "View all" }: {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function DashboardPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const { data, isLoading } = useDashboard();
 
+  const updateStatus = useUpdateFeedbackStatus();
+  const deleteFb = useDeleteFeedback();
+  const createProject = useCreateProject();
+
+  const [showModal, setShowModal] = useState(false);
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("#F59E0B");
+  const [position, setPosition] = useState<"bottom-right" | "bottom-left">(
+    "bottom-right",
+  );
+
+  const resetForm = () => {
+    setName("");
+    setColor("#F59E0B");
+    setPosition("bottom-right");
+  };
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    try {
+      const project = await createProject.mutateAsync({
+        name: name.trim(),
+        color,
+        position,
+      });
+      setShowModal(false);
+      resetForm();
+      router.push(`/dashboard/projects/${project.id}`);
+    } catch {
+      // error shown via createProject.isError
+    }
+  };
+
   const firstName = session?.user?.name?.split(" ")[0] ?? "there";
   const unreviewed = data?.stats.unreviewed ?? 0;
-  const projects   = data?.stats.totalProjects ?? 0;
+  const projects = data?.stats.totalProjects ?? 0;
 
   const summaryLine =
     unreviewed === 0
       ? "Everything is up to date."
       : `You have ${unreviewed} unreviewed feedback item${unreviewed !== 1 ? "s" : ""} across ${projects} project${projects !== 1 ? "s" : ""}.`;
 
+  const projectMap = useMemo(() => {
+    const projects = data?.recentProjects ?? [];
+
+    return Object.fromEntries(
+      projects.map((p) => [p.id, { name: p.name, color: p.color }]),
+    );
+  }, [data?.recentProjects]);
+
+  const recentFeedback = useMemo(() => {
+    const feedback = data?.recentFeedback ?? [];
+
+    return feedback.map((f) => ({
+      id: f.id,
+      projectId: f.project.id,
+      message: f.message,
+      email: "",
+      pageUrl: "",
+      userAgent: "",
+      status: f.status as Status,
+      createdAt: f.createdAt,
+    }));
+  }, [data?.recentFeedback]);
+
   return (
     <div className="flex-1 px-9 py-8 overflow-y-auto">
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-3">
         <div>
@@ -87,12 +150,10 @@ export function DashboardPage() {
               All Feedback
             </Button>
           </Link>
-          <Link href="/dashboard/projects">
-            <Button className="gap-1.5">
-              <Plus size={14} />
-              New Project
-            </Button>
-          </Link>
+          <Button onClick={() => setShowModal(true)} className="gap-1.5">
+            <Plus size={14} />
+            New Project
+          </Button>
         </div>
       </div>
 
@@ -137,73 +198,68 @@ export function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
             {/* Left column */}
             <div className="flex flex-col gap-6 xl:col-span-2">
-              {/* Recent feedback */}
-              <div className="flex flex-col gap-4">
-                <SectionHeader title="Recent Feedback" href="/dashboard/feedback" />
-                {!data?.recentFeedback.length ? (
+              <div className="flex flex-col gap-3">
+                <SectionHeader
+                  title="Recent Feedback"
+                  href="/dashboard/feedback"
+                />
+                {!recentFeedback.length ? (
                   <Card>
                     <p className="text-sm text-muted-foreground text-center py-4">
                       No feedback yet.
                     </p>
                   </Card>
                 ) : (
-                  <div className="flex flex-col gap-3">
-                    {data.recentFeedback.slice(0, 6).map((fb) => (
-                      <Link
+                  recentFeedback
+                    .slice(0, 6)
+                    .map((fb) => (
+                      <FeedbackRow
                         key={fb.id}
-                        href={`/dashboard/feedback/${fb.id}`}
-                        className="flex items-start gap-3 p-3.5 bg-card border border-border rounded-xl hover:border-border/70 transition-colors group"
-                      >
-                        <div
-                          className="w-2 h-2 rounded-full mt-1.5 shrink-0"
-                          style={{ background: fb.project.color }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors mb-1">
-                            {fb.message}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground/50">
-                              {fb.project.name}
-                            </span>
-                            <span className="text-xs text-muted-foreground/30">·</span>
-                            <span className="text-xs text-muted-foreground/40">
-                              {timeAgo(fb.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                        <StatusBadge status={fb.status as Status} />
-                      </Link>
-                    ))}
-                  </div>
+                        fb={fb}
+                        onUpdateStatus={(id, status) =>
+                          updateStatus.mutate({ id, status })
+                        }
+                        onDelete={(id) => deleteFb.mutate(id)}
+                        projectName={projectMap[fb.projectId]?.name}
+                        projectColor={projectMap[fb.projectId]?.color}
+                      />
+                    ))
                 )}
               </div>
             </div>
 
-            {/* Right column — recent projects */}
-            <div className="flex flex-col gap-4">
-              <SectionHeader
-                title="Recent Projects"
-                href="/dashboard/projects"
-                linkLabel="All projects"
-              />
+            {/* Right column */}
+            <div className="flex flex-col gap-6 xl:gap-8">
               {!data?.recentProjects.length ? (
-                <Card>
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No projects yet.
-                  </p>
-                  <div className="flex justify-center mt-3">
-                    <Link href="/dashboard/projects">
-                      <Button className="gap-1.5">
+                <>
+                  <SectionHeader
+                    title="Recent Projects"
+                    href="/dashboard/projects"
+                    linkLabel="All projects"
+                  />
+                  <Card>
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No projects yet.
+                    </p>
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={() => setShowModal(true)}
+                        className="gap-1.5"
+                      >
                         <Plus size={14} />
                         Create project
                       </Button>
-                    </Link>
-                  </div>
-                </Card>
+                    </div>
+                  </Card>
+                </>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {data.recentProjects.map((p) => (
+                  <SectionHeader
+                    title="Recent Projects"
+                    href="/dashboard/projects"
+                    linkLabel="All projects"
+                  />
+                  {data.recentProjects.slice(0, 3).map((p) => (
                     <Link
                       key={p.id}
                       href={`/dashboard/projects/${p.id}`}
@@ -228,14 +284,17 @@ export function DashboardPage() {
                           )}
                         </p>
                       </div>
-                      <ArrowRight size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+                      <ArrowRight
+                        size={14}
+                        className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0"
+                      />
                     </Link>
                   ))}
                 </div>
               )}
 
               {/* Top projects */}
-              <div>
+              <div className="mt-2">
                 <SectionHeader
                   title="Top Projects (30 days)"
                   href="/dashboard/projects"
@@ -249,7 +308,7 @@ export function DashboardPage() {
                   </Card>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {data.topProjects.map((p, i) => (
+                    {data.topProjects.slice(0, 3).map((p, i) => (
                       <Link
                         key={p.id}
                         href={`/dashboard/projects/${p.id}`}
@@ -272,7 +331,10 @@ export function DashboardPage() {
                             {p.totalFeedback} total · {p.last30Days} this month
                           </p>
                         </div>
-                        <ArrowRight size={14} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+                        <ArrowRight
+                          size={14}
+                          className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0"
+                        />
                       </Link>
                     ))}
                   </div>
@@ -282,6 +344,92 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Create project modal */}
+      <Modal
+        open={showModal}
+        onClose={() => {
+          setShowModal(false);
+          resetForm();
+        }}
+        title="Create Project"
+      >
+        <div className="flex flex-col gap-4">
+          <FormField
+            label="Project Name"
+            value={name}
+            onChange={setName}
+            placeholder="My Website"
+          />
+          <div>
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+              Widget Color
+            </p>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
+                style={{ background: color }}
+              />
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                title="Pick a color"
+              />
+              <span className="text-sm text-muted-foreground font-mono">
+                {color}
+              </span>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+              Widget Position
+            </p>
+            <div className="flex gap-2">
+              {(["bottom-right", "bottom-left"] as const).map((pos) => (
+                <button
+                  key={pos}
+                  onClick={() => setPosition(pos)}
+                  style={{
+                    borderColor: position === pos ? color : "var(--border)",
+                    color: position === pos ? color : "var(--muted-foreground)",
+                    background: position === pos ? color + "15" : "transparent",
+                  }}
+                  className="px-3 py-[7px] rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
+                >
+                  {pos}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {createProject.isError && (
+            <p className="text-destructive text-sm">
+              {(createProject.error as Error)?.message ??
+                "Failed to create project."}
+            </p>
+          )}
+
+          <div className="flex gap-2 justify-end mt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowModal(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreate}
+              disabled={!name.trim() || createProject.isPending}
+            >
+              {createProject.isPending ? "Creating..." : "Create Project"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
