@@ -44,16 +44,15 @@ export function applyProjectFilters(
 
     case "feedback-desc":
       result.sort(
-        (a, b) => b.feedbackCount - a.feedbackCount,
+        (a, b) => (b.feedbackCount ?? 0) - (a.feedbackCount ?? 0),
       );
       break;
 
     case "feedback-asc":
       result.sort(
-        (a, b) => a.feedbackCount - b.feedbackCount,
+        (a, b) => (a.feedbackCount ?? 0) - (b.feedbackCount ?? 0),
       );
       break;
-
     default:
       result.sort(
         (a, b) =>
