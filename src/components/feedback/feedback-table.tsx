@@ -7,6 +7,7 @@ import { FeedbackRow } from "./feedback-row";
 import { FeedbackCard } from "./feedback-card";
 import { FilterBar, applyFeedbackFilters, type FeedbackFilters, type LayoutMode } from "./filter-bar";
 import { EmptyState } from "@/components/ui/empty-state";
+import { exportFeedbackCSV } from "@/lib/export-csv";
 import type { FilterOption } from "@/components/ui/filter-dropdown";
 
 interface FeedbackTableProps {
@@ -33,11 +34,11 @@ export function FeedbackTable({
   onUpdateStatus,
   onDelete,
   projects,
-  projectMap,
+  projectMap = {},
 }: FeedbackTableProps) {
-  const [filters,  setFilters]  = useState<FeedbackFilters>(DEFAULT_FILTERS);
-  const [layout,   setLayout]   = useState<LayoutMode>("list");
-  const [page,     setPage]     = useState(1);
+  const [filters, setFilters] = useState<FeedbackFilters>(DEFAULT_FILTERS);
+  const [layout,  setLayout]  = useState<LayoutMode>("list");
+  const [page,    setPage]    = useState(1);
 
   const handleFiltersChange = (f: FeedbackFilters) => {
     setFilters(f);
@@ -52,6 +53,10 @@ export function FeedbackTable({
   const showingTo   = Math.min(safePage * PAGE_SIZE, filtered.length);
   const hasFilters  = filters.search || filters.status || filters.timeRange || filters.projectId;
 
+  const handleExport = () => {
+    exportFeedbackCSV(filtered, projectMap);
+  };
+
   return (
     <div>
       <FilterBar
@@ -60,6 +65,8 @@ export function FeedbackTable({
         layout={layout}
         onLayoutChange={setLayout}
         projects={projects}
+        onExport={feedback.length > 0 ? handleExport : undefined}
+        exportCount={filtered.length}
       />
 
       {isLoading ? (
@@ -90,7 +97,6 @@ export function FeedbackTable({
         )
       ) : (
         <>
-          {/* List layout */}
           {layout === "list" && (
             <div className="flex flex-col gap-2 mb-4">
               {paginated.map((fb) => (
@@ -99,30 +105,28 @@ export function FeedbackTable({
                   fb={fb}
                   onUpdateStatus={onUpdateStatus}
                   onDelete={onDelete}
-                  projectName={projectMap?.[fb.projectId]?.name}
-                  projectColor={projectMap?.[fb.projectId]?.color}
+                  projectName={projectMap[fb.projectId]?.name}
+                  projectColor={projectMap[fb.projectId]?.color}
                 />
               ))}
             </div>
           )}
 
-          {/* Card layout */}
           {layout === "card" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
               {paginated.map((fb) => (
                 <FeedbackCard
                   key={fb.id}
                   fb={fb}
                   onUpdateStatus={onUpdateStatus}
                   onDelete={onDelete}
-                  projectName={projectMap?.[fb.projectId]?.name}
-                  projectColor={projectMap?.[fb.projectId]?.color}
+                  projectName={projectMap[fb.projectId]?.name}
+                  projectColor={projectMap[fb.projectId]?.color}
                 />
               ))}
             </div>
           )}
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <p className="text-xs text-muted-foreground/60">
@@ -132,7 +136,7 @@ export function FeedbackTable({
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={safePage === 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -166,7 +170,7 @@ export function FeedbackTable({
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safePage === totalPages}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={14} />
                 </button>

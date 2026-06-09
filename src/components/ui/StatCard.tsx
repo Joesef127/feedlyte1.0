@@ -6,19 +6,21 @@ export default function StatCard({
   value,
   icon: Icon,
   isLoading,
+  accent
 }: {
   label: string;
   value: string | number;
   icon: React.FC<{ size?: number; className?: string }>;
   isLoading?: boolean;
+  accent?: string;
 }) {
   return (
     <Card className="w-full justify-between">
       <div className="flex items-center justify-between gap-2.5">
-        <span className="text-xs sm:text-sm text-muted-foreground uppercase tracking-widest font-semibold">
+        <span className="text-xs sm:text-sm text-muted-foreground tracking-widest font-semibold">
           {label}
         </span>
-        <Icon className=" size-4 sm:size-5 text-foreground/80" />
+        <Icon size={14} className={accent ?? "size-4 sm:size-5 text-muted-foreground/40"} />
       </div>
       <span className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
         {isLoading ? "0" : value}

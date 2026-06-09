@@ -22,11 +22,7 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
-const NAV_ITEMS: {
-  id: Page;
-  label: string;
-  Icon: React.FC<{ size?: number }>;
-}[] = [
+const NAV_ITEMS: { id: Page; label: string; Icon: React.FC<{ size?: number }>; }[] = [
   { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { id: "feedback", label: "All Feedback", Icon: MessageSquare },
   { id: "projects", label: "Projects", Icon: LayoutGrid },
@@ -76,7 +72,7 @@ export function Sidebar({
         </button>
 
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2 ml-3">
+          <div onClick={() => navigate("/dashboard")} className="flex items-center gap-2 ml-3 cursor-pointer">
             <div className="w-7 h-7 bg-primary rounded-[7px] flex items-center justify-center">
               <MessageSquare
                 size={14}

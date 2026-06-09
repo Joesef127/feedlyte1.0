@@ -56,7 +56,7 @@ export function FeedbackRow({
       {/* Main content — clickable */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between flex-wrap gap-1.5 mb-2">
-          <p className="text-sm text-foreground font-medium leading-relaxed line-clamp-2 truncate">
+          <p className="text-sm text-foreground font-medium leading-relaxed line-clamp-2 truncate max-w-4/5">
             {fb.message}
           </p>
 

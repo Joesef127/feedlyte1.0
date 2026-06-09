@@ -13,7 +13,6 @@ export async function GET(
 
   const { id } = await params;
 
-  // Verify project belongs to this user
   const project = await prisma.project.findFirst({
     where: { id, userId: session.user.id },
   });
@@ -21,36 +20,34 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const url = new URL(req.url);
+  const url    = new URL(req.url);
   const status = url.searchParams.get("status") ?? "";
-  const q = url.searchParams.get("q") ?? "";
+  const q      = url.searchParams.get("q")      ?? "";
 
   const feedback = await prisma.feedback.findMany({
     where: {
       projectId: id,
       ...(status ? { status } : {}),
-      ...(q
-        ? {
-            OR: [
-              { message: { contains: q, mode: "insensitive" } },
-              { email: { contains: q, mode: "insensitive" } },
-              { pageUrl: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      ...(q ? {
+        OR: [
+          { message: { contains: q, mode: "insensitive" } },
+          { email:   { contains: q, mode: "insensitive" } },
+          { pageUrl: { contains: q, mode: "insensitive" } },
+        ],
+      } : {}),
     },
     orderBy: { createdAt: "desc" },
   });
 
   return NextResponse.json(
     feedback.map((f) => ({
-      id: f.id,
+      id:        f.id,
       projectId: f.projectId,
-      message: f.message,
-      email: f.email ?? "",
-      pageUrl: f.pageUrl ?? "",
+      message:   f.message,
+      email:     f.email     ?? "",
+      pageUrl:   f.pageUrl   ?? "",
       userAgent: f.userAgent ?? "",
-      status: f.status,
+      status:    f.status,
       createdAt: f.createdAt.toISOString(),
     }))
   );

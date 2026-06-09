@@ -1,9 +1,10 @@
 import type { ProjectDetailTab } from "@/types";
 
 const TABS: { id: ProjectDetailTab; label: string }[] = [
-  { id: "feedback", label: "Feedback" },
-  { id: "embed",    label: "Embed Code" },
-  { id: "settings", label: "Widget Settings" },
+  { id: "feedback",  label: "Feedback"       },
+  { id: "analytics", label: "Analytics"      },
+  { id: "embed",     label: "Embed Code"     },
+  { id: "settings",  label: "Widget Settings" },
 ];
 
 interface ProjectTabsProps {
