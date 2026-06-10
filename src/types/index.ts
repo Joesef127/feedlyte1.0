@@ -1,6 +1,6 @@
 export type Status         = "unreviewed" | "reviewed" | "resolved";
 export type Page           = "dashboard" | "projects" | "feedback" | "settings" | "profile";
-export type ProjectDetailTab = "feedback" | "analytics" | "embed" | "settings";
+export type ProjectDetailTab = "feedback" | "analytics" | "integrations" | "embed" | "settings";
 export type WidgetPosition = "bottom-right" | "bottom-left";
 
 export interface Project {
@@ -35,5 +35,6 @@ export interface User {
   plan?: string;
 }
 
-
 export type BannerState = "idle" | "sending" | "sent" | "error";
+
+

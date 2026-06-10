@@ -75,6 +75,7 @@ model Project {
 
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   feedback Feedback[]
+  webhooks Webhook[]
 
   @@map("projects")
 }
@@ -92,4 +93,33 @@ model Feedback {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("feedback")
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  projectId String
+  url       String
+  secret    String?
+  label     String   @default("My Webhook")
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  project   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id         String   @id @default(cuid())
+  webhookId  String
+  success    Boolean
+  statusCode Int?
+  error      String?
+  payload    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_deliveries")
 }

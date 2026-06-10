@@ -9,6 +9,7 @@ import { ProjectStats } from "./project-stats";
 import { ProjectTabs } from "./project-tabs";
 import { FeedbackTab } from "./tabs/feedback-tab";
 import { AnalyticsTab } from "./tabs/analytics-tab";
+import { IntegrationsTab } from "./tabs/integrations-tab";
 import { EmbedTab } from "./tabs/embed-tab";
 import { SettingsTab } from "./tabs/settings-tab";
 import {
@@ -19,8 +20,8 @@ import {
 import { useDeleteProject, useUpdateProject } from "@/hooks/use-projects";
 
 interface ProjectDetailPageProps {
-  project:  Project;
-  onBack:   () => void;
+  project: Project;
+  onBack: () => void;
   onUpdate: (project: Project) => void;
 }
 
@@ -29,12 +30,14 @@ export function ProjectDetailPage({
   onBack,
   onUpdate,
 }: ProjectDetailPageProps) {
-  const [tab,         setTab]         = useState<ProjectDetailTab>("feedback");
+  const [tab, setTab] = useState<ProjectDetailTab>("feedback");
   const [deleteModal, setDeleteModal] = useState(false);
 
-  const { data: pFeedback = [], isLoading: feedbackLoading } = useFeedback(project.id);
-  const updateStatus  = useUpdateFeedbackStatus(project.id);
-  const deleteFb      = useDeleteFeedback(project.id);
+  const { data: pFeedback = [], isLoading: feedbackLoading } = useFeedback(
+    project.id,
+  );
+  const updateStatus = useUpdateFeedbackStatus(project.id);
+  const deleteFb = useDeleteFeedback(project.id);
   const deleteProject = useDeleteProject();
   const updateProject = useUpdateProject();
 
@@ -42,35 +45,26 @@ export function ProjectDetailPage({
     try {
       await deleteProject.mutateAsync(project.id);
       onBack();
-    } catch {
-      // error shown inside modal via deleteProject.isError
-    }
+    } catch {}
   };
 
   const handleSaveSettings = async (data: {
-    color:         string;
-    position:      WidgetPosition;
-    label:         string;
+    color: string;
+    position: WidgetPosition;
+    label: string;
     allowedOrigin: string;
   }) => {
     try {
       const updated = await updateProject.mutateAsync({
-        id:   project.id,
-        data: {
-          ...data,
-          allowedOrigin: data.allowedOrigin || null,
-        },
+        id: project.id,
+        data: { ...data, allowedOrigin: data.allowedOrigin || null },
       });
       onUpdate({ ...project, ...updated });
-    } catch {
-      // error surfaced via updateProject.isError
-    }
+    } catch {}
   };
 
   return (
     <div className="flex-1 px-5 sm:px-9 py-8 overflow-y-auto">
-
-      {/* Back + title */}
       <div className="mb-6">
         <button
           onClick={onBack}
@@ -100,13 +94,9 @@ export function ProjectDetailPage({
         </div>
       </div>
 
-      {/* Stats */}
       <ProjectStats feedback={pFeedback} isLoading={feedbackLoading} />
-
-      {/* Tabs */}
       <ProjectTabs active={tab} onChange={setTab} />
 
-      {/* Tab content */}
       {tab === "feedback" && (
         <FeedbackTab
           feedback={pFeedback}
@@ -115,30 +105,24 @@ export function ProjectDetailPage({
           onDelete={(id) => deleteFb.mutate(id)}
         />
       )}
-
       {tab === "analytics" && (
-        <AnalyticsTab
-          projectId={project.id}
-          projectColor={project.color}
-        />
+        <AnalyticsTab projectId={project.id} projectColor={project.color} />
       )}
-
-      {tab === "embed" && (
-        <EmbedTab project={project} />
-      )}
-
+      {tab === "integrations" && <IntegrationsTab projectId={project.id} />}
+      {tab === "embed" && <EmbedTab project={project} />}
       {tab === "settings" && (
         <SettingsTab
           project={project}
           onUpdate={onUpdate}
           isSaving={updateProject.isPending}
           isError={updateProject.isError}
-          errorMsg={(updateProject.error as Error)?.message ?? "Failed to save."}
+          errorMsg={
+            (updateProject.error as Error)?.message ?? "Failed to save."
+          }
           onSave={handleSaveSettings}
         />
       )}
 
-      {/* Delete modal */}
       <Modal
         open={deleteModal}
         onClose={() => setDeleteModal(false)}
