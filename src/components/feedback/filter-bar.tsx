@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, LayoutGrid, List, Download, Funnel, X } from "lucide-react";
+import { Search, LayoutGrid, List, Download, Funnel, X, FileText, FileType, FileSpreadsheet } from "lucide-react";
 import {
   FilterDropdown,
   type FilterOption,
@@ -23,7 +23,9 @@ interface FilterBarProps {
   layout: LayoutMode;
   onLayoutChange: (layout: LayoutMode) => void;
   projects?: FilterOption[];
-  onExport?: () => void;
+  onExportCSV?: () => void;
+  onExportJSON?: () => void;
+  onExportPDF?: () => void; 
   exportCount?: number;
 }
 
@@ -41,13 +43,21 @@ const TIME_OPTIONS: FilterOption[] = [
   { id: "year", label: "This year" },
 ];
 
+const EXPORT_OPTIONS: FilterOption[] = [
+  { id: "csv", label: "Export as CSV", icon: FileSpreadsheet },
+  { id: "json", label: "Export as JSON", icon: FileText },
+  { id: "pdf", label: "Export as PDF", icon: FileType },
+];
+
 export function FilterBar({
   filters,
   onFiltersChange,
   layout,
   onLayoutChange,
   projects,
-  onExport,
+  onExportCSV,
+  onExportJSON,
+  onExportPDF,
   exportCount,
 }: FilterBarProps) {
   const set = (key: keyof FeedbackFilters) => (value: string) =>
@@ -57,6 +67,14 @@ export function FilterBar({
     filters.search || filters.status || filters.timeRange || filters.projectId;
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [showExport, setShowExport] = useState<boolean>(false);
+
+  const handleExport = (format: string) => {
+    setShowExport(false);
+    if (format === "csv") onExportCSV?.();
+    else if (format === "json") onExportJSON?.();
+    else if (format === "pdf") onExportPDF?.();
+  };
 
   return (
     <div className="mb-4">
@@ -140,24 +158,15 @@ export function FilterBar({
             />
           )}
 
-          {onExport && (
-            <button
-              onClick={onExport}
-              title={
-                exportCount !== undefined
-                  ? `Export ${exportCount} rows as CSV`
-                  : "Export as CSV"
-              }
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors cursor-pointer shrink-0"
-            >
-              <Download size={13} />
-              Export
-              {exportCount !== undefined && (
-                <span className="text-xs text-muted-foreground/50">
-                  ({exportCount})
-                </span>
-              )}
-            </button>
+          {/* Export Dropdown - FIXED: includes onExportPDF */}
+          {(onExportCSV || onExportJSON || onExportPDF) && (
+            <FilterDropdown
+              label="Export"
+              options={EXPORT_OPTIONS}
+              value=""
+              onChange={handleExport}
+              allLabel=""
+            />
           )}
 
           {hasFilters && (
@@ -207,14 +216,15 @@ export function FilterBar({
             />
           )}
 
-          {onExport && (
-            <button
-              onClick={onExport}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium text-muted-foreground"
-            >
-              <Download size={13} />
-              Export
-            </button>
+          {/* Export Dropdown - FIXED: includes onExportPDF */}
+          {(onExportCSV || onExportJSON || onExportPDF) && (
+            <FilterDropdown
+              label="Export"
+              options={EXPORT_OPTIONS}
+              value=""
+              onChange={handleExport}
+              allLabel=""
+            />
           )}
 
           {hasFilters && (

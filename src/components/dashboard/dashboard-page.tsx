@@ -369,15 +369,11 @@ export function DashboardPage() {
               Widget Color
             </p>
             <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
-                style={{ background: color }}
-              />
               <input
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                className="w-12 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
                 title="Pick a color"
               />
               <span className="text-sm text-muted-foreground font-mono">

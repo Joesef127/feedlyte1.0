@@ -7,6 +7,7 @@ export interface FilterOption {
   id: string;
   label: string;
   dot?: string;
+  icon?: React.ComponentType<{ size: number; className?: string }>;
 }
 
 interface FilterDropdownProps {

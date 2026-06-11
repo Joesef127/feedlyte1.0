@@ -19,7 +19,11 @@ import {
   type LayoutMode,
 } from "./filter-bar";
 import { EmptyState } from "@/components/ui/empty-state";
-import { exportFeedbackCSV } from "@/lib/export-csv";
+import {
+  exportFeedbackCSV,
+  exportFeedbackJSON,
+  exportFeedbackPDF,
+} from "@/lib/export";
 import { BulkActionBar } from "./bulk-action-bar";
 import type { FilterOption } from "@/components/ui/filter-dropdown";
 import { toast } from "sonner";
@@ -62,6 +66,21 @@ export function FeedbackTable({
     setSelectedIds(new Set());
   };
 
+  const handleExportCSV = () => {
+    exportFeedbackCSV(filtered, projectMap);
+    toast.success(`Exported ${filtered.length} feedback item(s) to CSV`);
+  };
+
+  const handleExportJSON = () => {
+    exportFeedbackJSON(filtered, projectMap);
+    toast.success(`Exported ${filtered.length} feedback item(s) to JSON`);
+  };
+
+  const handleExportPDF = () => {
+    exportFeedbackPDF(filtered, projectMap);
+    toast.success(`Exported ${filtered.length} feedback item(s) to PDF`);
+  };
+
   const filtered = applyFeedbackFilters(feedback, filters);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -75,15 +94,15 @@ export function FeedbackTable({
   const hasFilters =
     filters.search || filters.status || filters.timeRange || filters.projectId;
 
-  // Clear selection on page/layout/filter change
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [page, layout, filters]);
+  const selectAllPage = useCallback(() => {
+    if (selectedIds.size === paginated.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map((fb) => fb.id)));
+    }
+  }, [paginated, selectedIds]);
 
-  const handleExport = () => {
-    exportFeedbackCSV(filtered, projectMap);
-    toast.success(`Exported ${filtered.length} feedback item(s) to CSV`);
-  };
+  const clearSelection = () => setSelectedIds(new Set());
 
   // Selection handlers
   const toggleSelect = (id: string) => {
@@ -98,24 +117,6 @@ export function FeedbackTable({
     });
   };
 
-  useEffect(() => {
-    const handleEscape = () => {
-      clearSelection(); // or setShowModal(false), etc.
-    };
-    window.addEventListener("feedlyte:escape", handleEscape);
-    return () => window.removeEventListener("feedlyte:escape", handleEscape);
-  }, []);
-
-  const selectAllPage = useCallback(() => {
-    if (selectedIds.size === paginated.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(paginated.map((fb) => fb.id)));
-    }
-  }, [paginated, selectedIds]);
-
-  const clearSelection = () => setSelectedIds(new Set());
-
   // Bulk actions
   const bulkUpdateStatus = async (status: Status) => {
     setBulkPending(true);
@@ -126,9 +127,12 @@ export function FeedbackTable({
     } finally {
       setBulkPending(false);
       clearSelection();
-      toast.success(`Updated ${selectedIds.size} item${selectedIds.size !== 1 ? 's' : ''} to "${status}"`);
+      toast.success(
+        `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status}"`,
+      );
     }
   };
+
   const bulkDelete = async () => {
     setBulkPending(true);
     try {
@@ -153,6 +157,19 @@ export function FeedbackTable({
   );
   const projectCount = projectNames.length;
 
+  // Clear selection on page/layout/filter change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, layout, filters]);
+
+  useEffect(() => {
+    const handleEscape = () => {
+      clearSelection(); // or setShowModal(false), etc.
+    };
+    window.addEventListener("feedlyte:escape", handleEscape);
+    return () => window.removeEventListener("feedlyte:escape", handleEscape);
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -176,7 +193,9 @@ export function FeedbackTable({
         layout={layout}
         onLayoutChange={setLayout}
         projects={projects}
-        onExport={feedback.length > 0 ? handleExport : undefined}
+        onExportCSV={feedback.length > 0 ? handleExportCSV : undefined}
+        onExportJSON={feedback.length > 0 ? handleExportJSON : undefined}
+        onExportPDF={feedback.length > 0 ? handleExportPDF : undefined}
         exportCount={filtered.length}
       />
 
@@ -210,28 +229,28 @@ export function FeedbackTable({
         <>
           {/* Select all checkbox in header (list layout only) */}
           {/* {layout === "list" && ( */}
-            <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
-              <button
-                onClick={selectAllPage}
-                className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors"
-                aria-label={
-                  selectedIds.size === paginated.length
-                    ? "Deselect all"
-                    : "Select all on page"
-                }
-              >
-                {selectedIds.size === paginated.length ? (
-                  <CheckSquare size={14} className="text-primary" />
-                ) : (
-                  <Square size={14} className="text-muted-foreground" />
-                )}
-              </button>
-              <span className="text-xs text-muted-foreground">
-                {selectedIds.size === paginated.length
-                  ? "All selected — click to deselect"
-                  : `Select all ${paginated.length} items on this page`}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
+            <button
+              onClick={selectAllPage}
+              className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors"
+              aria-label={
+                selectedIds.size === paginated.length
+                  ? "Deselect all"
+                  : "Select all on page"
+              }
+            >
+              {selectedIds.size === paginated.length ? (
+                <CheckSquare size={14} className="text-primary" />
+              ) : (
+                <Square size={14} className="text-muted-foreground" />
+              )}
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {selectedIds.size === paginated.length
+                ? "All selected — click to deselect"
+                : `Select all ${paginated.length} items on this page`}
+            </span>
+          </div>
           {/* )} */}
 
           {layout === "list" && (

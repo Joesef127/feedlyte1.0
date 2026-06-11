@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { X, Check, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 
 interface BulkActionBarProps {
   count: number;
@@ -26,6 +28,8 @@ export function BulkActionBar({
   onClear,
   isPending,
 }: BulkActionBarProps) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const isMultiProject = projectCount > 1;
 
   const projectText = isMultiProject
@@ -38,12 +42,21 @@ export function BulkActionBar({
     ? `Delete ${count} items ${projectText}?`
     : `Delete ${count} item${count !== 1 ? "s" : ""}?`;
 
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteModal(false);
+    onBulkDelete();
+  };
+
   return (
     <div
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-slide-up"
       style={{ maxWidth: "calc(100vw - 32px)" }}
     >
-      <div className="bg-card border border-border rounded-xl shadow-xl p-3 flex flex-col xl:flex-row items-center justify-between gap-3 w-full min-w-[300px]">
+      <div className="bg-card border border-border rounded-xl shadow-xl p-3 flex flex-col items-start justify-between gap-3 w-full min-w-75">
         <div className="flex items-center gap-3">
           <button
             onClick={onClear}
@@ -62,13 +75,13 @@ export function BulkActionBar({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="grid grid-cols-2 sm:flex flex-wrap items-center gap-2 shrink-0 sm:w-max">
           <Button
             variant="outline"
             size="sm"
             onClick={onBulkUnreviewed}
             disabled={isPending}
-            className="gap-1.5"
+            className="gap-1.5 text-xs"
           >
             <Check size={13} />
             Mark Unreviewed
@@ -78,7 +91,7 @@ export function BulkActionBar({
             size="sm"
             onClick={onBulkReviewed}
             disabled={isPending}
-            className="gap-1.5"
+            className="gap-1.5 text-xs"
           >
             <Check size={13} />
             Mark Reviewed
@@ -88,7 +101,7 @@ export function BulkActionBar({
             size="sm"
             onClick={onBulkResolved}
             disabled={isPending}
-            className="gap-1.5"
+            className="gap-1.5 text-xs"
           >
             <CheckCheck size={13} />
             Mark Resolved
@@ -96,15 +109,39 @@ export function BulkActionBar({
           <Button
             variant="destructive"
             size="sm"
-            onClick={onBulkDelete}
+            onClick={handleDeleteClick}
             disabled={isPending}
-            className="gap-1.5"
+            className="gap-1.5 text-xs"
           >
             <Trash2 size={13} />
             Delete
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Feedback"
+        description={deleteText}
+      >
+        <p className="text-sm text-muted-foreground mb-6">
+          This action cannot be undone. The selected feedback will be permanently removed.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirmDelete}
+            disabled={isPending}
+          >
+            {isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
