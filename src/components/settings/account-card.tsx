@@ -50,8 +50,8 @@ export function AccountCard(props: AccountCardProps) {
           </Button>
 
           <Button
-            onClick={() => {
-              props.saveAccount();
+            onClick={async () => {
+              await props.saveAccount();
               toast.success("Profile updated");
             }}
             disabled={
@@ -61,8 +61,7 @@ export function AccountCard(props: AccountCardProps) {
             }
           >
             {props.accountState === "saving" ? "Saving..." : "Save"}
-          </Button>
-        </div>
+          </Button>        </div>
       </div>
     </Card>
   );

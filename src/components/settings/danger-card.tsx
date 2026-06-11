@@ -55,8 +55,8 @@ export function DangerCard(props: DangerCardProps) {
 
           <Button
             variant="destructive"
-            onClick={() => {
-              props.deleteUser();
+            onClick={async () => {
+              await props.deleteUser();
               toast.success("Account deleted");
             }}
             disabled={
@@ -66,8 +66,7 @@ export function DangerCard(props: DangerCardProps) {
             }
           >
             {props.dangerState === "deleting" ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
+          </Button>        </div>
       </Modal>
     </>
   );

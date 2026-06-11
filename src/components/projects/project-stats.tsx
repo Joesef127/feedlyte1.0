@@ -54,7 +54,7 @@ export function ProjectStats({
 
   return (
     <div
-      className={`grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6 ${isAllFeedbackPage ? "xl:grid-cols-5" : ""}`}
+      className={`grid grid-cols-2 gap-3 mb-6 ${isAllFeedbackPage ? "xl:grid-cols-5" : "xl:grid-cols-4"}`}
     >
       {stats.map(({ label, value, Icon }) => (
         <StatCard
@@ -66,5 +66,4 @@ export function ProjectStats({
         />
       ))}
     </div>
-  );
-}
+  );}

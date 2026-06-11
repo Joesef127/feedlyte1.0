@@ -43,8 +43,11 @@ export function AllFeedbackPage() {
         </p>
       </div>
 
-      <ProjectStats feedback={feedback} isLoading={isLoading} />
-
+      <ProjectStats 
+        feedback={feedback} 
+        isLoading={isLoading} 
+        projects={projects.map(p => p.id)}
+      />
       <FeedbackTable
         feedback={feedback}
         isLoading={isLoading}

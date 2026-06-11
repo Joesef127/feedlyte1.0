@@ -8,6 +8,7 @@ import {
   Check,
   Trash2,
   Square,
+  CheckSquare,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Feedback, Status } from "@/types";
@@ -95,12 +96,11 @@ export function FeedbackRow({
         aria-checked={selected}
       >
         {selected ? (
-          <CheckCheck size={14} className="text-primary" />
+          <CheckSquare size={14} className="text-primary" />
         ) : (
           <Square size={14} className="text-muted-foreground" />
         )}
       </div>
-
       {/* Main content — clickable */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between flex-wrap gap-1.5 mb-2">

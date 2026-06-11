@@ -34,6 +34,14 @@ export function useSettings() {
   const [accountState, setAccountState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [accountError, setAccountError] = useState("");
 
+  useEffect(() => {
+    if (user) {
+      setName((prev) => (prev !== user.name ? user.name ?? "" : prev));
+      setEmail((prev) => (prev !== user.email ? user.email ?? "" : prev));
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+  }, [user?.name, user?.email]);
+
   const saveAccount = async () => {
     setAccountError("");
     setAccountState("saving");

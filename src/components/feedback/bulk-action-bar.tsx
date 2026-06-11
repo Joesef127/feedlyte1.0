@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Check, CheckCheck, Trash2, ExternalLink } from "lucide-react";
+import { X, Check, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BulkActionBarProps {

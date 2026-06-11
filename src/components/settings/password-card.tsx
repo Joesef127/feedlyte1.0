@@ -32,9 +32,9 @@ export function PasswordCard(props: PasswordCardProps) {
       <h3 className="text-sm font-bold">Password</h3>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          props.changePassword();
+          await props.changePassword();
           toast.success("Password changed");
         }}
         className="flex flex-col gap-3"

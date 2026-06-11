@@ -185,10 +185,15 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
               <button
                 key={s}
                 onClick={() => {
-                  updateStatus.mutate({ id: feedback.id, status: s });
-                  toast.success(`Marked as ${s}`);
-                }}
-                disabled={feedback.status === s || updateStatus.isPending}
+                  updateStatus.mutate(
+                    { id: feedback.id, status: s },
+                    {
+                      onSuccess: () => {
+                        toast.success(`Marked as ${s}`);
+                      },
+                    }
+                  );
+                }}                disabled={feedback.status === s || updateStatus.isPending}
                 className={[
                   "px-4 py-2 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all capitalize",
                   feedback.status === s

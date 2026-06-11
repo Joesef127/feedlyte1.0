@@ -126,10 +126,9 @@ export function FeedbackTable({
     } finally {
       setBulkPending(false);
       clearSelection();
-      toast.success(`Updated status to "${status}" for 1 feedback item`);
+      toast.success(`Updated ${selectedIds.size} item${selectedIds.size !== 1 ? 's' : ''} to "${status}"`);
     }
   };
-
   const bulkDelete = async () => {
     setBulkPending(true);
     try {
