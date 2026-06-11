@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export interface PasswordCardProps {
   current: string;
@@ -34,6 +35,7 @@ export function PasswordCard(props: PasswordCardProps) {
         onSubmit={(e) => {
           e.preventDefault();
           props.changePassword();
+          toast.success("Password changed");
         }}
         className="flex flex-col gap-3"
       >
@@ -79,7 +81,7 @@ export function PasswordCard(props: PasswordCardProps) {
               {showNext ? (
                 <EyeOff className="w-4 h-4" />
               ) : (
-              <Eye className="w-4 h-4" />
+                <Eye className="w-4 h-4" />
               )}
             </button>
           )}
@@ -110,13 +112,15 @@ export function PasswordCard(props: PasswordCardProps) {
         </div>
 
         {props.passwordError && (
-          <p className="text-sm text-destructive">
-            {props.passwordError}
-          </p>
+          <p className="text-sm text-destructive">{props.passwordError}</p>
         )}
 
         <div className="flex justify-end gap-2.5">
-          <Button type="button" variant="secondary" onClick={props.resetPassword}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={props.resetPassword}
+          >
             Clear
           </Button>
 
@@ -128,9 +132,7 @@ export function PasswordCard(props: PasswordCardProps) {
               props.updatePasswordIsPending
             }
           >
-            {props.passwordState === "saving"
-              ? "Updating..."
-              : "Update"}
+            {props.passwordState === "saving" ? "Updating..." : "Update"}
           </Button>
         </div>
       </form>

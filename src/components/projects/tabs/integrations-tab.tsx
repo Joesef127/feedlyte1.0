@@ -2,30 +2,41 @@
 
 import { useState } from "react";
 import {
-  Plus, Trash2, ChevronDown, ChevronUp,
-  Check, X, Zap, ToggleLeft, ToggleRight,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  X,
+  Zap,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  useWebhooks, useWebhookDeliveries,
-  useCreateWebhook, useUpdateWebhook, useDeleteWebhook,
+  useWebhooks,
+  useWebhookDeliveries,
+  useCreateWebhook,
+  useUpdateWebhook,
+  useDeleteWebhook,
   type Webhook,
 } from "@/hooks/use-webhooks";
+import { toast } from "sonner";
 
 interface IntegrationsTabProps {
   projectId: string;
 }
 
 function timeAgo(iso: string): string {
-  const diff  = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
   const hours = Math.floor(mins / 60);
-  const days  = Math.floor(hours / 24);
-  if (days  > 0) return `${days}d ago`;
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}d ago`;
   if (hours > 0) return `${hours}h ago`;
-  if (mins  > 0) return `${mins}m ago`;
+  if (mins > 0) return `${mins}m ago`;
   return "Just now";
 }
 
@@ -34,7 +45,11 @@ function DeliveryLog({ webhookId }: { webhookId: string }) {
   const { data: deliveries = [], isLoading } = useWebhookDeliveries(webhookId);
 
   if (isLoading) {
-    return <p className="text-xs text-muted-foreground py-3">Loading deliveries...</p>;
+    return (
+      <p className="text-xs text-muted-foreground py-3">
+        Loading deliveries...
+      </p>
+    );
   }
 
   if (!deliveries.length) {
@@ -57,10 +72,12 @@ function DeliveryLog({ webhookId }: { webhookId: string }) {
           ) : (
             <X size={13} className="text-destructive shrink-0" />
           )}
-          <span className={[
-            "text-xs font-semibold shrink-0",
-            d.success ? "text-green-500" : "text-destructive",
-          ].join(" ")}>
+          <span
+            className={[
+              "text-xs font-semibold shrink-0",
+              d.success ? "text-green-500" : "text-destructive",
+            ].join(" ")}
+          >
             {d.statusCode ?? "ERR"}
           </span>
           <span className="text-xs text-muted-foreground flex-1 truncate">
@@ -80,24 +97,29 @@ function WebhookRow({
   webhook,
   projectId,
 }: {
-  webhook:   Webhook;
+  webhook: Webhook;
   projectId: string;
 }) {
-  const [expanded,     setExpanded]     = useState(false);
-  const [deleteModal,  setDeleteModal]  = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
 
   const updateWebhook = useUpdateWebhook(projectId);
   const deleteWebhook = useDeleteWebhook(projectId);
 
   const toggleEnabled = () =>
-    updateWebhook.mutate({ id: webhook.id, data: { enabled: !webhook.enabled } });
+    updateWebhook.mutate({
+      id: webhook.id,
+      data: { enabled: !webhook.enabled },
+    });
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       {/* Header row */}
       <div className="flex items-center gap-3 px-4 py-3.5">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{webhook.label}</p>
+          <p className="text-sm font-semibold text-foreground truncate">
+            {webhook.label}
+          </p>
           <p className="text-xs text-muted-foreground/60 font-mono truncate mt-0.5">
             {webhook.url}
           </p>
@@ -157,13 +179,24 @@ function WebhookRow({
           its delivery history. This cannot be undone.
         </p>
         {deleteWebhook.isError && (
-          <p className="text-destructive text-sm mb-4">Failed to delete. Please try again.</p>
+          <p className="text-destructive text-sm mb-4">
+            Failed to delete. Please try again.
+          </p>
         )}
         <div className="flex gap-2 justify-end">
-          <Button variant="secondary" onClick={() => setDeleteModal(false)}>Cancel</Button>
+          <Button variant="secondary" onClick={() => setDeleteModal(false)}>
+            Cancel
+          </Button>
           <Button
             variant="destructive"
-            onClick={() => deleteWebhook.mutateAsync(webhook.id).then(() => setDeleteModal(false))}
+            onClick={() => {
+              deleteWebhook
+                .mutateAsync(webhook.id)
+                .then(() => {
+                  toast.success("Webhook deleted");
+                  setDeleteModal(false);
+                });
+            }}
             disabled={deleteWebhook.isPending}
           >
             {deleteWebhook.isPending ? "Deleting..." : "Delete Webhook"}
@@ -180,20 +213,25 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
   const createWebhook = useCreateWebhook(projectId);
 
   const [showModal, setShowModal] = useState(false);
-  const [url,       setUrl]       = useState("");
-  const [label,     setLabel]     = useState("");
-  const [secret,    setSecret]    = useState("");
+  const [url, setUrl] = useState("");
+  const [label, setLabel] = useState("");
+  const [secret, setSecret] = useState("");
 
-  const resetForm = () => { setUrl(""); setLabel(""); setSecret(""); };
+  const resetForm = () => {
+    setUrl("");
+    setLabel("");
+    setSecret("");
+  };
 
   const handleCreate = async () => {
     if (!url.trim()) return;
     try {
       await createWebhook.mutateAsync({
-        url:    url.trim(),
-        label:  label.trim() || "My Webhook",
+        url: url.trim(),
+        label: label.trim() || "My Webhook",
         secret: secret.trim() || undefined,
       });
+      toast.success("Webhook added");
       setShowModal(false);
       resetForm();
     } catch {
@@ -203,7 +241,6 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
 
   return (
     <div className="flex flex-col gap-5 pb-6">
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -212,7 +249,11 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
             Receive a POST request when new feedback is submitted.
           </p>
         </div>
-        <Button onClick={() => setShowModal(true)} className="gap-1.5" size="sm">
+        <Button
+          onClick={() => setShowModal(true)}
+          className="gap-1.5"
+          size="sm"
+        >
           <Plus size={13} />
           Add Webhook
         </Button>
@@ -246,14 +287,20 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
 
       {/* Webhook list */}
       {isLoading ? (
-        <p className="text-sm text-muted-foreground py-4">Loading webhooks...</p>
+        <p className="text-sm text-muted-foreground py-4">
+          Loading webhooks...
+        </p>
       ) : webhooks.length === 0 ? (
         <EmptyState
           icon={<Zap size={22} />}
           title="No webhooks yet"
           description="Add a webhook to get notified when new feedback arrives."
           action={
-            <Button onClick={() => setShowModal(true)} className="gap-1.5" size="sm">
+            <Button
+              onClick={() => setShowModal(true)}
+              className="gap-1.5"
+              size="sm"
+            >
               <Plus size={13} />
               Add your first webhook
             </Button>
@@ -270,7 +317,10 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
       {/* Create modal */}
       <Modal
         open={showModal}
-        onClose={() => { setShowModal(false); resetForm(); }}
+        onClose={() => {
+          setShowModal(false);
+          resetForm();
+        }}
         title="Add Webhook"
       >
         <div className="flex flex-col gap-4">
@@ -298,7 +348,10 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block mb-1.5">
-              Secret <span className="normal-case text-muted-foreground/50 tracking-normal">(optional)</span>
+              Secret{" "}
+              <span className="normal-case text-muted-foreground/50 tracking-normal">
+                (optional)
+              </span>
             </label>
             <input
               value={secret}
@@ -311,12 +364,19 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
 
           {createWebhook.isError && (
             <p className="text-destructive text-sm">
-              {(createWebhook.error as Error)?.message ?? "Failed to create webhook."}
+              {(createWebhook.error as Error)?.message ??
+                "Failed to create webhook."}
             </p>
           )}
 
           <div className="flex gap-2 justify-end mt-1">
-            <Button variant="secondary" onClick={() => { setShowModal(false); resetForm(); }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowModal(false);
+                resetForm();
+              }}
+            >
               Cancel
             </Button>
             <Button

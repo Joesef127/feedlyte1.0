@@ -18,6 +18,7 @@ import {
   useDeleteFeedback,
 } from "@/hooks/use-feedback";
 import { useDeleteProject, useUpdateProject } from "@/hooks/use-projects";
+import { toast } from "sonner";
 
 interface ProjectDetailPageProps {
   project: Project;
@@ -44,6 +45,7 @@ export function ProjectDetailPage({
   const handleDeleteProject = async () => {
     try {
       await deleteProject.mutateAsync(project.id);
+      toast.success("Project deleted");
       onBack();
     } catch {}
   };
@@ -59,6 +61,9 @@ export function ProjectDetailPage({
         id: project.id,
         data: { ...data, allowedOrigin: data.allowedOrigin || null },
       });
+
+      toast.success("Settings saved");
+
       onUpdate({ ...project, ...updated });
     } catch {}
   };

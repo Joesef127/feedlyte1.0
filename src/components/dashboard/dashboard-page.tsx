@@ -26,6 +26,7 @@ import {
   useDeleteFeedback,
 } from "@/hooks/use-feedback";
 import type { Status } from "@/types";
+import { toast } from "sonner";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,8 @@ export function DashboardPage() {
         position,
       });
       setShowModal(false);
+
+      toast.success("Project created");
       resetForm();
       router.push(`/dashboard/projects/${project.id}`);
     } catch {

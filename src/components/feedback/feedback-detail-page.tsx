@@ -4,15 +4,27 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Trash2, Globe, Mail, Monitor,
-  Calendar, Tag, ExternalLink, Clock,
+  ArrowLeft,
+  Trash2,
+  Globe,
+  Mail,
+  Monitor,
+  Calendar,
+  Tag,
+  ExternalLink,
+  Clock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { useFeedbackItem, useUpdateFeedbackStatus, useDeleteFeedback } from "@/hooks/use-feedback";
+import {
+  useFeedbackItem,
+  useUpdateFeedbackStatus,
+  useDeleteFeedback,
+} from "@/hooks/use-feedback";
 import type { Status } from "@/types";
+import { toast } from "sonner";
 
 interface FeedbackDetailPageProps {
   params: Promise<{ id: string }>;
@@ -21,56 +33,68 @@ interface FeedbackDetailPageProps {
 function parseUserAgent(ua: string): { browser: string; os: string } {
   if (!ua) return { browser: "Unknown", os: "Unknown" };
 
-  const browser =
-    ua.includes("Edg/")     ? "Edge"    :
-    ua.includes("Chrome/")  ? "Chrome"  :
-    ua.includes("Firefox/") ? "Firefox" :
-    ua.includes("Safari/")  ? "Safari"  :
-    ua.includes("OPR/")     ? "Opera"   : "Unknown";
+  const browser = ua.includes("Edg/")
+    ? "Edge"
+    : ua.includes("Chrome/")
+      ? "Chrome"
+      : ua.includes("Firefox/")
+        ? "Firefox"
+        : ua.includes("Safari/")
+          ? "Safari"
+          : ua.includes("OPR/")
+            ? "Opera"
+            : "Unknown";
 
-  const os =
-    ua.includes("Windows NT") ? "Windows" :
-    ua.includes("Mac OS X")   ? "macOS"   :
-    ua.includes("Android")    ? "Android" :
-    ua.includes("iPhone")     ? "iOS"     :
-    ua.includes("iPad")       ? "iPadOS"  :
-    ua.includes("Linux")      ? "Linux"   : "Unknown";
+  const os = ua.includes("Windows NT")
+    ? "Windows"
+    : ua.includes("Mac OS X")
+      ? "macOS"
+      : ua.includes("Android")
+        ? "Android"
+        : ua.includes("iPhone")
+          ? "iOS"
+          : ua.includes("iPad")
+            ? "iPadOS"
+            : ua.includes("Linux")
+              ? "Linux"
+              : "Unknown";
 
   return { browser, os };
 }
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
-    year:   "numeric",
-    month:  "long",
-    day:    "numeric",
-    hour:   "2-digit",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
   });
 }
 
 function timeAgo(iso: string): string {
-  const diff  = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
   const hours = Math.floor(mins / 60);
-  const days  = Math.floor(hours / 24);
-  if (days  > 0) return `${days}d ago`;
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}d ago`;
   if (hours > 0) return `${hours}h ago`;
-  if (mins  > 0) return `${mins}m ago`;
+  if (mins > 0) return `${mins}m ago`;
   return "Just now";
 }
 
 export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
-  const { id }   = use(params);
-  const router   = useRouter();
+  const { id } = use(params);
+  const router = useRouter();
   const [deleteModal, setDeleteModal] = useState(false);
 
   const { data: feedback, isLoading, isError } = useFeedbackItem(id);
   const updateStatus = useUpdateFeedbackStatus();
-  const deleteFb     = useDeleteFeedback();
+  const deleteFb = useDeleteFeedback();
 
   const handleDelete = async () => {
     await deleteFb.mutateAsync(id);
+    toast.success("Feedback deleted");
     router.push("/dashboard/feedback");
   };
 
@@ -86,7 +110,10 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
     return (
       <div className="flex-1 flex items-center justify-center flex-col gap-3">
         <p className="text-muted-foreground text-sm">Feedback not found.</p>
-        <Button variant="secondary" onClick={() => router.push("/dashboard/feedback")}>
+        <Button
+          variant="secondary"
+          onClick={() => router.push("/dashboard/feedback")}
+        >
           Back to Feedback
         </Button>
       </div>
@@ -97,7 +124,6 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
   return (
     <div className="flex-1 px-5 sm:px-9 py-8 overflow-y-auto">
-
       {/* Back */}
       <button
         onClick={() => router.back()}
@@ -108,7 +134,6 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
       </button>
 
       <div className="max-w-full xl:max-w-3/4 flex flex-col gap-4">
-
         {/* Header card */}
         <Card>
           <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
@@ -159,7 +184,10 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
               <button
                 key={s}
-                onClick={() => updateStatus.mutate({ id: feedback.id, status: s })}
+                onClick={() => {
+                  updateStatus.mutate({ id: feedback.id, status: s });
+                  toast.success(`Marked as ${s}`);
+                }}
                 disabled={feedback.status === s || updateStatus.isPending}
                 className={[
                   "px-4 py-2 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all capitalize",
@@ -180,68 +208,115 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             Submission Details
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
             <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
-              <Calendar size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
+              <Calendar
+                size={15}
+                className="text-muted-foreground/60 mt-0.5 shrink-0"
+              />
               <div>
-                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">Submitted</p>
-                <p className="text-sm text-foreground font-medium">{formatDate(feedback.createdAt)}</p>
+                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
+                  Submitted
+                </p>
+                <p className="text-sm text-foreground font-medium">
+                  {formatDate(feedback.createdAt)}
+                </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
-              <Mail size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
+              <Mail
+                size={15}
+                className="text-muted-foreground/60 mt-0.5 shrink-0"
+              />
               <div className="min-w-0">
-                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">Email</p>
+                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
+                  Email
+                </p>
                 {feedback.email ? (
-                  <a href={`mailto:${feedback.email}`} className="text-sm text-primary hover:text-primary/80 transition-colors break-all">
+                  <a
+                    href={`mailto:${feedback.email}`}
+                    className="text-sm text-primary hover:text-primary/80 transition-colors break-all"
+                  >
                     {feedback.email}
                   </a>
                 ) : (
-                  <p className="text-sm text-muted-foreground/50">Not provided</p>
+                  <p className="text-sm text-muted-foreground/50">
+                    Not provided
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border sm:col-span-2">
-              <Globe size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
+              <Globe
+                size={15}
+                className="text-muted-foreground/60 mt-0.5 shrink-0"
+              />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">Page URL</p>
+                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
+                  Page URL
+                </p>
                 {feedback.pageUrl ? (
                   <div className="flex items-center gap-2">
-                    <p className="text-sm text-foreground font-mono break-all flex-1">{feedback.pageUrl}</p>
-                    <a href={feedback.pageUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                    <p className="text-sm text-foreground font-mono break-all flex-1">
+                      {feedback.pageUrl}
+                    </p>
+                    <a
+                      href={feedback.pageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    >
                       <ExternalLink size={13} />
                     </a>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground/50">Not captured</p>
+                  <p className="text-sm text-muted-foreground/50">
+                    Not captured
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
-              <Monitor size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
+              <Monitor
+                size={15}
+                className="text-muted-foreground/60 mt-0.5 shrink-0"
+              />
               <div>
-                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">Browser</p>
+                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
+                  Browser
+                </p>
                 <p className="text-sm text-foreground font-medium">{browser}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
-              <Tag size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
+              <Tag
+                size={15}
+                className="text-muted-foreground/60 mt-0.5 shrink-0"
+              />
               <div>
-                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">Operating System</p>
+                <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
+                  Operating System
+                </p>
                 <p className="text-sm text-foreground font-medium">{os}</p>
               </div>
             </div>
 
             {feedback.userAgent && (
               <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border sm:col-span-2">
-                <Clock size={15} className="text-muted-foreground/60 mt-0.5 shrink-0" />
+                <Clock
+                  size={15}
+                  className="text-muted-foreground/60 mt-0.5 shrink-0"
+                />
                 <div className="min-w-0">
-                  <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">User Agent</p>
-                  <p className="text-sm text-muted-foreground font-mono break-all leading-relaxed">{feedback.userAgent}</p>
+                  <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
+                    User Agent
+                  </p>
+                  <p className="text-sm text-muted-foreground font-mono break-all leading-relaxed">
+                    {feedback.userAgent}
+                  </p>
                 </div>
               </div>
             )}
@@ -266,7 +341,9 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                   </p>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <StatusBadge status={s.status} />
-                    <span className="text-sm text-muted-foreground/50">{timeAgo(s.createdAt)}</span>
+                    <span className="text-sm text-muted-foreground/50">
+                      {timeAgo(s.createdAt)}
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -285,10 +362,10 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ 
-                  background: feedback.project.color,
-                  opacity: 0.125
-                }}
+              style={{
+                background: feedback.project.color,
+                opacity: 0.125,
+              }}
             >
               <Globe size={15} style={{ color: feedback.project.color }} />
             </div>
@@ -300,19 +377,33 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                 {feedback.project.id}
               </p>
             </div>
-            <ExternalLink size={14} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+            <ExternalLink
+              size={14}
+              className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0"
+            />
           </Link>
         </Card>
       </div>
 
       {/* Delete modal */}
-      <Modal open={deleteModal} onClose={() => setDeleteModal(false)} title="Delete Feedback">
+      <Modal
+        open={deleteModal}
+        onClose={() => setDeleteModal(false)}
+        title="Delete Feedback"
+      >
         <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-          This will permanently delete this feedback entry. This cannot be undone.
+          This will permanently delete this feedback entry. This cannot be
+          undone.
         </p>
         <div className="flex gap-2 justify-end">
-          <Button variant="secondary" onClick={() => setDeleteModal(false)}>Cancel</Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleteFb.isPending}>
+          <Button variant="secondary" onClick={() => setDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleteFb.isPending}
+          >
             {deleteFb.isPending ? "Deleting..." : "Delete"}
           </Button>
         </div>

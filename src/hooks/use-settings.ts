@@ -29,18 +29,10 @@ export function useSettings() {
 
   // ── Account state ─────────────────────────────
 
-  const [name,  setName]  = useState("");
-  const [email, setEmail] = useState("");
+  const [name,  setName]  = useState(user?.name  ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [accountState, setAccountState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [accountError, setAccountError] = useState("");
-
-  // Sync name and email once user data loads from the server
-  useEffect(() => {
-    if (user) {
-      setName(user.name  ?? "");
-      setEmail(user.email ?? "");
-    }
-  }, [user]);
 
   const saveAccount = async () => {
     setAccountError("");
