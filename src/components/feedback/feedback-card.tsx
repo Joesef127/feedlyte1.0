@@ -14,7 +14,7 @@ interface FeedbackCardProps {
   projectColor?:  string;
   selected?:      boolean;
   onSelect?:      (id: string) => void;
-  clearSelection: () => void;
+  clearSelection?: () => void;
 }
 
 function timeAgo(iso: string): string {
@@ -54,7 +54,7 @@ export function FeedbackCard({
 
   useEffect(() => {
   const handleEscape = () => {
-    clearSelection(); // or setShowModal(false), etc.
+    clearSelection?.(); // or setShowModal(false), etc.
   };
   window.addEventListener("feedlyte:escape", handleEscape);
   return () => window.removeEventListener("feedlyte:escape", handleEscape);

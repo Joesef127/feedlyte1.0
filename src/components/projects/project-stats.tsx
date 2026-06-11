@@ -1,4 +1,4 @@
-import { MessageSquare, Bell, Check, Eye } from "lucide-react";
+import { MessageSquare, Bell, Check, Eye, LayoutGrid } from "lucide-react";
 import type { Feedback } from "@/types";
 import StatCard from "@/components/ui/StatCard";
 import { usePathname } from "next/navigation";
@@ -31,7 +31,7 @@ export function ProjectStats({
             value:
               projects?.length ??
               new Set(feedback.map((f) => f.projectId)).size,
-            Icon: Check,
+            Icon: LayoutGrid,
           },
         ]
       : []),
