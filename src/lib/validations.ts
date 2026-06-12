@@ -3,13 +3,16 @@ import { z } from "zod";
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const registerSchema = z.object({
-  name:     z.string().min(2, "Name must be at least 2 characters").max(80),
-  email:    z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(100),
+  name: z.string().min(2, "Name must be at least 2 characters").max(80),
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100),
 });
 
 export const loginSchema = z.object({
-  email:    z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -18,14 +21,17 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  token:    z.string().min(1, "Token is required"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(100),
+  token: z.string().min(1, "Token is required"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100),
 });
 
-export type RegisterInput       = z.infer<typeof registerSchema>;
-export type LoginInput          = z.infer<typeof loginSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
-export type ResetPasswordInput  = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 // ── Projects ─────────────────────────────────────────────────────────────────
 
@@ -38,27 +44,45 @@ const originSchema = z
   .nullable();
 
 export const createProjectSchema = z.object({
-  name:          z.string().min(1, "Project name is required").max(80),
-  color:         z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional().default("#F59E0B"),
-  position:      z.enum(["bottom-right", "bottom-left"]).optional().default("bottom-right"),
-  label:         z.string().max(30).optional().default("Feedback"),
+  name: z.string().min(1, "Project name is required").max(80),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
+    .optional()
+    .default("#F59E0B"),
+  position: z
+    .enum(["bottom-right", "bottom-left"])
+    .optional()
+    .default("bottom-right"),
+  label: z.string().max(30).optional().default("Feedback"),
   allowedOrigin: originSchema,
 });
 
 const cooldownSchema = z.enum(["none", "5min", "15min", "30min", "1hour"]);
 
 export const updateProjectSchema = z.object({
-  name:                 z.string().min(1).max(80).optional(),
-  color:                z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional(),
-  position:             z.enum(["bottom-right", "bottom-left"]).optional(),
-  label:                z.string().max(30).optional(),
-  allowedOrigin:        originSchema,
-  notifyOnSubmission:   z.boolean().optional(),
-  digestFrequency:      z.enum(["none", "daily"]).optional(),
-  timezone:             z.string().optional(),           
-  notificationCooldown: cooldownSchema.optional(),
-  unsubscribeToken:     z.string().optional(),
-  lastNotificationSentAt: z.string().optional(),       
+  name: z.string().min(1).max(80).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
+    .optional(),
+  position: z.enum(["bottom-right", "bottom-left"]).optional(),
+  label: z.string().max(30).optional(),
+  allowedOrigin: originSchema,
+  notifyOnSubmission: z.boolean().optional(),
+  digestFrequency: z.enum(["none", "daily"]).optional(),
+  timezone: z
+    .string()
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Invalid IANA timezone")
+    .optional(),
+  lastNotificationSent: z.string().optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
@@ -73,15 +97,15 @@ export const projectQuerySchema = z.object({
 export type ProjectQueryInput = z.infer<typeof projectQuerySchema>;
 
 export const submitFeedbackSchema = z.object({
-  message:   z.string().min(1, "Message is required").max(2000),
-  email:     z.string().email("Invalid email").optional().or(z.literal("")),
-  pageUrl:   z
+  message: z.string().min(1, "Message is required").max(2000),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  pageUrl: z
     .string()
     .url("Invalid URL")
     .max(2048, "URL too long")
     .refine(
       (url) => /^https?:\/\//i.test(url),
-      "Only http and https URLs are allowed"
+      "Only http and https URLs are allowed",
     )
     .optional()
     .or(z.literal("")),

@@ -236,10 +236,9 @@ if (projectWithPrefs?.notifyOnSubmission && projectWithPrefs.user?.email) {
         return prisma.project.update({
           where: { id: projectId },
           data: { lastNotificationSent: now },
-        });
+        }).catch((err) => console.error("[feedback] Failed to update lastNotificationSent:", err));
       })
-      .catch((err) => console.error("[feedback] Failed to send notification email:", err));
-  }
+      .catch((err) => console.error("[feedback] Failed to send notification email:", err));  }
 }
 
 
