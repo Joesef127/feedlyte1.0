@@ -75,9 +75,9 @@ export async function GET(req: Request) {
           });
         }
 
-        const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
-        const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${project.id}`;
-
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${unsubscribeToken}`;
+        const dashboardUrl = `${baseUrl}/dashboard/projects/${project.id}`;
         await sendDailyDigestEmail(
           project.user.email,
           project.name,

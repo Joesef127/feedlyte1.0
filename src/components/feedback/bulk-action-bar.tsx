@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Check, CheckCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { toast } from "sonner";
 
 interface BulkActionBarProps {
   count: number;
@@ -49,6 +50,11 @@ export function BulkActionBar({
   const handleConfirmDelete = async () => {
     try {
       await onBulkDelete();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete feedback"
+      );
+      console.error("Bulk delete error:", err);
     } finally {
       setShowDeleteModal(false);
     }

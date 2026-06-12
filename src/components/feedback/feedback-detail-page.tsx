@@ -101,9 +101,9 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
       toast.error(  
         err instanceof Error ? err.message : "Failed to delete feedback",  
       );  
+      console.error("Delete feedback error:", err);
     }  
   };
-
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">

@@ -17,8 +17,8 @@ import { toast } from "sonner";
 
 interface FeedbackRowProps {
   fb: Feedback;
-  onUpdateStatus: (id: string, status: Status) => void;
-  onDelete: (id: string) => void;
+  onUpdateStatus: (id: string, status: Status) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   projectName?: string;
   projectColor?: string;
   selected?: boolean;

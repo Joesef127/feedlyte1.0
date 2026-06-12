@@ -220,9 +220,9 @@ export function DashboardPage() {
                         key={fb.id}
                         fb={fb}
                         onUpdateStatus={(id, status) =>
-                          updateStatus.mutate({ id, status })
+                          updateStatus.mutateAsync({ id, status })
                         }
-                        onDelete={(id) => deleteFb.mutate(id)}
+                        onDelete={(id) => deleteFb.mutateAsync(id)}
                         projectName={projectMap[fb.projectId]?.name}
                         projectColor={projectMap[fb.projectId]?.color}
                       />

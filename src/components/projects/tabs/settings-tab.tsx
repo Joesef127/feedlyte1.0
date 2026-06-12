@@ -49,32 +49,8 @@ export function SettingsTab({
   >(project.notificationCooldown ?? "15min");
 
   // Common timezones for dropdown
-  const COMMON_TIMEZONES = [
-    "UTC",
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "America/Toronto",
-    "America/Vancouver",
-    "Europe/London",
-    "Europe/Paris",
-    "Europe/Berlin",
-    "Europe/Madrid",
-    "Europe/Rome",
-    "Europe/Amsterdam",
-    "Europe/Stockholm",
-    "Europe/Oslo",
-    "Asia/Tokyo",
-    "Asia/Shanghai",
-    "Asia/Singapore",
-    "Asia/Dubai",
-    "Asia/Kolkata",
-    "Australia/Sydney",
-    "Australia/Melbourne",
-    "Pacific/Auckland",
-  ];
-
+  const COMMON_TIMEZONES = Intl.supportedValuesOf('timeZone');
+  
   const handleSave = () => {
     // In handleSave:
     onSave({

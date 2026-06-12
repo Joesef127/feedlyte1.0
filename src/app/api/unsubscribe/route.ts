@@ -27,10 +27,28 @@ export async function GET(req: Request) {
   }
   
   // Disable digest frequency
-  await prisma.project.update({
-    where: { id: projectId },
-    data: { digestFrequency: "none" },
-  });
+  try {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { digestFrequency: "none" },
+    });
+  } catch (err) {
+    console.error(`[unsubscribe] Failed to update project ${projectId}:`, err);
+    if (err instanceof Error && err.message.includes("Record to update not found")) {
+      return new NextResponse(`
+        <html><body style="font-family:system-ui;padding:40px;text-align:center;background:#080808;color:#f0ede8;">
+          <h1>Project not found</h1>
+          <p>The project associated with this link no longer exists.</p>
+        </body></html>
+      `, { status: 404, headers: { "Content-Type": "text/html" } });
+    }
+    return new NextResponse(`
+      <html><body style="font-family:system-ui;padding:40px;text-align:center;background:#080808;color:#f0ede8;">
+        <h1>Error</h1>
+        <p>Something went wrong. Please try again later.</p>
+      </body></html>
+    `, { status: 500, headers: { "Content-Type": "text/html" } });
+  }
   
   return new NextResponse(`
     <html><body style="font-family:system-ui;padding:40px;text-align:center;background:#080808;color:#f0ede8;">

@@ -51,8 +51,8 @@ export function AllFeedbackPage() {
       <FeedbackTable
         feedback={feedback}
         isLoading={isLoading}
-        onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
-        onDelete={(id) => deleteFb.mutate(id)}
+        onUpdateStatus={(id, status) => updateStatus.mutateAsync({ id, status })}
+        onDelete={(id) => deleteFb.mutateAsync(id)}
         projects={projectOptions}
         projectMap={projectMap}
       />

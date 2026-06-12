@@ -31,8 +31,8 @@ import { toast } from "sonner";
 interface FeedbackTableProps {
   feedback: Feedback[];
   isLoading?: boolean;
-  onUpdateStatus: (id: string, status: Status) => void;
-  onDelete: (id: string) => void;
+  onUpdateStatus: (id: string, status: Status) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   projects?: FilterOption[];
   projectMap?: Record<string, { name: string; color: string }>;
 }

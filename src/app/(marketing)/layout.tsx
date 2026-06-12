@@ -33,7 +33,7 @@ export default function MarketingLayout({
   return (
     <html lang="en">
 
-    <script src="https://feedlyte.vercel.app/widget.js" data-project="cmq3ra9pv0000nkmzuw2phm54"></script>
+    <script src="https://feedlyte.vercel.app/widget.js" data-project="cmqbavl3k000004l7tupvoaan"></script>
     <body className={`${instrumentSerif.variable} grain`}>
       {children}
     </body>

@@ -218,13 +218,7 @@ if (projectWithPrefs?.notifyOnSubmission && projectWithPrefs.user?.email) {
     const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
     const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
     
-    // Update lastNotificationSent
-    await prisma.project.update({
-      where: { id: projectId },
-      data: { lastNotificationSent: now },
-    });
-    
-    // Fire async
+    // Fire async and update lastNotificationSent only on success
     sendFeedbackNotificationEmail(
       projectWithPrefs.user.email,
       projectWithPrefs.name,
@@ -237,7 +231,14 @@ if (projectWithPrefs?.notifyOnSubmission && projectWithPrefs.user?.email) {
       },
       dashboardUrl,
       unsubscribeUrl
-    ).catch((err) => console.error("[feedback] Failed to send notification email:", err));
+    )
+      .then(() => {
+        return prisma.project.update({
+          where: { id: projectId },
+          data: { lastNotificationSent: now },
+        });
+      })
+      .catch((err) => console.error("[feedback] Failed to send notification email:", err));
   }
 }
 

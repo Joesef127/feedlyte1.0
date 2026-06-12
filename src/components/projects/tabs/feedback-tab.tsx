@@ -6,8 +6,8 @@ import { FeedbackTable } from "@/components/feedback/feedback-table";
 interface FeedbackTabProps {
   feedback:       Feedback[];
   isLoading:      boolean;
-  onUpdateStatus: (id: string, status: Status) => void;
-  onDelete:       (id: string) => void;
+  onUpdateStatus: (id: string, status: Status) => Promise<void>;
+  onDelete:       (id: string) => Promise<void>;
 }
 
 export function FeedbackTab({

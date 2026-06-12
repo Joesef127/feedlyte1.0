@@ -106,8 +106,8 @@ export function ProjectDetailPage({
         <FeedbackTab
           feedback={pFeedback}
           isLoading={feedbackLoading}
-          onUpdateStatus={(id, status) => updateStatus.mutate({ id, status })}
-          onDelete={(id) => deleteFb.mutate(id)}
+          onUpdateStatus={(id, status) => updateStatus.mutateAsync({ id, status })}
+          onDelete={(id) => deleteFb.mutateAsync(id)}
         />
       )}
       {tab === "analytics" && (
