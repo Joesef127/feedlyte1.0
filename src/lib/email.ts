@@ -26,9 +26,12 @@ export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string,
 ): Promise<SendEmailResult> {
+  if (!to) {
+    return { success: false, error: "Recipient email is required" };
+  }
   const { data, error } = await resend.emails.send({
     from: FROM,
-    to: "adegboladayor@gmail.com",
+    to,
     subject: "Reset your Feedlyte password",
     html: passwordResetTemplate(resetUrl),
   });

@@ -30,7 +30,7 @@ export async function fireWebhooks(payload: FeedbackPayload): Promise<void> {
     feedback: payload,
   });
 
-  await Promise.allSettled(
+  const deliveryResults = await Promise.allSettled(
     webhooks.map(async (webhook: { id: string; url: string; secret: string | null }) => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -60,16 +60,25 @@ export async function fireWebhooks(payload: FeedbackPayload): Promise<void> {
         error = e instanceof Error ? e.message : "Unknown error";
       }
 
-      // Fire-and-forget delivery log — don't await or let it block
-      prisma.webhookDelivery.create({
-        data: {
-          webhookId: webhook.id,
-          success,
-          statusCode,
-          error,
-          payload: body,
-        },
-      }).catch(() => {});
+      return { webhookId: webhook.id, success, statusCode, error, payload: body };
     })
+  );
+
+  // Persist delivery logs after all deliveries complete
+  // Await to ensure writes complete in serverless environments
+  await Promise.allSettled(
+    deliveryResults
+      .filter((r): r is PromiseFulfilledResult<{ webhookId: string; success: boolean; statusCode: number | null; error: string | null; payload: string }> => r.status === "fulfilled")
+      .map((r) =>
+        prisma.webhookDelivery.create({
+          data: {
+            webhookId: r.value.webhookId,
+            success: r.value.success,
+            statusCode: r.value.statusCode,
+            error: r.value.error,
+            payload: r.value.payload,
+          },
+        })
+      )
   );
 }

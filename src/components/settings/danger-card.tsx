@@ -12,7 +12,7 @@ export interface DangerCardProps {
   input: string;
   setInput: (v: string) => void;
   confirmed: boolean;
-  deleteUser: () => Promise<void>;
+  deleteUser: () => Promise<boolean>;
   dangerState: "idle" | "deleting" | "error";
   dangerError: string;
   deleteAccountIsPending: boolean;
@@ -56,8 +56,11 @@ export function DangerCard(props: DangerCardProps) {
           <Button
             variant="destructive"
             onClick={async () => {
-              await props.deleteUser();
-              toast.success("Account deleted");
+              const ok = await props.deleteUser();
+              if (ok) {
+                toast.success("Account deleted");
+                props.setModal(false);
+              }
             }}
             disabled={
               !props.confirmed ||

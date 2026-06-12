@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
 import type { Feedback } from "@/types";
 
 // ── CSV ────────────────────────────────────────────────────────────────────────
@@ -125,42 +124,31 @@ const STATUS_LABELS: Record<string, string> = {
   resolved: "Resolved",
 };
 
-function parseUserAgent(ua: string): { browser: string; os: string } {
-  if (!ua) return { browser: "Unknown", os: "Unknown" };
-
-  const browser = ua.includes("Edg/")
-    ? "Edge"
-    : ua.includes("Chrome/")
-      ? "Chrome"
-      : ua.includes("Firefox/")
-        ? "Firefox"
-        : ua.includes("Safari/")
-          ? "Safari"
-          : ua.includes("OPR/")
-            ? "Opera"
-            : "Unknown";
-
-  const os = ua.includes("Windows NT")
-    ? "Windows"
-    : ua.includes("Mac OS X")
-      ? "macOS"
-      : ua.includes("Android")
-        ? "Android"
-        : ua.includes("iPhone")
-          ? "iOS"
-          : ua.includes("iPad")
-            ? "iPadOS"
-            : ua.includes("Linux")
-              ? "Linux"
-              : "Unknown";
-
-  return { browser, os };
+function detectBrowser(ua: string): string {
+  if (ua.includes("Edg/")) return "Edge";
+  if (ua.includes("Chrome/")) return "Chrome";
+  if (ua.includes("Firefox/")) return "Firefox";
+  if (ua.includes("Safari/")) return "Safari";
+  if (ua.includes("OPR/")) return "Opera";
+  return "Unknown";
 }
 
-function getUniqueProjects(
-  feedback: Feedback[],
-  projectMap: Record<string, { name: string; color: string }>,
-): string[] {
+function detectOS(ua: string): string {
+  if (ua.includes("Windows NT")) return "Windows";
+  if (ua.includes("Mac OS X")) return "macOS";
+  if (ua.includes("Android")) return "Android";
+  if (ua.includes("iPhone")) return "iOS";
+  if (ua.includes("iPad")) return "iPadOS";
+  if (ua.includes("Linux")) return "Linux";
+  return "Unknown";
+}
+
+function parseUserAgent(ua: string): { browser: string; os: string } {
+  if (!ua) return { browser: "Unknown", os: "Unknown" };
+  return { browser: detectBrowser(ua), os: detectOS(ua) };
+}
+
+function getUniqueProjects(feedback: Feedback[]): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const f of feedback) {
@@ -181,12 +169,11 @@ function drawRoundedRect(
   h: number,
   r: number,
   fillColor?: [number, number, number],
+  stroke: boolean = true,
 ) {
-  if (fillColor) {
-    doc.setFillColor(...fillColor);
-    doc.roundedRect(x, y, w, h, r, r, "F");
-  }
-  doc.roundedRect(x, y, w, h, r, r, "S");
+  const paintOp = fillColor && !stroke ? "F" : fillColor ? "FD" : stroke ? "S" : "S";
+  if (fillColor) doc.setFillColor(...fillColor);
+  doc.roundedRect(x, y, w, h, r, r, paintOp);
 }
 
 export function exportFeedbackPDF(
@@ -201,7 +188,7 @@ export function exportFeedbackPDF(
   const contentWidth = pageWidth - margin * 2;
   let y = margin;
 
-  const uniqueProjects = getUniqueProjects(feedback, projectMap);
+  const uniqueProjects = getUniqueProjects(feedback);
   const isMultiProject = uniqueProjects.length > 1;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -278,7 +265,12 @@ export function exportFeedbackPDF(
     // Calculate card height dynamically
     const messageLines = doc.splitTextToSize(fb.message, contentWidth - 10);
     const messageHeight = messageLines.length * 5;
-    const cardHeight = 30 + messageHeight; // base + message
+    const metaItems = 5; // Email, Page URL, Browser, Submitted, ID
+    const lineHeight = 5;
+    const dividerGap = 4;
+    const metaHeight = metaItems * lineHeight;
+    const bottomPadding = 5;
+    const cardHeight = 30 + messageHeight + dividerGap + metaHeight + bottomPadding; // base + message + divider + metadata + padding
 
     addPageIfNeeded(cardHeight + 5);
 
@@ -324,7 +316,6 @@ export function exportFeedbackPDF(
     // Metadata (two columns)
     const { browser, os } = parseUserAgent(fb.userAgent);
     const metaStartY = dividerY + 4;
-    const lineHeight = 5;
     const colGap = 90;
 
     const meta = [

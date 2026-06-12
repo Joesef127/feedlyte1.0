@@ -30,10 +30,16 @@ export default function MarketingLayout({
 }) {
   // No <html> or <body> — root layout owns those.
   // We just inject the font variable and marketing styles.
+  const projectId = process.env.NEXT_PUBLIC_FEEDLYTE_PROJECT;
+
   return (
     <html lang="en">
-
-    <script src="https://feedlyte.vercel.app/widget.js" data-project="cmqbavl3k000004l7tupvoaan"></script>
+    {projectId && (
+      <script
+        src="https://feedlyte.vercel.app/widget.js"
+        data-project={projectId}
+      ></script>
+    )}
     <body className={`${instrumentSerif.variable} grain`}>
       {children}
     </body>

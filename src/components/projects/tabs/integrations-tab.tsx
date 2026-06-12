@@ -195,6 +195,10 @@ function WebhookRow({
                 .then(() => {
                   toast.success("Webhook deleted");
                   setDeleteModal(false);
+                })
+                .catch((err) => {
+                  toast.error("Failed to delete webhook");
+                  console.error(err);
                 });
             }}
             disabled={deleteWebhook.isPending}

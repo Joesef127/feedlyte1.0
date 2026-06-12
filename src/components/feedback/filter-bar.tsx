@@ -67,10 +67,8 @@ export function FilterBar({
     filters.search || filters.status || filters.timeRange || filters.projectId;
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [showExport, setShowExport] = useState<boolean>(false);
 
   const handleExport = (format: string) => {
-    setShowExport(false);
     if (format === "csv") onExportCSV?.();
     else if (format === "json") onExportJSON?.();
     else if (format === "pdf") onExportPDF?.();

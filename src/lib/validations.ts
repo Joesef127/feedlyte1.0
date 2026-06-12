@@ -82,7 +82,6 @@ export const updateProjectSchema = z.object({
       }
     }, "Invalid IANA timezone")
     .optional(),
-  lastNotificationSent: z.string().optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;

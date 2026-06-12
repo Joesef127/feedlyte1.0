@@ -197,6 +197,9 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                       onSuccess: () => {
                         toast.success(`Marked as ${s}`);
                       },
+                      onError: (err) => {
+                        toast.error(err instanceof Error ? err.message : "Failed to update status");
+                      },
                     }
                   );
                 }}                disabled={feedback.status === s || updateStatus.isPending}

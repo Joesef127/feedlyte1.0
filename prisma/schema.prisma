@@ -77,6 +77,7 @@ model Project {
   notificationCooldown    String   @default("15min")       // NEW: "none" | "5min" | "15min" | "30min" | "1hour"
   lastNotificationSent    DateTime?                        // NEW: for cooldown tracking
   unsubscribeToken        String?  @unique                 // NEW: for unsubscribe links
+  lastDigestSentAt        DateTime?                        // NEW: for daily digest dedup
   createdAt               DateTime @default(now())
 
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -113,6 +114,7 @@ model Webhook {
   project   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   deliveries WebhookDelivery[]
 
+  @@index([projectId, enabled])
   @@map("webhooks")
 }
 
@@ -127,5 +129,6 @@ model WebhookDelivery {
 
   webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 
+  @@index([createdAt])
   @@map("webhook_deliveries")
 }

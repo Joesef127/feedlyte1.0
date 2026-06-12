@@ -170,76 +170,92 @@ export async function POST(req: Request) {
       },
     });
 
-    // Fetch project with notification preferences
-const projectWithPrefs = await prisma.project.findUnique({
-  where: { id: projectId },
-  select: { 
-    id: true, 
-    name: true, 
-    userId: true,
-    notifyOnSubmission: true,
-    notificationCooldown: true,
-    lastNotificationSent: true,
-    unsubscribeToken: true,
-    user: { select: { email: true } }
-  },
-});
-
-// Send immediate notification if enabled AND cooldown allows
-if (projectWithPrefs?.notifyOnSubmission && projectWithPrefs.user?.email) {
-  const now = new Date();
-  const cooldown = projectWithPrefs.notificationCooldown;
-  const lastSent = projectWithPrefs.lastNotificationSent;
-  
-  let shouldSend = true;
-  
-  if (cooldown !== "none" && lastSent) {
-    const cooldownMs = {
-      "5min": 5 * 60 * 1000,
-      "15min": 15 * 60 * 1000,
-      "30min": 30 * 60 * 1000,
-      "1hour": 60 * 60 * 1000,
-    }[cooldown] || 0;
-    
-    shouldSend = (now.getTime() - lastSent.getTime()) >= cooldownMs;
-  }
-  
-  if (shouldSend) {
-    // Generate unsubscribe token if not exists
-    let unsubscribeToken = projectWithPrefs.unsubscribeToken;
-    if (!unsubscribeToken) {
-      unsubscribeToken = await createUnsubscribeToken(projectId);
-      await prisma.project.update({
-        where: { id: projectId },
-        data: { unsubscribeToken },
-      });
-    }
-    
-    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
-    
-    // Fire async and update lastNotificationSent only on success
-    sendFeedbackNotificationEmail(
-      projectWithPrefs.user.email,
-      projectWithPrefs.name,
-      {
-        message: feedback.message,
-        email: feedback.email,
-        pageUrl: feedback.pageUrl,
-        userAgent: feedback.userAgent,
-        createdAt: feedback.createdAt.toISOString(),
+    // Fetch project with notification preferences (for background notification work)
+    const projectWithPrefs = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { 
+        id: true, 
+        name: true, 
+        userId: true,
+        notifyOnSubmission: true,
+        notificationCooldown: true,
+        lastNotificationSent: true,
+        unsubscribeToken: true,
+        user: { select: { email: true } }
       },
-      dashboardUrl,
-      unsubscribeUrl
-    )
-      .then(() => {
-        return prisma.project.update({
-          where: { id: projectId },
+    });
+
+    // Background notification work - decoupled from feedback response
+    // Runs async without blocking the API response
+    if (projectWithPrefs?.notifyOnSubmission && projectWithPrefs.user?.email) {
+      // Use atomic conditional update to "claim" the send window
+      // Only updates if cooldown condition is met (prevents race conditions)
+      const now = new Date();
+      const cooldown = projectWithPrefs.notificationCooldown;
+      const lastSent = projectWithPrefs.lastNotificationSent;
+      
+      let shouldSend = true;
+      let cooldownMs = 0;
+      
+      if (cooldown !== "none" && lastSent) {
+        cooldownMs = {
+          "5min": 5 * 60 * 1000,
+          "15min": 15 * 60 * 1000,
+          "30min": 30 * 60 * 1000,
+          "1hour": 60 * 60 * 1000,
+        }[cooldown] || 0;
+        shouldSend = (now.getTime() - lastSent.getTime()) >= cooldownMs;
+      }
+
+      if (shouldSend) {
+        // Atomic conditional update: only set lastNotificationSent if cooldown passed
+        // This replaces the read-then-write with a single atomic operation
+        const updateResult = await prisma.project.updateMany({
+          where: {
+            id: projectId,
+            ...(cooldown !== "none" && lastSent
+              ? {
+                  lastNotificationSent: {
+                    lte: new Date(now.getTime() - cooldownMs),
+                  },
+                }
+              : {}),
+          },
           data: { lastNotificationSent: now },
-        }).catch((err) => console.error("[feedback] Failed to update lastNotificationSent:", err));
-      })
-      .catch((err) => console.error("[feedback] Failed to send notification email:", err));  }
-}
+        });
+
+        // updateResult.count > 0 means we "claimed" the send window
+        if (updateResult.count > 0) {
+          // Generate unsubscribe token if not exists
+          let unsubscribeToken = projectWithPrefs.unsubscribeToken;
+          if (!unsubscribeToken) {
+            unsubscribeToken = await createUnsubscribeToken(projectId);
+            await prisma.project.update({
+              where: { id: projectId },
+              data: { unsubscribeToken },
+            });
+          }
+          
+          const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
+          const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
+          
+          // Fire async - errors are caught and logged, don't affect feedback response
+          sendFeedbackNotificationEmail(
+            projectWithPrefs.user.email,
+            projectWithPrefs.name,
+            {
+              message: feedback.message,
+              email: feedback.email,
+              pageUrl: feedback.pageUrl,
+              userAgent: feedback.userAgent,
+              createdAt: feedback.createdAt.toISOString(),
+            },
+            dashboardUrl,
+            unsubscribeUrl
+          ).catch((err) => console.error("[feedback] Failed to send notification email:", err));
+        }
+      }
+    }
 
 
 

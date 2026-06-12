@@ -14,7 +14,7 @@ export interface PasswordCardProps {
   setCurrent: (v: string) => void;
   setNext: (v: string) => void;
   setConfirm: (v: string) => void;
-  changePassword: () => Promise<void>;
+  changePassword: () => Promise<boolean>;
   resetPassword: () => void;
   passwordState: "idle" | "saving" | "saved" | "error";
   passwordError: string;
@@ -34,8 +34,8 @@ export function PasswordCard(props: PasswordCardProps) {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await props.changePassword();
-          toast.success("Password changed");
+          const ok = await props.changePassword();
+          if (ok) toast.success("Password changed");
         }}
         className="flex flex-col gap-3"
       >

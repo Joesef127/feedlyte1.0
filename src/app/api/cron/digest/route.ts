@@ -21,6 +21,21 @@ function is8AMInTimezone(timezone: string): boolean {
   }
 }
 
+function getLocalDateKey(timezone: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(now); // YYYY-MM-DD in project's timezone
+  } catch {
+    return new Date().toISOString().split("T")[0]; // fallback to UTC
+  }
+}
+
 export async function GET(req: Request) {
   // Verify cron secret
   const authHeader = req.headers.get("authorization");
@@ -40,6 +55,7 @@ export async function GET(req: Request) {
         timezone: true,
         unsubscribeToken: true,
         userId: true,
+        lastDigestSentAt: true,
         user: { select: { email: true } },
       },
     });
@@ -52,7 +68,19 @@ export async function GET(req: Request) {
 
     const results = await Promise.allSettled(
       eligibleProjects.map(async (project) => {
-        if (!project.user?.email) return;
+        if (!project.user?.email) {
+          return { skipped: true, reason: "no_user_email" };
+        }
+
+        // Check if already sent for today in project's timezone
+        const todayKey = getLocalDateKey(project.timezone || "UTC");
+        const lastSent = project.lastDigestSentAt;
+        if (lastSent) {
+          const lastSentKey = new Date(lastSent).toISOString().split("T")[0];
+          if (lastSentKey === todayKey) {
+            return { skipped: true, reason: "already_sent_today" };
+          }
+        }
 
         // Get feedback from last 24 hours
         const feedback = await prisma.feedback.findMany({
@@ -63,7 +91,9 @@ export async function GET(req: Request) {
           orderBy: { createdAt: "desc" },
         });
 
-        if (feedback.length === 0) return; // No digest if no new feedback
+        if (feedback.length === 0) {
+          return { skipped: true, reason: "no_new_feedback" };
+        }
 
         // Ensure unsubscribe token exists
         let unsubscribeToken = project.unsubscribeToken;
@@ -91,17 +121,28 @@ export async function GET(req: Request) {
           dashboardUrl,
           unsubscribeUrl
         );
+
+        // Mark as sent for today (atomic update with conditional)
+        await prisma.project.update({
+          where: { id: project.id },
+          data: { lastDigestSentAt: now },
+        });
+
+        return { sent: true };
       })
     );
 
-    const sent = results.filter(r => r.status === "fulfilled").length;
+    const sent = results.filter(r => r.status === "fulfilled" && r.value?.sent).length;
+    const skipped = results.filter(r => r.status === "fulfilled" && r.value?.skipped).length;
     const failed = results.filter(r => r.status === "rejected").length;
 
     return NextResponse.json({ 
-      message: `Digest sent for ${sent} project(s)`,
+      message: `Digest sent for ${sent} project(s), ${skipped} skipped`,
       failed,
       checked: projects.length,
       eligible: eligibleProjects.length,
+      sent,
+      skipped,
     });
   } catch (error) {
     console.error("[cron/digest] Error:", error);

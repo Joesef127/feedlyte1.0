@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
 
+const COMMON_TIMEZONES = Intl.supportedValuesOf("timeZone");
+
 interface SettingsTabProps {
   project: Project;
   onUpdate: (project: Project) => void;
@@ -48,9 +50,6 @@ export function SettingsTab({
     "none" | "5min" | "15min" | "30min" | "1hour"
   >(project.notificationCooldown ?? "15min");
 
-  // Common timezones for dropdown
-  const COMMON_TIMEZONES = Intl.supportedValuesOf('timeZone');
-  
   const handleSave = () => {
     // In handleSave:
     onSave({

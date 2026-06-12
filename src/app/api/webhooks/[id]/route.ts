@@ -5,7 +5,17 @@ import { handleError } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const updateWebhookSchema = z.object({
-  url:     z.string().url("Must be a valid URL").optional(),
+  url: z
+    .string()
+    .url("Must be a valid URL")
+    .refine((v) => {
+      try {
+        return new URL(v).protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "URL must use HTTPS")
+    .optional(),
   label:   z.string().min(1).max(60).optional(),
   secret:  z.string().max(200).optional().nullable(),
   enabled: z.boolean().optional(),

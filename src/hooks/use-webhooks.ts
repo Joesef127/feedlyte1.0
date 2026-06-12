@@ -81,7 +81,7 @@ export function useDeleteWebhook(projectId: string) {
   return useMutation({
     mutationFn: (id: string) =>
       fetch(`/api/webhooks/${id}`, { method: "DELETE" }).then((r) => {
-        if (!r.ok && r.status !== 204) throw new Error("Failed to delete");
+        if (!r.ok) throw new Error("Failed to delete");
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["webhooks", projectId] }),
   });

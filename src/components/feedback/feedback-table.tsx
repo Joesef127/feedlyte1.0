@@ -135,29 +135,51 @@ export function FeedbackTable({
   // Bulk actions
   const bulkUpdateStatus = async (status: Status) => {
     setBulkPending(true);
+    const failedIds: string[] = [];
     try {
       for (const id of selectedIds) {
-        await onUpdateStatus(id, status);
+        try {
+          await onUpdateStatus(id, status);
+        } catch {
+          failedIds.push(id);
+        }
+      }
+      if (failedIds.length > 0) {
+        toast.error(
+          `Failed to update ${failedIds.length} of ${selectedIds.size} item${failedIds.length !== 1 ? "s" : ""}`,
+        );
+      } else {
+        toast.success(
+          `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status}"`,
+        );
       }
     } finally {
       setBulkPending(false);
       clearSelection();
-      toast.success(
-        `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status}"`,
-      );
     }
   };
 
   const bulkDelete = async () => {
     setBulkPending(true);
+    const failedIds: string[] = [];
     try {
       for (const id of selectedIds) {
-        await onDelete(id);
+        try {
+          await onDelete(id);
+        } catch {
+          failedIds.push(id);
+        }
+      }
+      if (failedIds.length > 0) {
+        toast.error(
+          `Failed to delete ${failedIds.length} of ${selectedIds.size} item${failedIds.length !== 1 ? "s" : ""}`,
+        );
+      } else {
+        toast.success(`Deleted ${selectedIds.size} feedback item(s)`);
       }
     } finally {
       setBulkPending(false);
       clearSelection();
-      toast.success(`Deleted ${selectedIds.size} feedback item(s)`);
     }
   };
 
@@ -192,13 +214,19 @@ export function FeedbackTable({
         clearSelection();
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+        const target = e.target as HTMLElement;
+        const isEditable =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+        if (isEditable) return;
         e.preventDefault();
         selectAllPage();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIds.size, paginated.length, selectAllPage]);
+  }, [selectAllPage]);
 
   return (
     <div>
@@ -242,31 +270,30 @@ export function FeedbackTable({
         )
       ) : (
         <>
-          {/* Select all checkbox in header (list layout only) */}
-          {/* {layout === "list" && ( */}
-          <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
-            <button
-              onClick={selectAllPage}
-              className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors"
-              aria-label={
-                selectedIds.size === paginated.length
-                  ? "Deselect all"
-                  : "Select all on page"
-              }
-            >
-              {selectedIds.size === paginated.length ? (
-                <CheckSquare size={14} className="text-primary" />
-              ) : (
-                <Square size={14} className="text-muted-foreground" />
-              )}
-            </button>
-            <span className="text-xs text-muted-foreground">
-              {selectedIds.size === paginated.length
-                ? "All selected — click to deselect"
-                : `Select all ${paginated.length} items on this page`}
-            </span>
-          </div>
-          {/* )} */}
+          {layout === "list" && (
+            <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
+              <button
+                onClick={selectAllPage}
+                className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors"
+                aria-label={
+                  selectedIds.size === paginated.length
+                    ? "Deselect all"
+                    : "Select all on page"
+                }
+              >
+                {selectedIds.size === paginated.length ? (
+                  <CheckSquare size={14} className="text-primary" />
+                ) : (
+                  <Square size={14} className="text-muted-foreground" />
+                )}
+              </button>
+              <span className="text-xs text-muted-foreground">
+                {selectedIds.size === paginated.length
+                  ? "All selected — click to deselect"
+                  : `Select all ${paginated.length} items on this page`}
+              </span>
+            </div>
+          )}
 
           {layout === "list" && (
             <div className="flex flex-col gap-2 mb-4">

@@ -10,7 +10,7 @@ export interface AccountCardProps {
   email: string;
   setName: (v: string) => void;
   setEmail: (v: string) => void;
-  saveAccount: () => Promise<void>;
+  saveAccount: () => Promise<boolean>;
   resetAccount: () => void;
   accountState: "idle" | "saving" | "saved" | "error";
   accountError: string;
@@ -51,8 +51,8 @@ export function AccountCard(props: AccountCardProps) {
 
           <Button
             onClick={async () => {
-              await props.saveAccount();
-              toast.success("Profile updated");
+              const ok = await props.saveAccount();
+              if (ok) toast.success("Profile updated");
             }}
             disabled={
               !props.isAccountDirty ||
