@@ -5,6 +5,7 @@ import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { checkWidgetRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { handleError } from "@/lib/api-helpers";
 import { fireWebhooks } from "@/lib/webhooks";
+import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
 
 const FALLBACK_ORIGINS = [
   "https://feedlyte.vercel.app",
@@ -103,9 +104,10 @@ export async function POST(req: Request) {
     );
 
     if (!queryParsed.success) {
+      const corsHeaders = getCorsHeaders(req, null);
       return NextResponse.json(
         { error: queryParsed.error.issues[0].message },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -117,9 +119,10 @@ export async function POST(req: Request) {
     });
 
     if (!project) {
+      const corsHeaders = getCorsHeaders(req, null);
       return NextResponse.json(
         { error: "Project not found." },
-        { status: 404 },
+        { status: 404, headers: corsHeaders },
       );
     }
 
@@ -166,6 +169,79 @@ export async function POST(req: Request) {
         status: "unreviewed",
       },
     });
+
+    // Fetch project with notification preferences
+const projectWithPrefs = await prisma.project.findUnique({
+  where: { id: projectId },
+  select: { 
+    id: true, 
+    name: true, 
+    userId: true,
+    notifyOnSubmission: true,
+    notificationCooldown: true,
+    lastNotificationSent: true,
+    unsubscribeToken: true,
+    user: { select: { email: true } }
+  },
+});
+
+// Send immediate notification if enabled AND cooldown allows
+if (projectWithPrefs?.notifyOnSubmission && projectWithPrefs.user?.email) {
+  const now = new Date();
+  const cooldown = projectWithPrefs.notificationCooldown;
+  const lastSent = projectWithPrefs.lastNotificationSent;
+  
+  let shouldSend = true;
+  
+  if (cooldown !== "none" && lastSent) {
+    const cooldownMs = {
+      "5min": 5 * 60 * 1000,
+      "15min": 15 * 60 * 1000,
+      "30min": 30 * 60 * 1000,
+      "1hour": 60 * 60 * 1000,
+    }[cooldown] || 0;
+    
+    shouldSend = (now.getTime() - lastSent.getTime()) >= cooldownMs;
+  }
+  
+  if (shouldSend) {
+    // Generate unsubscribe token if not exists
+    let unsubscribeToken = projectWithPrefs.unsubscribeToken;
+    if (!unsubscribeToken) {
+      unsubscribeToken = await createUnsubscribeToken(projectId);
+      await prisma.project.update({
+        where: { id: projectId },
+        data: { unsubscribeToken },
+      });
+    }
+    
+    const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
+    
+    // Update lastNotificationSent
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { lastNotificationSent: now },
+    });
+    
+    // Fire async
+    sendFeedbackNotificationEmail(
+      projectWithPrefs.user.email,
+      projectWithPrefs.name,
+      {
+        message: feedback.message,
+        email: feedback.email,
+        pageUrl: feedback.pageUrl,
+        userAgent: feedback.userAgent,
+        createdAt: feedback.createdAt.toISOString(),
+      },
+      dashboardUrl,
+      unsubscribeUrl
+    ).catch((err) => console.error("[feedback] Failed to send notification email:", err));
+  }
+}
+
+
 
     // Fire webhooks async — does not block the response
     fireWebhooks({

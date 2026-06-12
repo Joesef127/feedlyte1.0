@@ -4,15 +4,19 @@ export type ProjectDetailTab = "feedback" | "analytics" | "integrations" | "embe
 export type WidgetPosition = "bottom-right" | "bottom-left";
 
 export interface Project {
-  id:            string;
-  name:          string;
-  createdAt:     string;
-  feedbackCount: number;
-  newCount:      number;
-  color:         string;
-  position:      WidgetPosition;
-  label:         string;
-  allowedOrigin?: string | null;
+  id:                      string;
+  name:                    string;
+  createdAt:               string;
+  feedbackCount:           number;
+  newCount:                number;
+  color:                   string;
+  position:                WidgetPosition;
+  label:                   string;
+  allowedOrigin?:          string | null;
+  notifyOnSubmission?:     boolean;
+  digestFrequency?:        "none" | "daily";
+  timezone?:               string;          
+  notificationCooldown?:   "none" | "5min" | "15min" | "30min" | "1hour";
 }
 
 export interface Feedback {

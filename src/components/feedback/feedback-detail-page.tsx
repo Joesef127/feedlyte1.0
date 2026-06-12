@@ -93,9 +93,15 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
   const deleteFb = useDeleteFeedback();
 
   const handleDelete = async () => {
-    await deleteFb.mutateAsync(id);
-    toast.success("Feedback deleted");
-    router.push("/dashboard/feedback");
+    try {  
+      await deleteFb.mutateAsync(id);  
+      toast.success("Feedback deleted");  
+      router.push("/dashboard/feedback");  
+    } catch (err) {  
+      toast.error(  
+        err instanceof Error ? err.message : "Failed to delete feedback",  
+      );  
+    }  
   };
 
   if (isLoading) {

@@ -85,6 +85,28 @@ export function exportFeedbackJSON(
 
 // Brand colors
 const AMBER: [number, number, number] = [245, 158, 11];
+
+function hexToRgb(hex: string): [number, number, number] {
+  // Normalize and validate
+  let clean = hex.trim().replace(/^#/, "");
+  
+  // Expand 3-digit to 6-digit (#fff -> #ffffff)
+  if (clean.length === 3) {
+    clean = clean.split('').map(c => c + c).join('');
+  }
+  
+  // Validate 6-digit hex
+  if (!/^[0-9A-Fa-f]{6}$/.test(clean)) {
+    // Return amber fallback color
+    return [245, 158, 11];
+  }
+  
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return [r, g, b];
+}
+
 const DARK_BG: [number, number, number] = [15, 15, 15];
 const CARD_BG: [number, number, number] = [25, 25, 25];
 const BORDER: [number, number, number] = [60, 60, 60];
@@ -270,7 +292,7 @@ export function exportFeedbackPDF(
     drawRoundedRect(doc, cardX, cardY, cardW, cardHeight, 3, CARD_BG);
 
     // Project color indicator (top-left)
-    doc.setFillColor(projectColor);
+    doc.setFillColor(...hexToRgb(projectColor));
     doc.circle(cardX + 4, cardY + 4, 1.5, "F");
 
     // Status badge (top-right)
@@ -346,7 +368,7 @@ export function exportFeedbackPDF(
 
       // Project section header
       addPageIfNeeded(12);
-      doc.setFillColor(pColor);
+      doc.setFillColor(...hexToRgb(pColor));
       doc.roundedRect(margin, y, contentWidth, 10, 2, 2, "F");
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(11);

@@ -45,12 +45,20 @@ export const createProjectSchema = z.object({
   allowedOrigin: originSchema,
 });
 
+const cooldownSchema = z.enum(["none", "5min", "15min", "30min", "1hour"]);
+
 export const updateProjectSchema = z.object({
-  name:          z.string().min(1).max(80).optional(),
-  color:         z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional(),
-  position:      z.enum(["bottom-right", "bottom-left"]).optional(),
-  label:         z.string().max(30).optional(),
-  allowedOrigin: originSchema,
+  name:                 z.string().min(1).max(80).optional(),
+  color:                z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").optional(),
+  position:             z.enum(["bottom-right", "bottom-left"]).optional(),
+  label:                z.string().max(30).optional(),
+  allowedOrigin:        originSchema,
+  notifyOnSubmission:   z.boolean().optional(),
+  digestFrequency:      z.enum(["none", "daily"]).optional(),
+  timezone:             z.string().optional(),           
+  notificationCooldown: cooldownSchema.optional(),
+  unsubscribeToken:     z.string().optional(),
+  lastNotificationSentAt: z.string().optional(),       
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;

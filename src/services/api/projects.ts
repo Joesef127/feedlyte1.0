@@ -5,8 +5,20 @@
 
 import type { Project } from "@/types";
 
-export type ProjectPayload = Partial<Pick<Project, "name" | "color" | "position" | "label" | "allowedOrigin">>;
-
+export type ProjectPayload = Partial<
+  Pick<
+    Project,
+    | "name"
+    | "color"
+    | "position"
+    | "label"
+    | "allowedOrigin"
+    | "notifyOnSubmission"
+    | "digestFrequency"
+    | "timezone"
+    | "notificationCooldown"
+  >
+>;
 // ─── Fetch ───────────────────────────────────────────────────────────────────
 
 /**
@@ -43,7 +55,7 @@ export async function createProject(data: ProjectPayload): Promise<Project> {
  */
 export async function updateProject(
   id: string,
-  data: ProjectPayload
+  data: ProjectPayload,
 ): Promise<Partial<Project>> {
   const res = await fetch(`/api/projects/${id}`, {
     method: "PATCH",

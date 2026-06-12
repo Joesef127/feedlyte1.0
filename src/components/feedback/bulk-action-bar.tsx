@@ -12,7 +12,7 @@ interface BulkActionBarProps {
   onBulkUnreviewed: () => void;
   onBulkReviewed: () => void;
   onBulkResolved: () => void;
-  onBulkDelete: () => void;
+  onBulkDelete: () => Promise<void>;
   onClear: () => void;
   isPending: boolean;
 }
@@ -46,11 +46,14 @@ export function BulkActionBar({
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = () => {
-    setShowDeleteModal(false);
-    onBulkDelete();
+  const handleConfirmDelete = async () => {
+    try {
+      await onBulkDelete();
+    } finally {
+      setShowDeleteModal(false);
+    }
   };
-
+  
   return (
     <div
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-slide-up"
@@ -127,7 +130,8 @@ export function BulkActionBar({
         description={deleteText}
       >
         <p className="text-sm text-muted-foreground mb-6">
-          This action cannot be undone. The selected feedback will be permanently removed.
+          This action cannot be undone. The selected feedback will be
+          permanently removed.
         </p>
         <div className="flex gap-2 justify-end">
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>

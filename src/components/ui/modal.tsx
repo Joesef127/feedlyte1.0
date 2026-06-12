@@ -26,9 +26,6 @@ function Modal({
     <DialogPrimitive.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70" />
-        <DialogPrimitive.DialogTitle className="sr-only">
-          {title}
-        </DialogPrimitive.DialogTitle>
         <DialogPrimitive.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
@@ -41,9 +38,9 @@ function Modal({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-border">
             <div className="flex flex-col gap-1">
-              <span className="text-base font-bold text-foreground">
+              <DialogPrimitive.DialogTitle className="text-base font-bold text-foreground">
                 {title}
-              </span>
+              </DialogPrimitive.DialogTitle>
               {description && (
                 <span className="text-sm font-medium text-foreground">
                   {description}

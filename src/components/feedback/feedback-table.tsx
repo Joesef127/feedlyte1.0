@@ -67,18 +67,33 @@ export function FeedbackTable({
   };
 
   const handleExportCSV = () => {
-    exportFeedbackCSV(filtered, projectMap);
-    toast.success(`Exported ${filtered.length} feedback item(s) to CSV`);
+    try {
+      exportFeedbackCSV(filtered, projectMap);
+      toast.success(`Exported ${filtered.length} feedback item(s) to CSV`);
+    } catch (error) {
+      toast.error("Failed to export CSV");
+      console.error("CSV export error:", error);
+    }
   };
 
   const handleExportJSON = () => {
-    exportFeedbackJSON(filtered, projectMap);
-    toast.success(`Exported ${filtered.length} feedback item(s) to JSON`);
+    try {
+      exportFeedbackJSON(filtered, projectMap);
+      toast.success(`Exported ${filtered.length} feedback item(s) to JSON`);
+    } catch (error) {
+      toast.error("Failed to export JSON");
+      console.error("JSON export error:", error);
+    }
   };
 
   const handleExportPDF = () => {
-    exportFeedbackPDF(filtered, projectMap);
-    toast.success(`Exported ${filtered.length} feedback item(s) to PDF`);
+    try {
+      exportFeedbackPDF(filtered, projectMap);
+      toast.success(`Exported ${filtered.length} feedback item(s) to PDF`);
+    } catch (error) {
+      toast.error("Failed to export PDF");
+      console.error("PDF export error:", error);
+    }
   };
 
   const filtered = applyFeedbackFilters(feedback, filters);

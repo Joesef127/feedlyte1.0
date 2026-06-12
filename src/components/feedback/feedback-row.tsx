@@ -62,12 +62,12 @@ export function FeedbackRow({
   }, []);
 
   useEffect(() => {
-  const handleEscape = () => {
-    clearSelection?.() // or setShowModal(false), etc.
-  };
-  window.addEventListener("feedlyte:escape", handleEscape);
-  return () => window.removeEventListener("feedlyte:escape", handleEscape);
-}, [clearSelection]);
+    const handleEscape = () => {
+      clearSelection?.(); // or setShowModal(false), etc.
+    };
+    window.addEventListener("feedlyte:escape", handleEscape);
+    return () => window.removeEventListener("feedlyte:escape", handleEscape);
+  }, [clearSelection]);
 
   const handleOpen = () => {
     if (fb.status === "unreviewed") onUpdateStatus(fb.id, "reviewed");
@@ -94,6 +94,7 @@ export function FeedbackRow({
         className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background shrink-0 mt-0.5 hover:bg-accent transition-colors"
         aria-label={selected ? "Deselect" : "Select"}
         aria-checked={selected}
+        role="checkbox"
       >
         {selected ? (
           <CheckSquare size={14} className="text-primary" />
@@ -164,12 +165,18 @@ export function FeedbackRow({
                 <Eye size={13} />
                 View details
               </button>
+              
               {fb.status !== "reviewed" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false);
-                    onUpdateStatus(fb.id, "reviewed");
-    toast.success("Marked as reviewed");
+                    try {
+                      await onUpdateStatus(fb.id, "reviewed");
+                      toast.success("Marked as reviewed");
+                    } catch (error) {
+                      toast.error("Failed to update status");
+                      console.error(error);
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
                 >
@@ -177,12 +184,18 @@ export function FeedbackRow({
                   Mark as reviewed
                 </button>
               )}
+
               {fb.status !== "resolved" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false);
-                    onUpdateStatus(fb.id, "resolved");
-    toast.success("Marked as resolved");
+                    try {
+                      await onUpdateStatus(fb.id, "resolved");
+                      toast.success("Marked as resolved");
+                    } catch (error) {
+                      toast.error("Failed to update status");
+                      console.error(error);
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
                 >
@@ -190,12 +203,18 @@ export function FeedbackRow({
                   Mark as resolved
                 </button>
               )}
+
               {fb.status !== "unreviewed" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false);
-                    onUpdateStatus(fb.id, "unreviewed");
-    toast.success("Marked as unreviewed");
+                    try {
+                      await onUpdateStatus(fb.id, "unreviewed");
+                      toast.success("Marked as unreviewed");
+                    } catch (error) {
+                      toast.error("Failed to update status");
+                      console.error(error);
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
                 >
@@ -203,13 +222,18 @@ export function FeedbackRow({
                   Mark as unreviewed
                 </button>
               )}
+
               <div className="h-px bg-border mx-2 my-1" />
               <button
-                onClick={() => {
+                onClick={async () => {
                   setMenuOpen(false);
-                  onDelete(fb.id);
-                  
-    toast.success("Feedback Deleted");
+                  try {
+                    await onDelete(fb.id);
+                    toast.success("Feedback Deleted");
+                  } catch (error) {
+                    toast.error("Failed to delete feedback");
+                    console.error(error);
+                  }
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors cursor-pointer text-left"
               >
