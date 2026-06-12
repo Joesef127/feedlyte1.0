@@ -144,6 +144,14 @@ export async function sendDailyDigestEmail(
   return { success: true };
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function baseTemplate(content: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -235,21 +243,25 @@ function feedbackNotificationTemplate(
   dashboardUrl: string,
   unsubscribeUrl: string
 ): string {
+  const message = escapeHtml(feedback.message);
+  const email = feedback.email ? escapeHtml(feedback.email) : "";
+  const pageUrl = feedback.pageUrl ? escapeHtml(feedback.pageUrl) : "";
+  
   return baseTemplate(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#f0ede8;letter-spacing:-0.02em;">
       New Feedback Received
     </h1>
     <p style="margin:0 0 24px;font-size:15px;color:rgba(240,237,232,0.55);line-height:1.6;">
-      You received new feedback on <strong>${projectName}</strong>.
+      You received new feedback on <strong>${escapeHtml(projectName)}</strong>.
     </p>
     
     <div style="background:#0f0f0f;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;margin:24px 0;">
-      <p style="margin:0 0 16px;font-size:15px;color:#f0ede8;line-height:1.6;white-space:pre-wrap;">${feedback.message}</p>
+      <p style="margin:0 0 16px;font-size:15px;color:#f0ede8;line-height:1.6;white-space:pre-wrap;">${message}</p>
       
       <div style="font-size:13px;color:rgba(240,237,232,0.5);line-height:2;">
-        ${feedback.email ? `<div>📧 ${feedback.email}</div>` : ""}
-        ${feedback.pageUrl ? `<div>🌐 ${feedback.pageUrl}</div>` : ""}
-        <div>🖥 ${browser} / ${os}</div>
+        ${email ? `<div>📧 ${email}</div>` : ""}
+        ${pageUrl ? `<div>🌐 ${pageUrl}</div>` : ""}
+        <div>🖥 ${escapeHtml(browser)} / ${escapeHtml(os)}</div>
         <div>🕐 ${new Date(feedback.createdAt).toLocaleString()}</div>
       </div>
     </div>
@@ -276,24 +288,35 @@ function dailyDigestTemplate(
     resolved: "#22c55e",
   };
   
-  const itemsHtml = items.map(item => `
+  const itemsHtml = items.map(item => {
+    const message = escapeHtml(item.message);
+    const email = item.email ? escapeHtml(item.email) : "";
+    let pageUrlPath = "";
+    if (item.pageUrl) {
+      try {
+        pageUrlPath = escapeHtml(new URL(item.pageUrl).pathname);
+      } catch {
+        pageUrlPath = escapeHtml(item.pageUrl);
+      }
+    }
+    return `
     <div style="background:#0f0f0f;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin:12px 0;">
-      <p style="margin:0 0 8px;font-size:14px;color:#f0ede8;line-height:1.5;">${item.message}</p>
+      <p style="margin:0 0 8px;font-size:14px;color:#f0ede8;line-height:1.5;">${message}</p>
       <div style="font-size:12px;color:rgba(240,237,232,0.5);display:flex;gap:16px;flex-wrap:wrap;">
-        ${item.email ? `<span>📧 ${item.email}</span>` : ""}
-        ${item.pageUrl ? `<span>🌐 ${new URL(item.pageUrl).pathname}</span>` : ""}
-        <span style="background:${statusColors[item.status] || "#666"}20;color:${statusColors[item.status] || "#666"};padding:2px 8px;border-radius:4px;font-weight:600;text-transform:capitalize;">${item.status}</span>
+        ${email ? `<span>📧 ${email}</span>` : ""}
+        ${pageUrlPath ? `<span>🌐 ${pageUrlPath}</span>` : ""}
+        <span style="background:${statusColors[item.status] || "#666"}20;color:${statusColors[item.status] || "#666"};padding:2px 8px;border-radius:4px;font-weight:600;text-transform:capitalize;">${escapeHtml(item.status)}</span>
         <span>🕐 ${new Date(item.createdAt).toLocaleString()}</span>
       </div>
     </div>
-  `).join("");
+  `}).join("");
 
   return baseTemplate(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#f0ede8;letter-spacing:-0.02em;">
       Daily Feedback Digest
     </h1>
     <p style="margin:0 0 24px;font-size:15px;color:rgba(240,237,232,0.55);line-height:1.6;">
-      <strong>${items.length}</strong> new feedback item${items.length !== 1 ? "s" : ""} received on <strong>${projectName}</strong> yesterday.
+      <strong>${items.length}</strong> new feedback item${items.length !== 1 ? "s" : ""} received on <strong>${escapeHtml(projectName)}</strong> yesterday.
     </p>
     
     ${itemsHtml}
