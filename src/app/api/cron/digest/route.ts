@@ -21,18 +21,17 @@ function is8AMInTimezone(timezone: string): boolean {
   }
 }
 
-function getLocalDateKey(timezone: string): string {
+function getLocalDateKey(timezone: string, date: Date = new Date()): string {
   try {
-    const now = new Date();
     const formatter = new Intl.DateTimeFormat("en-CA", {
       timeZone: timezone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     });
-    return formatter.format(now); // YYYY-MM-DD in project's timezone
+    return formatter.format(date); // YYYY-MM-DD in project's timezone
   } catch {
-    return new Date().toISOString().split("T")[0]; // fallback to UTC
+    return date.toISOString().split("T")[0]; // fallback to UTC
   }
 }
 
@@ -73,10 +72,11 @@ export async function GET(req: Request) {
         }
 
         // Check if already sent for today in project's timezone
-        const todayKey = getLocalDateKey(project.timezone || "UTC");
+        const tz = project.timezone || "UTC";
+        const todayKey = getLocalDateKey(tz);
         const lastSent = project.lastDigestSentAt;
         if (lastSent) {
-          const lastSentKey = new Date(lastSent).toISOString().split("T")[0];
+          const lastSentKey = getLocalDateKey(tz, new Date(lastSent));
           if (lastSentKey === todayKey) {
             return { skipped: true, reason: "already_sent_today" };
           }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { validateUnsubscribeToken } from "@/lib/email";
+import { escapeHtml } from "@/lib/email";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
   return new NextResponse(`
     <html><body style="font-family:system-ui;padding:40px;text-align:center;background:#080808;color:#f0ede8;">
       <h1>Unsubscribe from daily digests</h1>
-      <p>Are you sure you want to unsubscribe from daily digest emails for <strong>${project?.name || "this project"}</strong>?</p>
+      <p>Are you sure you want to unsubscribe from daily digest emails for <strong>${escapeHtml(project?.name || "this project")}</strong>?</p>
       <form method="POST" action="/api/unsubscribe" style="margin-top:24px;">
         <input type="hidden" name="token" value="${token}" />
         <button type="submit" style="background:#f59e0b;color:#0a0a0a;padding:12px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
