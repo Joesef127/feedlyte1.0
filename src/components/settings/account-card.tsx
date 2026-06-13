@@ -3,13 +3,14 @@
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export interface AccountCardProps {
   name: string;
   email: string;
   setName: (v: string) => void;
   setEmail: (v: string) => void;
-  saveAccount: () => Promise<void>;
+  saveAccount: () => Promise<boolean>;
   resetAccount: () => void;
   accountState: "idle" | "saving" | "saved" | "error";
   accountError: string;
@@ -23,11 +24,7 @@ export function AccountCard(props: AccountCardProps) {
       <h3 className="text-sm font-bold">Account</h3>
 
       <div className="flex flex-col gap-3">
-        <FormField
-          label="Name"
-          value={props.name}
-          onChange={props.setName}
-        />
+        <FormField label="Name" value={props.name} onChange={props.setName} />
 
         <FormField
           label="Email"
@@ -36,9 +33,7 @@ export function AccountCard(props: AccountCardProps) {
         />
 
         {props.accountError && (
-          <p className="text-sm text-destructive">
-            {props.accountError}
-          </p>
+          <p className="text-sm text-destructive">{props.accountError}</p>
         )}
 
         {props.accountState === "saved" && (
@@ -55,18 +50,18 @@ export function AccountCard(props: AccountCardProps) {
           </Button>
 
           <Button
-            onClick={props.saveAccount}
+            onClick={async () => {
+              const ok = await props.saveAccount();
+              if (ok) toast.success("Profile updated");
+            }}
             disabled={
               !props.isAccountDirty ||
               props.accountState === "saving" ||
               props.updateProfileIsPending
             }
           >
-            {props.accountState === "saving"
-              ? "Saving..."
-              : "Save"}
-          </Button>
-        </div>
+            {props.accountState === "saving" ? "Saving..." : "Save"}
+          </Button>        </div>
       </div>
     </Card>
   );

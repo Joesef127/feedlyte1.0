@@ -77,9 +77,8 @@ export default function WidgetPage({
   useEffect(() => {
     const id = projectId || resolvedParams?.project;
     if (!id) return;
-    const base = typeof window !== "undefined" ? window.location.origin : "";
-    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)
-      .then((r) => r.ok ? r.json() : null)
+    const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
+    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)      .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
         if (data.color) setWidgetColor(data.color);
@@ -116,9 +115,8 @@ export default function WidgetPage({
     try {
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
-      const apiBase = typeof window !== "undefined" ? window.location.origin : "";
-      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {
-        method: "POST",
+      const apiBase = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
+      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: message.trim(),

@@ -64,17 +64,25 @@ model VerificationToken {
 }
 
 model Project {
-  id            String   @id @default(cuid())
-  name          String
-  userId        String
-  color         String   @default("#F59E0B")
-  position      String   @default("bottom-right")
-  label         String   @default("Feedback")
-  allowedOrigin String?
-  createdAt     DateTime @default(now())
+  id                      String   @id @default(cuid())
+  name                    String
+  userId                  String
+  color                   String   @default("#F59E0B")
+  position                String   @default("bottom-right")
+  label                   String   @default("Feedback")
+  allowedOrigin           String?
+  notifyOnSubmission      Boolean  @default(false)
+  digestFrequency         String   @default("none")        // "none" | "daily"
+  timezone                String   @default("UTC")         // NEW: IANA timezone
+  notificationCooldown    String   @default("15min")       // NEW: "none" | "5min" | "15min" | "30min" | "1hour"
+  lastNotificationSent    DateTime?                        // NEW: for cooldown tracking
+  unsubscribeToken        String?  @unique                 // NEW: for unsubscribe links
+  lastDigestSentAt        DateTime?                        // NEW: for daily digest dedup
+  createdAt               DateTime @default(now())
 
   user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   feedback Feedback[]
+  webhooks Webhook[]
 
   @@map("projects")
 }
@@ -92,4 +100,35 @@ model Feedback {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("feedback")
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  projectId String
+  url       String
+  secret    String?
+  label     String   @default("My Webhook")
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  project   Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([projectId, enabled])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id         String   @id @default(cuid())
+  webhookId  String
+  success    Boolean
+  statusCode Int?
+  error      String?
+  payload    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("webhook_deliveries")
 }

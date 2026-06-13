@@ -12,6 +12,7 @@ import { ProjectCard } from "./project-card";
 import { useProjects, useCreateProject } from "@/hooks/use-projects";
 import { ProjectFilterBar, ProjectFilters } from "./project-filter-bar";
 import { applyProjectFilters } from "./filtering-helper";
+import { toast } from "sonner";
 
 export function ProjectsPage() {
   const router = useRouter();
@@ -47,6 +48,9 @@ export function ProjectsPage() {
         position,
       });
       setShowModal(false);
+      
+      toast.success("Project created");
+
       resetForm();
       router.push(`/dashboard/projects/${project.id}`);
     } catch {

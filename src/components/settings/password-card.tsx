@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export interface PasswordCardProps {
   current: string;
@@ -13,7 +14,7 @@ export interface PasswordCardProps {
   setCurrent: (v: string) => void;
   setNext: (v: string) => void;
   setConfirm: (v: string) => void;
-  changePassword: () => Promise<void>;
+  changePassword: () => Promise<boolean>;
   resetPassword: () => void;
   passwordState: "idle" | "saving" | "saved" | "error";
   passwordError: string;
@@ -31,9 +32,10 @@ export function PasswordCard(props: PasswordCardProps) {
       <h3 className="text-sm font-bold">Password</h3>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          props.changePassword();
+          const ok = await props.changePassword();
+          if (ok) toast.success("Password changed");
         }}
         className="flex flex-col gap-3"
       >
@@ -79,7 +81,7 @@ export function PasswordCard(props: PasswordCardProps) {
               {showNext ? (
                 <EyeOff className="w-4 h-4" />
               ) : (
-              <Eye className="w-4 h-4" />
+                <Eye className="w-4 h-4" />
               )}
             </button>
           )}
@@ -110,13 +112,15 @@ export function PasswordCard(props: PasswordCardProps) {
         </div>
 
         {props.passwordError && (
-          <p className="text-sm text-destructive">
-            {props.passwordError}
-          </p>
+          <p className="text-sm text-destructive">{props.passwordError}</p>
         )}
 
         <div className="flex justify-end gap-2.5">
-          <Button type="button" variant="secondary" onClick={props.resetPassword}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={props.resetPassword}
+          >
             Clear
           </Button>
 
@@ -128,9 +132,7 @@ export function PasswordCard(props: PasswordCardProps) {
               props.updatePasswordIsPending
             }
           >
-            {props.passwordState === "saving"
-              ? "Updating..."
-              : "Update"}
+            {props.passwordState === "saving" ? "Updating..." : "Update"}
           </Button>
         </div>
       </form>

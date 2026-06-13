@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Project } from "@/types";
 import * as projectsAPI from "@/services/api/projects";
 
 const PROJECTS_KEY = ["projects"] as const;
@@ -23,7 +22,7 @@ export function useCreateProject() {
 export function useUpdateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Project, "name" | "color" | "position" | "label" | "allowedOrigin">> }) =>
+    mutationFn: ({ id, data }: { id: string; data: projectsAPI.ProjectPayload }) =>
       projectsAPI.updateProject(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PROJECTS_KEY });

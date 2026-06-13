@@ -11,26 +11,42 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   width?: number;
+  description?: string;
 }
 
-function Modal({ open, onClose, title, children, width = 480 }: ModalProps) {
+function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  width = 480,
+}: ModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70" />
-        <DialogPrimitive.DialogTitle className="sr-only">{title}</DialogPrimitive.DialogTitle>
         <DialogPrimitive.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
             "bg-card border border-[#2a2a2a] rounded-[14px]",
-            "max-h-[90vh] overflow-auto p-0 focus:outline-none"
+            "max-h-[90vh] overflow-auto p-0 focus:outline-none",
           )}
           style={{ width, maxWidth: "calc(100vw - 40px)" }}
           aria-describedby={undefined}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-            <span className="text-base font-bold text-foreground">{title}</span>
+            <div className="flex flex-col gap-1">
+              <DialogPrimitive.DialogTitle className="text-base font-bold text-foreground">
+                {title}
+              </DialogPrimitive.DialogTitle>
+              {description && (
+                <span className="text-sm font-medium text-foreground">
+                  {description}
+                </span>
+              )}
+            </div>
             <button
               onClick={onClose}
               className="text-[#737373] hover:text-foreground cursor-pointer p-1 transition-colors"

@@ -7,6 +7,7 @@ export interface FilterOption {
   id: string;
   label: string;
   dot?: string;
+  icon?: React.ComponentType<{ size: number; className?: string }>;
 }
 
 interface FilterDropdownProps {
@@ -124,6 +125,8 @@ export function FilterDropdown({
                   : "text-muted-foreground hover:text-foreground hover:bg-accent",
               ].join(" ")}
             >
+              {option.icon && <option.icon size={14} className="shrink-0" />}
+
               {option.dot && (
                 <span
                   className="w-2 h-2 rounded-full shrink-0"

@@ -1,17 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Eye, CheckCheck, Check, Trash2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  Eye,
+  CheckCheck,
+  Check,
+  Trash2,
+  Square,
+  CheckSquare,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Feedback, Status } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { toast } from "sonner";
 
 interface FeedbackRowProps {
   fb: Feedback;
-  onUpdateStatus: (id: string, status: Status) => void;
-  onDelete: (id: string) => void;
+  onUpdateStatus: (id: string, status: Status) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   projectName?: string;
   projectColor?: string;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+  clearSelection?: () => void;
 }
 
 function timeAgo(iso: string): string {
@@ -31,6 +43,9 @@ export function FeedbackRow({
   onDelete,
   projectName,
   projectColor,
+  selected = false,
+  onSelect,
+  clearSelection,
 }: FeedbackRowProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,13 +61,47 @@ export function FeedbackRow({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  useEffect(() => {
+    const handleEscape = () => {
+      clearSelection?.(); // or setShowModal(false), etc.
+    };
+    window.addEventListener("feedlyte:escape", handleEscape);
+    return () => window.removeEventListener("feedlyte:escape", handleEscape);
+  }, [clearSelection]);
+
   const handleOpen = () => {
     if (fb.status === "unreviewed") onUpdateStatus(fb.id, "reviewed");
     router.push(`/dashboard/feedback/${fb.id}`);
   };
 
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelect?.(fb.id);
+  };
+
   return (
-    <div onClick={handleOpen} className="bg-card border border-border rounded-[10px] px-4 py-3.5 flex items-start gap-3.5 hover:border-border/70 transition-colors cursor-pointer">
+    <div
+      onClick={handleOpen}
+      className={[
+        "bg-card border border-border rounded-[10px] px-4 py-3.5 flex items-start gap-3.5 hover:border-border/70 transition-colors cursor-pointer",
+        selected && "ring-2 ring-primary border-primary",
+      ].join(" ")}
+    >
+      {/* Checkbox */}
+      <div
+        onClick={handleCheckboxClick}
+        className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background shrink-0 mt-0.5 hover:bg-accent transition-colors"
+        aria-label={selected ? "Deselect" : "Select"}
+        aria-checked={selected}
+        role="checkbox"
+      >
+        {selected ? (
+          <CheckSquare size={14} className="text-primary" />
+        ) : (
+          <Square size={14} className="text-muted-foreground" />
+        )}
+      </div>
       {/* Main content — clickable */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between flex-wrap gap-1.5 mb-2">
@@ -81,7 +130,9 @@ export function FeedbackRow({
             </span>
           )}
           {fb.email && (
-            <span className="text-xs xl:text-sm text-muted-foreground">{fb.email}</span>
+            <span className="text-xs xl:text-sm text-muted-foreground">
+              {fb.email}
+            </span>
           )}
           <span className="text-xs xl:text-sm text-muted-foreground/40">
             {timeAgo(fb.createdAt)}
@@ -89,10 +140,8 @@ export function FeedbackRow({
         </div>
       </div>
 
-      {/* Right: status badge + options */}
+      {/* Right: options menu */}
       <div className="flex items-center gap-2 shrink-0 mt-0.5">
-        {/* <StatusBadge status={fb.status} /> */}
-
         <div ref={menuRef} className="relative">
           <button
             onClick={(e) => {
@@ -116,11 +165,18 @@ export function FeedbackRow({
                 <Eye size={13} />
                 View details
               </button>
+              
               {fb.status !== "reviewed" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false);
-                    onUpdateStatus(fb.id, "reviewed");
+                    try {
+                      await onUpdateStatus(fb.id, "reviewed");
+                      toast.success("Marked as reviewed");
+                    } catch (error) {
+                      toast.error("Failed to update status");
+                      console.error(error);
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
                 >
@@ -128,11 +184,18 @@ export function FeedbackRow({
                   Mark as reviewed
                 </button>
               )}
+
               {fb.status !== "resolved" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false);
-                    onUpdateStatus(fb.id, "resolved");
+                    try {
+                      await onUpdateStatus(fb.id, "resolved");
+                      toast.success("Marked as resolved");
+                    } catch (error) {
+                      toast.error("Failed to update status");
+                      console.error(error);
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
                 >
@@ -140,11 +203,18 @@ export function FeedbackRow({
                   Mark as resolved
                 </button>
               )}
+
               {fb.status !== "unreviewed" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false);
-                    onUpdateStatus(fb.id, "unreviewed");
+                    try {
+                      await onUpdateStatus(fb.id, "unreviewed");
+                      toast.success("Marked as unreviewed");
+                    } catch (error) {
+                      toast.error("Failed to update status");
+                      console.error(error);
+                    }
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
                 >
@@ -152,11 +222,18 @@ export function FeedbackRow({
                   Mark as unreviewed
                 </button>
               )}
+
               <div className="h-px bg-border mx-2 my-1" />
               <button
-                onClick={() => {
+                onClick={async () => {
                   setMenuOpen(false);
-                  onDelete(fb.id);
+                  try {
+                    await onDelete(fb.id);
+                    toast.success("Feedback Deleted");
+                  } catch (error) {
+                    toast.error("Failed to delete feedback");
+                    console.error(error);
+                  }
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors cursor-pointer text-left"
               >

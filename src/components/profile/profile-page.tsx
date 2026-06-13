@@ -18,6 +18,8 @@ import Link from "next/link";
 import StatCard from "@/components/ui/StatCard";
 import { useState } from "react";
 import { BannerState } from "@/types";
+import { toast } from "sonner";
+import { PlanCard } from "../settings/plan-card";
 
 function Avatar({ name, size = 72 }: { name: string; size?: number }) {
   const initials = name
@@ -65,6 +67,8 @@ export function ProfilePage() {
       const res = await fetch("/api/auth/resend-verification", {
         method: "POST",
       });
+      if (res.ok) toast.success("Verification email sent");
+      else toast.error("Failed to send email");
       setState(res.ok ? "sent" : "error");
     } catch {
       setState("error");
@@ -116,43 +120,43 @@ export function ProfilePage() {
                   <>
                     {state === "idle" && (
                       <button
-                      className={[
-                        "inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full cursor-pointer",
-                        isVerified
-                          ? "bg-success/10 text-success border border-success/20"
-                          : "bg-destructive/10 text-destructive border border-destructive/20",
-                      ].join(" ")}
-                      onClick={verifyMail}
-                    >
-                      <CheckCircle size={12} />
-                      {isVerified ? "Email verified" : "Verify Email"}
-                    </button>
+                        className={[
+                          "inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full cursor-pointer",
+                          isVerified
+                            ? "bg-success/10 text-success border border-success/20"
+                            : "bg-destructive/10 text-destructive border border-destructive/20",
+                        ].join(" ")}
+                        onClick={verifyMail}
+                      >
+                        <CheckCircle size={12} />
+                        {isVerified ? "Email verified" : "Verify Email"}
+                      </button>
                     )}
                     {state === "sending" && (
                       <button
-                      className={[
-                        "inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full cursor-text",
-                        isVerified
-                          ? "bg-success/10 text-success border border-success/20"
-                          : "bg-primary/10 text-primary border border-primary/20",
-                      ].join(" ")}
-                    >
-                      <CheckCircle size={12} />
-                      Sending mail
-                    </button>
+                        className={[
+                          "inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full cursor-text",
+                          isVerified
+                            ? "bg-success/10 text-success border border-success/20"
+                            : "bg-primary/10 text-primary border border-primary/20",
+                        ].join(" ")}
+                      >
+                        <CheckCircle size={12} />
+                        Sending mail
+                      </button>
                     )}
                     {state === "sent" && (
                       <button
-                      className={[
-                        "inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full cursor-text",
-                        isVerified
-                          ? "bg-success/10 text-success border border-success/20"
-                          : "bg-primary/10 text-primary border border-primary/20",
-                      ].join(" ")}
-                    >
-                      <CheckCircle size={12} />
-                      Email sent
-                    </button>
+                        className={[
+                          "inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full cursor-text",
+                          isVerified
+                            ? "bg-success/10 text-success border border-success/20"
+                            : "bg-primary/10 text-primary border border-primary/20",
+                        ].join(" ")}
+                      >
+                        <CheckCircle size={12} />
+                        Email sent
+                      </button>
                     )}
                     {state === "error" && (
                       <button
@@ -192,7 +196,9 @@ export function ProfilePage() {
                   <p className="text-xs text-muted-foreground/50 uppercase tracking-widest font-semibold m-0">
                     {label}
                   </p>
-                  <p className={`${value === name && "capitalize"} text-sm sm:text-base font-medium text-foreground m-0 break-all`}>
+                  <p
+                    className={`${value === name && "capitalize"} text-sm sm:text-base font-medium text-foreground m-0 break-all`}
+                  >
                     {value}
                   </p>
                 </div>
@@ -229,6 +235,8 @@ export function ProfilePage() {
             />
           </div>
         </div>
+
+        <PlanCard />
 
         {/* Quick links */}
         <Card>

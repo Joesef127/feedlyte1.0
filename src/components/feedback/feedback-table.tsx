@@ -1,29 +1,47 @@
 "use client";
 
-import { useState } from "react";
-import { MessageSquare, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  CheckSquare,
+  Square,
+} from "lucide-react";
 import type { Feedback, Status } from "@/types";
 import { FeedbackRow } from "./feedback-row";
 import { FeedbackCard } from "./feedback-card";
-import { FilterBar, applyFeedbackFilters, type FeedbackFilters, type LayoutMode } from "./filter-bar";
+import {
+  FilterBar,
+  applyFeedbackFilters,
+  type FeedbackFilters,
+  type LayoutMode,
+} from "./filter-bar";
 import { EmptyState } from "@/components/ui/empty-state";
-import { exportFeedbackCSV } from "@/lib/export-csv";
+import {
+  exportFeedbackCSV,
+  exportFeedbackJSON,
+  exportFeedbackPDF,
+} from "@/lib/export";
+import { BulkActionBar } from "./bulk-action-bar";
 import type { FilterOption } from "@/components/ui/filter-dropdown";
+import { toast } from "sonner";
 
 interface FeedbackTableProps {
-  feedback:       Feedback[];
-  isLoading?:     boolean;
-  onUpdateStatus: (id: string, status: Status) => void;
-  onDelete:       (id: string) => void;
-  projects?:      FilterOption[];
-  projectMap?:    Record<string, { name: string; color: string }>;
+  feedback: Feedback[];
+  isLoading?: boolean;
+  onUpdateStatus: (id: string, status: Status) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  projects?: FilterOption[];
+  projectMap?: Record<string, { name: string; color: string }>;
 }
 
 const PAGE_SIZE = 10;
 
 const DEFAULT_FILTERS: FeedbackFilters = {
-  search:    "",
-  status:    "",
+  search: "",
+  status: "",
   timeRange: "",
   projectId: "",
 };
@@ -37,25 +55,178 @@ export function FeedbackTable({
   projectMap = {},
 }: FeedbackTableProps) {
   const [filters, setFilters] = useState<FeedbackFilters>(DEFAULT_FILTERS);
-  const [layout,  setLayout]  = useState<LayoutMode>("list");
-  const [page,    setPage]    = useState(1);
+  const [layout, setLayout] = useState<LayoutMode>("list");
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkPending, setBulkPending] = useState(false);
 
   const handleFiltersChange = (f: FeedbackFilters) => {
     setFilters(f);
     setPage(1);
+    setSelectedIds(new Set());
   };
 
-  const filtered    = applyFeedbackFilters(feedback, filters);
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage    = Math.min(page, totalPages);
-  const paginated   = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const showingFrom = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
-  const showingTo   = Math.min(safePage * PAGE_SIZE, filtered.length);
-  const hasFilters  = filters.search || filters.status || filters.timeRange || filters.projectId;
-
-  const handleExport = () => {
-    exportFeedbackCSV(filtered, projectMap);
+  const handleExportCSV = () => {
+    try {
+      exportFeedbackCSV(filtered, projectMap);
+      toast.success(`Exported ${filtered.length} feedback item(s) to CSV`);
+    } catch (error) {
+      toast.error("Failed to export CSV");
+      console.error("CSV export error:", error);
+    }
   };
+
+  const handleExportJSON = () => {
+    try {
+      exportFeedbackJSON(filtered, projectMap);
+      toast.success(`Exported ${filtered.length} feedback item(s) to JSON`);
+    } catch (error) {
+      toast.error("Failed to export JSON");
+      console.error("JSON export error:", error);
+    }
+  };
+
+  const handleExportPDF = () => {
+    try {
+      exportFeedbackPDF(filtered, projectMap);
+      toast.success(`Exported ${filtered.length} feedback item(s) to PDF`);
+    } catch (error) {
+      toast.error("Failed to export PDF");
+      console.error("PDF export error:", error);
+    }
+  };
+
+  const filtered = applyFeedbackFilters(feedback, filters);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
+  const showingFrom =
+    filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
+  const showingTo = Math.min(safePage * PAGE_SIZE, filtered.length);
+  const hasFilters =
+    filters.search || filters.status || filters.timeRange || filters.projectId;
+
+  const selectAllPage = useCallback(() => {
+    if (selectedIds.size === paginated.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map((fb) => fb.id)));
+    }
+  }, [paginated, selectedIds]);
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // Selection handlers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  // Bulk actions
+  const bulkUpdateStatus = async (status: Status) => {
+    setBulkPending(true);
+    const failedIds: string[] = [];
+    try {
+      for (const id of selectedIds) {
+        try {
+          await onUpdateStatus(id, status);
+        } catch {
+          failedIds.push(id);
+        }
+      }
+      if (failedIds.length > 0) {
+        toast.error(
+          `Failed to update ${failedIds.length} of ${selectedIds.size} item${failedIds.length !== 1 ? "s" : ""}`,
+        );
+      } else {
+        toast.success(
+          `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status}"`,
+        );
+      }
+    } finally {
+      setBulkPending(false);
+      clearSelection();
+    }
+  };
+
+  const bulkDelete = async () => {
+    setBulkPending(true);
+    const failedIds: string[] = [];
+    try {
+      for (const id of selectedIds) {
+        try {
+          await onDelete(id);
+        } catch {
+          failedIds.push(id);
+        }
+      }
+      if (failedIds.length > 0) {
+        toast.error(
+          `Failed to delete ${failedIds.length} of ${selectedIds.size} item${failedIds.length !== 1 ? "s" : ""}`,
+        );
+      } else {
+        toast.success(`Deleted ${selectedIds.size} feedback item(s)`);
+      }
+    } finally {
+      setBulkPending(false);
+      clearSelection();
+    }
+  };
+
+  // Compute project context for bulk bar
+  const selectedFeedback = paginated.filter((fb) => selectedIds.has(fb.id));
+  const projectNames = Array.from(
+    new Set(
+      selectedFeedback
+        .map((fb) => projectMap[fb.projectId]?.name)
+        .filter(Boolean),
+    ),
+  );
+  const projectCount = projectNames.length;
+
+  // Clear selection on page/layout/filter change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, layout, filters]);
+
+  useEffect(() => {
+    const handleEscape = () => {
+      clearSelection(); // or setShowModal(false), etc.
+    };
+    window.addEventListener("feedlyte:escape", handleEscape);
+    return () => window.removeEventListener("feedlyte:escape", handleEscape);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        clearSelection();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+        const target = e.target as HTMLElement;
+        const isEditable =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+        if (isEditable) return;
+        e.preventDefault();
+        selectAllPage();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectAllPage]);
 
   return (
     <div>
@@ -65,7 +236,9 @@ export function FeedbackTable({
         layout={layout}
         onLayoutChange={setLayout}
         projects={projects}
-        onExport={feedback.length > 0 ? handleExport : undefined}
+        onExportCSV={feedback.length > 0 ? handleExportCSV : undefined}
+        onExportJSON={feedback.length > 0 ? handleExportJSON : undefined}
+        onExportPDF={feedback.length > 0 ? handleExportPDF : undefined}
         exportCount={filtered.length}
       />
 
@@ -98,6 +271,31 @@ export function FeedbackTable({
       ) : (
         <>
           {layout === "list" && (
+            <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
+              <button
+                onClick={selectAllPage}
+                className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors"
+                aria-label={
+                  selectedIds.size === paginated.length
+                    ? "Deselect all"
+                    : "Select all on page"
+                }
+              >
+                {selectedIds.size === paginated.length ? (
+                  <CheckSquare size={14} className="text-primary" />
+                ) : (
+                  <Square size={14} className="text-muted-foreground" />
+                )}
+              </button>
+              <span className="text-xs text-muted-foreground">
+                {selectedIds.size === paginated.length
+                  ? "All selected — click to deselect"
+                  : `Select all ${paginated.length} items on this page`}
+              </span>
+            </div>
+          )}
+
+          {layout === "list" && (
             <div className="flex flex-col gap-2 mb-4">
               {paginated.map((fb) => (
                 <FeedbackRow
@@ -107,6 +305,9 @@ export function FeedbackTable({
                   onDelete={onDelete}
                   projectName={projectMap[fb.projectId]?.name}
                   projectColor={projectMap[fb.projectId]?.color}
+                  selected={selectedIds.has(fb.id)}
+                  onSelect={toggleSelect}
+                  clearSelection={clearSelection}
                 />
               ))}
             </div>
@@ -122,6 +323,9 @@ export function FeedbackTable({
                   onDelete={onDelete}
                   projectName={projectMap[fb.projectId]?.name}
                   projectColor={projectMap[fb.projectId]?.color}
+                  selected={selectedIds.has(fb.id)}
+                  onSelect={toggleSelect}
+                  clearSelection={clearSelection}
                 />
               ))}
             </div>
@@ -142,15 +346,26 @@ export function FeedbackTable({
                 </button>
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - safePage) <= 1,
+                  )
                   .reduce<(number | "...")[]>((acc, p, i, arr) => {
-                    if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("...");
+                    if (i > 0 && p - (arr[i - 1] as number) > 1)
+                      acc.push("...");
                     acc.push(p);
                     return acc;
                   }, [])
                   .map((p, i) =>
                     p === "..." ? (
-                      <span key={`ellipsis-${i}`} className="text-xs text-muted-foreground/40 px-1">…</span>
+                      <span
+                        key={`ellipsis-${i}`}
+                        className="text-xs text-muted-foreground/40 px-1"
+                      >
+                        …
+                      </span>
                     ) : (
                       <button
                         key={p}
@@ -164,7 +379,7 @@ export function FeedbackTable({
                       >
                         {p}
                       </button>
-                    )
+                    ),
                   )}
 
                 <button
@@ -176,6 +391,21 @@ export function FeedbackTable({
                 </button>
               </div>
             </div>
+          )}
+
+          {/* Bulk Action Bar */}
+          {selectedIds.size > 0 && (
+            <BulkActionBar
+              count={selectedIds.size}
+              projectCount={projectCount}
+              projectNames={projectNames}
+              onBulkUnreviewed={() => bulkUpdateStatus("unreviewed")}
+              onBulkReviewed={() => bulkUpdateStatus("reviewed")}
+              onBulkResolved={() => bulkUpdateStatus("resolved")}
+              onBulkDelete={bulkDelete}
+              onClear={clearSelection}
+              isPending={bulkPending}
+            />
           )}
         </>
       )}

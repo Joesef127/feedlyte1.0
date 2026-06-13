@@ -24,6 +24,23 @@ export default function DashboardLayout({
     }
   }, [status, router]);
 
+  useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Escape closes modals, clears selection
+    if (e.key === "Escape") {
+      // Dispatch custom event that components can listen for
+      window.dispatchEvent(new CustomEvent("feedlyte:escape"));
+    }
+    // Cmd/Ctrl + K for command palette (future)
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      // TODO: open command palette
+    }
+  };
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
+}, []);
+
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

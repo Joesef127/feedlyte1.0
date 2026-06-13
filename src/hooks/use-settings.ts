@@ -29,20 +29,20 @@ export function useSettings() {
 
   // ── Account state ─────────────────────────────
 
-  const [name,  setName]  = useState("");
-  const [email, setEmail] = useState("");
+  const [name,  setName]  = useState(user?.name  ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [accountState, setAccountState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [accountError, setAccountError] = useState("");
 
-  // Sync name and email once user data loads from the server
   useEffect(() => {
     if (user) {
-      setName(user.name  ?? "");
-      setEmail(user.email ?? "");
+      setName((prev) => (prev !== user.name ? user.name ?? "" : prev));
+      setEmail((prev) => (prev !== user.email ? user.email ?? "" : prev));
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+  }, [user?.name, user?.email]);
 
-  const saveAccount = async () => {
+  const saveAccount = async (): Promise<boolean> => {
     setAccountError("");
     setAccountState("saving");
 
@@ -60,11 +60,13 @@ export function useSettings() {
       accountSaveTimerRef.current = setTimeout(() => {
         setAccountState("idle");
       }, 2500);
+      return true;
     } catch (err) {
       setAccountError(
         err instanceof Error ? err.message : "Failed to update profile"
       );
       setAccountState("error");
+      return false;
     }
   };
 
@@ -87,20 +89,20 @@ export function useSettings() {
   const [passwordState, setPasswordState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [passwordError, setPasswordError] = useState("");
 
-  const changePassword = async () => {
+  const changePassword = async (): Promise<boolean> => {
     setPasswordError("");
 
     if (!current || !next || !confirm) {
       setPasswordError("All fields required");
-      return;
+      return false;
     }
     if (next !== confirm) {
       setPasswordError("Passwords do not match");
-      return;
+      return false;
     }
     if (next.length < 8) {
       setPasswordError("Password too short");
-      return;
+      return false;
     }
 
     setPasswordState("saving");
@@ -117,11 +119,13 @@ export function useSettings() {
       passwordSaveTimerRef.current = setTimeout(() => {
         setPasswordState("idle");
       }, 2500);
+      return true;
     } catch (err) {
       setPasswordError(
         err instanceof Error ? err.message : "Failed to update password"
       );
       setPasswordState("error");
+      return false;
     }
   };
 
@@ -148,19 +152,21 @@ export function useSettings() {
 
   const confirmed = input.toLowerCase() === "delete my account";
 
-  const deleteUser = async () => {
-    if (!confirmed || !user?.id) return;
+  const deleteUser = async (): Promise<boolean> => {
+    if (!confirmed || !user?.id) return false;
 
     setDangerError("");
     setDangerState("deleting");
 
     try {
       await deleteAccount(user.id);
+      return true;
     } catch (err) {
       setDangerError(
         err instanceof Error ? err.message : "Failed to delete account"
       );
       setDangerState("error");
+      return false;
     }
   };
 

@@ -26,6 +26,7 @@ import {
   useDeleteFeedback,
 } from "@/hooks/use-feedback";
 import type { Status } from "@/types";
+import { toast } from "sonner";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,8 @@ export function DashboardPage() {
         position,
       });
       setShowModal(false);
+
+      toast.success("Project created");
       resetForm();
       router.push(`/dashboard/projects/${project.id}`);
     } catch {
@@ -217,9 +220,9 @@ export function DashboardPage() {
                         key={fb.id}
                         fb={fb}
                         onUpdateStatus={(id, status) =>
-                          updateStatus.mutate({ id, status })
+                          updateStatus.mutateAsync({ id, status })
                         }
-                        onDelete={(id) => deleteFb.mutate(id)}
+                        onDelete={(id) => deleteFb.mutateAsync(id)}
                         projectName={projectMap[fb.projectId]?.name}
                         projectColor={projectMap[fb.projectId]?.color}
                       />
@@ -366,15 +369,11 @@ export function DashboardPage() {
               Widget Color
             </p>
             <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-full border-2 border-sidebar-border shrink-0"
-                style={{ background: color }}
-              />
               <input
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
+                className="w-12 h-8 rounded cursor-pointer border-0 bg-transparent p-0"
                 title="Pick a color"
               />
               <span className="text-sm text-muted-foreground font-mono">

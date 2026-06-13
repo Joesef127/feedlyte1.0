@@ -7,6 +7,7 @@ import Link from "next/link";
 import { MessageSquare, Eye, EyeOff } from "lucide-react";
 import { FormField } from "@/components/ui/form-field";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 type Mode = "login" | "register";
 type Status = "default" | "checking-email";
@@ -14,7 +15,7 @@ type Status = "default" | "checking-email";
 export function AuthScreen() {
   const router = useRouter();
   const { register, login, registerIsPending, loginIsPending } = useAuth();
-  
+
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +35,7 @@ export function AuthScreen() {
       if (mode === "register") {
         // Register — verification email will be sent
         await register({ name, email: email.toLowerCase(), password });
-        // Show "check your email" message — don't verify here
+        toast.success("Account created! Check your email to verify.");
         setStatus("checking-email");
         return;
       }
@@ -43,7 +44,10 @@ export function AuthScreen() {
       await login({ email: email.toLowerCase(), password });
       router.push("/dashboard");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
       setError(errorMessage);
     }
   };
@@ -87,7 +91,8 @@ export function AuthScreen() {
             Verify your email
           </h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            We've sent a verification link to <span className="font-semibold text-foreground">{email}</span>. 
+            We've sent a verification link to{" "}
+            <span className="font-semibold text-foreground">{email}</span>.
             Click the link in your email to verify your account.
           </p>
           <button
