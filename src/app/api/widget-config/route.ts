@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { withWidgetVersionHeaders, WIDGET_CONFIG_VERSION } from "@/lib/api-helpers";
 
 // Public — no auth. Returns only non-sensitive widget config for a given project.
 export async function GET(req: Request) {
@@ -19,10 +20,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
-  return NextResponse.json({
-    color:         project.color,
-    position:      project.position,
-    label:         project.label,
-    allowedOrigin: project.allowedOrigin ?? null,
-  });
+  return NextResponse.json(
+    {
+      version: WIDGET_CONFIG_VERSION,
+      color: project.color,
+      position: project.position,
+      label: project.label,
+      allowedOrigin: project.allowedOrigin ?? null,
+    },
+    {
+      headers: withWidgetVersionHeaders(),
+    },
+  );
 }

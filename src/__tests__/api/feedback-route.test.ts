@@ -33,6 +33,8 @@ vi.mock("@/lib/webhooks", () => ({
 }));
 
 vi.mock("@/lib/api-helpers", () => ({
+  withApiVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
+  withWidgetVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
   handleError: vi.fn((_e, _ctx) =>
     NextResponse.json({ error: "Internal Server Error" }, { status: 500 }),
   ),

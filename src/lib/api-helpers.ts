@@ -17,6 +17,27 @@ export const API_ERROR_CODES = {
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
 
+export const API_VERSION = "v1";
+export const WIDGET_CONFIG_VERSION = "v1";
+
+export function withApiVersionHeaders(
+  headers: HeadersInit = {},
+  version = API_VERSION,
+): Headers {
+  const nextHeaders = new Headers(headers);
+  nextHeaders.set("X-Feedlyte-API-Version", version);
+  return nextHeaders;
+}
+
+export function withWidgetVersionHeaders(
+  headers: HeadersInit = {},
+  version = WIDGET_CONFIG_VERSION,
+): Headers {
+  const nextHeaders = new Headers(headers);
+  nextHeaders.set("X-Feedlyte-Widget-Version", version);
+  return nextHeaders;
+}
+
 export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
 
 export function err(

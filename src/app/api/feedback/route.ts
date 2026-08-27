@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { checkWidgetRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
-import { handleError } from "@/lib/api-helpers";
+import { handleError, withApiVersionHeaders } from "@/lib/api-helpers";
 import { fireWebhooks } from "@/lib/webhooks";
 import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
 
@@ -73,7 +73,7 @@ export async function OPTIONS(req: Request) {
   }
   return new NextResponse(null, {
     status: 204,
-    headers: getCorsHeaders(req, projectOrigin),
+    headers: withApiVersionHeaders(getCorsHeaders(req, projectOrigin)),
   });
 }
 
@@ -106,6 +106,7 @@ export async function GET(req: Request) {
   });
 
   const headers = new Headers();
+  headers.set("X-Feedlyte-API-Version", "v1");
   if (feedback.length === take && feedback.at(-1)) {
     headers.set("x-next-cursor", feedback.at(-1)!.id);
   }
@@ -121,7 +122,7 @@ export async function GET(req: Request) {
       status: f.status,
       createdAt: f.createdAt.toISOString(),
     })),
-    { headers },
+    { headers: withApiVersionHeaders(headers) },
   );
 }
 
@@ -136,7 +137,7 @@ export async function POST(req: Request) {
       const corsHeaders = getCorsHeaders(req, null);
       return NextResponse.json(
         { error: queryParsed.error.issues[0].message },
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
@@ -151,7 +152,7 @@ export async function POST(req: Request) {
       const corsHeaders = getCorsHeaders(req, null);
       return NextResponse.json(
         { error: "Project not found." },
-        { status: 404, headers: corsHeaders },
+        { status: 404, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
@@ -161,7 +162,7 @@ export async function POST(req: Request) {
     if (!isOriginAllowed(origin, project.allowedOrigin)) {
       return NextResponse.json(
         { error: "Origin not allowed." },
-        { status: 403, headers: corsHeaders },
+        { status: 403, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
@@ -171,7 +172,7 @@ export async function POST(req: Request) {
         { error: "Too many requests. Please try again later." },
         {
           status: 429,
-          headers: { ...corsHeaders, ...rateLimitHeaders(rateLimit) },
+          headers: withApiVersionHeaders({ ...corsHeaders, ...rateLimitHeaders(rateLimit) }),
         },
       );
     }
@@ -182,7 +183,7 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0].message },
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
@@ -301,7 +302,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { id: feedback.id, message: "Feedback received. Thank you!" },
-      { status: 201, headers: corsHeaders },
+      { status: 201, headers: withApiVersionHeaders(corsHeaders) },
     );
   } catch (e) {
     return handleError(e, "feedback/POST");
