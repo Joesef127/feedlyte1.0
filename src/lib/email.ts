@@ -51,7 +51,7 @@ export async function sendVerificationEmail(
 ): Promise<SendEmailResult> {
   const { data, error } = await resend.emails.send({
     from: FROM,
-    to: TO,
+    to,
     subject: "Verify your Feedlyte email address",
     html: verificationTemplate(verifyUrl),
   });

@@ -5,13 +5,36 @@ import { handleError } from "@/lib/api-helpers";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-export async function GET(_req: Request) {
+export async function GET(req: Request) {
   try {
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id") || searchParams.get("userId");
+
+    if (id) {
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          createdAt: true,
+        },
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(user);
+    }
+
+    // Future admin/workspace-role listing endpoint.
     const users = await prisma.user.findMany({
       select: {
         id: true,

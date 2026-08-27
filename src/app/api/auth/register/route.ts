@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       select: { id: true, name: true, email: true },
     });
 
-    // Create verification token for auto-redirect
+    // Create verification token for email delivery only; never return it to the client.
     let verificationToken = "";
     try {
       verificationToken = await createEmailVerificationToken(email);
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       console.error("[register] Failed to send verification email", emailErr);
     }
 
-    return NextResponse.json({ ...user, token: verificationToken }, { status: 201 });
+    return NextResponse.json(user, { status: 201 });
   } catch (e) {
     return handleError(e, "register");
   }
