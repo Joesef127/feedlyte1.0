@@ -14,6 +14,7 @@ export interface Project {
   id:                      string;
   name:                    string;
   createdAt:               string;
+  updatedAt?:              string;
   feedbackCount:           number;
   newCount:                number;
   color:                   string;
@@ -22,7 +23,7 @@ export interface Project {
   allowedOrigin?:          string | null;
   notifyOnSubmission?:     boolean;
   digestFrequency?:        DigestFrequency;
-  timezone?:               string;          
+  timezone?:               string;
   notificationCooldown?:   NotificationCooldown;
 }
 
@@ -35,6 +36,7 @@ export interface Feedback {
   userAgent: string;
   status:    Status;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface User {

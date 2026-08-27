@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Feedback, Project } from "@/types";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -49,5 +50,39 @@ describe("shared validation contracts", () => {
         allowedOrigin: "https://example.com/embed?preview=true",
       }).success,
     ).toBe(false);
+  });
+
+  it("keeps update timestamps on the typed project and feedback contract", () => {
+    const project: Project = {
+      id: "proj_123",
+      name: "Acme",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-02T00:00:00.000Z",
+      feedbackCount: 1,
+      newCount: 1,
+      color: "#F59E0B",
+      position: "bottom-right",
+      label: "Feedback",
+      allowedOrigin: "https://example.com",
+      notifyOnSubmission: true,
+      digestFrequency: "daily",
+      timezone: "UTC",
+      notificationCooldown: "15min",
+    };
+
+    const feedback: Feedback = {
+      id: "fb_123",
+      projectId: project.id,
+      message: "The widget is visible",
+      email: "hello@example.com",
+      pageUrl: "https://example.com",
+      userAgent: "vitest",
+      status: "unreviewed",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-02T00:00:00.000Z",
+    };
+
+    expect(project.updatedAt).toBeTruthy();
+    expect(feedback.updatedAt).toBeTruthy();
   });
 });

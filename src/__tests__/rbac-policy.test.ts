@@ -60,7 +60,7 @@ describe("RBAC policy checks", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       workspace: { id: "ws_1", name: "Acme", slug: "acme", ownerId: "user_1", createdAt: new Date(), updatedAt: new Date(), description: null },
-    });
+    } as any);
     vi.mocked(prisma.project.findUnique).mockResolvedValue({
       id: "proj_1",
       name: "Website",
@@ -79,7 +79,7 @@ describe("RBAC policy checks", () => {
       lastDigestSentAt: null,
       createdAt: new Date(),
       workspace: { id: "ws_1", name: "Acme", slug: "acme", ownerId: "user_1", createdAt: new Date(), updatedAt: new Date(), description: null },
-    });
+    } as any);
     vi.mocked(prisma.feedback.findUnique).mockResolvedValue({
       id: "fb_1",
       projectId: "proj_1",
@@ -90,7 +90,7 @@ describe("RBAC policy checks", () => {
       status: "unreviewed",
       createdAt: new Date(),
       project: { id: "proj_1", name: "Website", userId: "user_1", workspaceId: "ws_1", color: "#000000", position: "bottom-right", label: "Feedback", allowedOrigin: null, notifyOnSubmission: false, digestFrequency: "none", timezone: "UTC", notificationCooldown: "15min", lastNotificationSent: null, unsubscribeToken: null, lastDigestSentAt: null, createdAt: new Date(), workspace: { id: "ws_1", name: "Acme", slug: "acme", ownerId: "user_1", createdAt: new Date(), updatedAt: new Date(), description: null } },
-    });
+    } as any);
 
     const workspace = await requireWorkspaceAccess("ws_1", "user_1");
     expect(workspace?.id).toBe("ws_1");
