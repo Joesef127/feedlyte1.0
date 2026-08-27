@@ -7,10 +7,32 @@ import { handleError } from "@/lib/api-helpers";
 import { fireWebhooks } from "@/lib/webhooks";
 import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
 
+const MAX_FEEDBACK_PAGE_SIZE = 100;
+
 const FALLBACK_ORIGINS = [
   "https://feedlyte.vercel.app",
   "http://localhost:3000",
 ];
+const MAX_SEARCH_LENGTH = 200;
+
+function getListQueryOptions(req: Request) {
+  const url = new URL(req.url);
+  const limitParam = url.searchParams.get("limit");
+  const cursorParam = url.searchParams.get("cursor");
+  const requestedLimit = limitParam ? Number.parseInt(limitParam, 10) : 100;
+  const take = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(requestedLimit, 1), 100)
+    : 100;
+  const q = (url.searchParams.get("q") ?? "").trim().slice(0, MAX_SEARCH_LENGTH);
+  const status = url.searchParams.get("status") ?? "";
+
+  return {
+    status,
+    q,
+    take,
+    cursor: cursorParam?.trim() || null,
+  };
+}
 
 function isOriginAllowed(
   origin: string,
@@ -61,9 +83,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(req.url);
-  const status = url.searchParams.get("status") ?? "";
-  const q = url.searchParams.get("q") ?? "";
+  const query = getListQueryOptions(req);
+  const { status, q, take, cursor } = query;
 
   const feedback = await prisma.feedback.findMany({
     where: {
@@ -79,8 +100,15 @@ export async function GET(req: Request) {
           }
         : {}),
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
+
+  const headers = new Headers();
+  if (feedback.length === take && feedback.at(-1)) {
+    headers.set("x-next-cursor", feedback.at(-1)!.id);
+  }
 
   return NextResponse.json(
     feedback.map((f) => ({
@@ -93,6 +121,7 @@ export async function GET(req: Request) {
       status: f.status,
       createdAt: f.createdAt.toISOString(),
     })),
+    { headers },
   );
 }
 

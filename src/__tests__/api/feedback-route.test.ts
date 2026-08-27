@@ -201,6 +201,23 @@ describe("GET /api/feedback", () => {
     const callArgs = mockPrisma.feedback.findMany.mock.calls[0][0];
     expect(callArgs.where.OR).toBeDefined();
   });
+
+  it("applies a safe default page size and caps oversized requests", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
+    mockPrisma.feedback.findMany.mockResolvedValue([]);
+
+    await GET(makeGetRequest({ limit: "200" }));
+    expect(mockPrisma.feedback.findMany.mock.calls[0][0]).toMatchObject({
+      take: 100,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+
+    await GET(makeGetRequest({ cursor: "fb_2", limit: "15" }));
+    expect(mockPrisma.feedback.findMany.mock.calls[1][0]).toMatchObject({
+      cursor: { id: "fb_2" },
+      take: 15,
+    });
+  });
 });
 
 // ── POST ──────────────────────────────────────────────────────────────────────
