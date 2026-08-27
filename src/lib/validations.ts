@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  DIGEST_FREQUENCIES,
+  FEEDBACK_STATUSES,
+  NOTIFICATION_COOLDOWNS,
+  WIDGET_POSITIONS,
+} from "@/types";
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -51,14 +57,14 @@ export const createProjectSchema = z.object({
     .optional()
     .default("#F59E0B"),
   position: z
-    .enum(["bottom-right", "bottom-left"])
+    .enum(WIDGET_POSITIONS)
     .optional()
     .default("bottom-right"),
   label: z.string().max(30).optional().default("Feedback"),
   allowedOrigin: originSchema,
 });
 
-const cooldownSchema = z.enum(["none", "5min", "15min", "30min", "1hour"]);
+const cooldownSchema = z.enum(NOTIFICATION_COOLDOWNS);
 
 export const updateProjectSchema = z.object({
   name: z.string().min(1).max(80).optional(),
@@ -66,11 +72,12 @@ export const updateProjectSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color")
     .optional(),
-  position: z.enum(["bottom-right", "bottom-left"]).optional(),
+  position: z.enum(WIDGET_POSITIONS).optional(),
   label: z.string().max(30).optional(),
   allowedOrigin: originSchema,
   notifyOnSubmission: z.boolean().optional(),
-  digestFrequency: z.enum(["none", "daily"]).optional(),
+  digestFrequency: z.enum(DIGEST_FREQUENCIES).optional(),
+  notificationCooldown: cooldownSchema.optional(),
   timezone: z
     .string()
     .refine((tz) => {
@@ -114,7 +121,7 @@ export const submitFeedbackSchema = z.object({
 export type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
 
 export const updateStatusSchema = z.object({
-  status: z.enum(["unreviewed", "reviewed", "resolved"]),
+  status: z.enum(FEEDBACK_STATUSES),
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;

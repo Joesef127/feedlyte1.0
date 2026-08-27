@@ -44,7 +44,7 @@ This file is intentionally short and intentionally tied to the master roadmap in
 
 ## Active work
 
-The current priority phase is Module 0, Phase 0.2: make the repository docs truthful and actionable. After that, the next implementation work continues in Module 1 with security and quality baseline hardening.
+The current priority phase is Module 1, Phase 1.2: make validation and code quality enforceable. The initial quality baseline is in place: TypeScript strict checking and ESLint pass, and rate-limit rejection handling no longer uses avoidable `any` types. Remaining work follows the acceptance criteria in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ### 23. Magic String Extraction
 - [ ] Identify all hardcoded strings

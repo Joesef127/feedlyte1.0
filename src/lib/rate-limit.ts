@@ -7,6 +7,19 @@ export interface RateLimitResult {
   reset: number;
 }
 
+function getMsBeforeNext(error: unknown): number {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "msBeforeNext" in error &&
+    typeof error.msBeforeNext === "number"
+  ) {
+    return error.msBeforeNext;
+  }
+
+  return 0;
+}
+
 const authLimiter = new RateLimiterMemory({
   points: 5,
   duration: 60 * 15, // 15 min
@@ -31,12 +44,12 @@ export async function checkAuthRateLimit(
       remaining: result.remainingPoints,
       reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
     };
-  } catch (result: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       limit: 5,
       remaining: 0,
-      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+      reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
     };
   }
 }
@@ -53,12 +66,12 @@ export async function checkWidgetRateLimit(
       remaining: result.remainingPoints,
       reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
     };
-  } catch (result: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       limit: 10,
       remaining: 0,
-      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+      reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
     };
   }
 }
