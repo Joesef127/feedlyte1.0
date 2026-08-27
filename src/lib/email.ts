@@ -1,7 +1,10 @@
 import { Resend } from "resend";
 import { createEmailVerificationToken, validateEmailVerificationToken } from "@/lib/tokens";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  return apiKey ? new Resend(apiKey) : null;
+}
 
 const FROM = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
@@ -29,6 +32,10 @@ export async function sendPasswordResetEmail(
   if (!to) {
     return { success: false, error: "Recipient email is required" };
   }
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: "Email delivery is not configured" };
+  }
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
@@ -49,6 +56,10 @@ export async function sendVerificationEmail(
   to: string,
   verifyUrl: string,
 ): Promise<SendEmailResult> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: "Email delivery is not configured" };
+  }
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
@@ -102,6 +113,10 @@ export async function sendFeedbackNotificationEmail(
   dashboardUrl: string,
   unsubscribeUrl: string
 ): Promise<SendEmailResult> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: "Email delivery is not configured" };
+  }
   const { browser, os } = parseUserAgent(feedback.userAgent || "");
   
   const { data, error } = await resend.emails.send({
@@ -133,6 +148,10 @@ export async function sendDailyDigestEmail(
   dashboardUrl: string,
   unsubscribeUrl: string
 ): Promise<SendEmailResult> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: "Email delivery is not configured" };
+  }
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,

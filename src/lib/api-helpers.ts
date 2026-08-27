@@ -7,8 +7,25 @@ export function ok<T>(data: T, status = 200) {
   return NextResponse.json(data, { status });
 }
 
-export function err(message: string, status: number, headers?: HeadersInit) {
-  return NextResponse.json({ error: message }, { status, headers });
+export const API_ERROR_CODES = {
+  BAD_REQUEST: "BAD_REQUEST",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  NOT_FOUND: "NOT_FOUND",
+  CONFLICT: "CONFLICT",
+  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+} as const;
+
+export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
+
+export function err(
+  message: string,
+  status: number,
+  headers?: HeadersInit,
+  code: ApiErrorCode = API_ERROR_CODES.INTERNAL_ERROR,
+) {
+  return NextResponse.json({ error: message, code }, { status, headers });
 }
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
@@ -24,7 +41,8 @@ export async function requireAuth() {
 export class ApiError extends Error {
   constructor(
     public message: string,
-    public status: number
+    public status: number,
+    public code: ApiErrorCode = API_ERROR_CODES.INTERNAL_ERROR,
   ) {
     super(message);
   }
@@ -39,8 +57,8 @@ export function handleError(
 ): NextResponse {
   // Already a structured API error — pass through as-is
   if (e instanceof ApiError) {
-    console.error(`[${context}] ApiError ${e.status}:`, e.message);
-    return err(e.message, e.status, extraHeaders);
+    logApiError(context, e.code, e.status, e.message);
+    return err(e.message, e.status, extraHeaders, e.code);
   }
 
   // Prisma known request errors
@@ -51,62 +69,71 @@ export function handleError(
       const fields = Array.isArray(e.meta?.target)
         ? (e.meta.target as string[]).join(", ")
         : "field";
-      console.error(`[${context}] Unique constraint on ${fields}`);
+      logApiError(context, API_ERROR_CODES.CONFLICT, 409, "Unique constraint");
       const friendly = friendlyUniqueField(fields);
-      return err(friendly, 409, extraHeaders);
+      return err(friendly, 409, extraHeaders, API_ERROR_CODES.CONFLICT);
     }
 
     if (code === "P2025") {
-      console.error(`[${context}] Record not found`);
-      return err("The requested record was not found.", 404, extraHeaders);
+      logApiError(context, API_ERROR_CODES.NOT_FOUND, 404, "Record not found");
+      return err("The requested record was not found.", 404, extraHeaders, API_ERROR_CODES.NOT_FOUND);
     }
 
     if (code === "P2003") {
       const field = (e.meta?.field_name as string) ?? "related record";
-      console.error(`[${context}] Foreign key constraint on ${field}`);
-      return err(`Related record not found: ${field}.`, 400, extraHeaders);
+      logApiError(context, API_ERROR_CODES.BAD_REQUEST, 400, "Foreign key constraint");
+      return err(`Related record not found: ${field}.`, 400, extraHeaders, API_ERROR_CODES.BAD_REQUEST);
     }
 
     if (code === "P2016") {
-      console.error(`[${context}] Query interpretation error`);
-      return err("Invalid query parameters.", 400, extraHeaders);
+      logApiError(context, API_ERROR_CODES.BAD_REQUEST, 400, "Query interpretation error");
+      return err("Invalid query parameters.", 400, extraHeaders, API_ERROR_CODES.BAD_REQUEST);
     }
 
     if (code === "P2021") {
-      console.error(`[${context}] Table not found — run prisma migrate`);
-      return err("Database schema is out of date. Please contact support.", 503, extraHeaders);
+      logApiError(context, API_ERROR_CODES.SERVICE_UNAVAILABLE, 503, "Database schema is out of date");
+      return err("Database schema is out of date. Please contact support.", 503, extraHeaders, API_ERROR_CODES.SERVICE_UNAVAILABLE);
     }
 
     if (code === "P2024") {
-      console.error(`[${context}] Connection pool timeout`);
-      return err("Database is busy. Please try again in a moment.", 503, extraHeaders);
+      logApiError(context, API_ERROR_CODES.SERVICE_UNAVAILABLE, 503, "Connection pool timeout");
+      return err("Database is busy. Please try again in a moment.", 503, extraHeaders, API_ERROR_CODES.SERVICE_UNAVAILABLE);
     }
 
     // All other Prisma errors
-    console.error(`[${context}] Prisma ${code}:`, e);
-    return err(`Database error. Please try again.`, 500, extraHeaders);
+    logApiError(context, API_ERROR_CODES.INTERNAL_ERROR, 500, `Prisma ${code}`);
+    return err("Database error. Please try again.", 500, extraHeaders);
   }
 
   // Prisma client initialization errors (missing env, connection refused)
   if (isPrismaClientError(e)) {
-    console.error(`[${context}] Prisma client error:`, e);
-    return err("Could not connect to the database. Please try again.", 503, extraHeaders);
+    logApiError(context, API_ERROR_CODES.SERVICE_UNAVAILABLE, 503, "Prisma client error");
+    return err("Could not connect to the database. Please try again.", 503, extraHeaders, API_ERROR_CODES.SERVICE_UNAVAILABLE);
   }
 
   // JSON parse errors from req.json()
   if (e instanceof SyntaxError) {
-    return err("Invalid JSON in request body.", 400, extraHeaders);
+    return err("Invalid JSON in request body.", 400, extraHeaders, API_ERROR_CODES.BAD_REQUEST);
   }
 
   // TypeError — usually a programming error or missing env var
   if (e instanceof TypeError) {
-    console.error(`[${context}] TypeError:`, e.message);
+    logApiError(context, API_ERROR_CODES.INTERNAL_ERROR, 500, e.message);
     return err("An internal error occurred. Please try again.", 500, extraHeaders);
   }
 
   // Unexpected
-  console.error(`[${context}] Unhandled error:`, e);
+  logApiError(context, API_ERROR_CODES.INTERNAL_ERROR, 500, "Unhandled error");
   return err("An unexpected error occurred. Please try again.", 500, extraHeaders);
+}
+
+function logApiError(
+  context: string,
+  code: ApiErrorCode,
+  status: number,
+  message: string,
+) {
+  console.error(JSON.stringify({ level: "error", context, code, status, message }));
 }
 
 // Map known Prisma unique fields to human-readable messages

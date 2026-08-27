@@ -23,6 +23,7 @@ describe("API same-origin protection", () => {
     );
 
     expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("x-request-id")).toBeTruthy();
   });
 
   it("preserves public feedback submission for its dedicated origin policy", () => {
