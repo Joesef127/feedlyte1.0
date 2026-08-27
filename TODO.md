@@ -1,222 +1,50 @@
-# Feedlyte 1.0 - Priority Todo List
+# Feedlyte active backlog
 
-## 🔴 Critical Issues (Fix Before Production)
+This file is intentionally short and intentionally tied to the master roadmap in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). The plan is the source of truth for sequencing and completion criteria.
 
-### 1. Rate Limiter - Redis/Upstash Integration
-- **Current Issue**: In-memory rate limiter resets on server restart
-- **Impact**: Doesn't work on multi-instance Vercel deployments
-- **Solution**: Integrate Redis or Upstash (free tier available)
-- **Affected Components**: `src/lib/rate-limit.ts`
-- **Priority**: CRITICAL for production
-- [ ] Replace in-memory limiter with Redis/Upstash
-- [ ] Test with multiple server instances
-- [ ] Update environment variables documentation
+## Done
 
-### 2. Settings Page - Backend Implementation
-- **Current Issue**: UI exists but non-functional
-- **Affected Features**: Account settings, billing, API keys, delete account
-- **Priority**: CRITICAL - users expect these features
-- [ ] Build `PATCH /api/users/[id]` endpoint for account updates
-- [ ] Build `DELETE /api/users/[id]` endpoint with confirmation
-- [ ] Implement cascading deletion logic
+- Basic auth flow with credentials registration, login, and session handling
+- Email verification and password reset routes with token generation and delivery
+- Project CRUD and project ownership checks
+- Public feedback submission with CORS-aware validation
+- Authenticated feedback list/detail/update/delete APIs
+- Webhook creation, HMAC signing, and delivery tracking
+- Notification email and digest features
+- Dashboard analytics and project detail views
+- A working widget loader and isolated widget UI
+- Test suite baseline and environment-validation guardrails
 
-### 3. Email Verification (Security)
-- **Current Issue**: Email verification tokens exist but aren't used
-- **Current Behavior**: Any email accepted on registration
-- **Solution**: Add verification step on signup
-- **Priority**: CRITICAL security best practice
-- [ ] Implement email verification flow
-- [ ] Integrate email service (SendGrid/Resend)
-- [ ] Create verification token management
-- [ ] Block login until email verified
+## Partial
 
-### 4. Add Pagination
-- **Current Issue**: All feedback loaded at once
-- **Impact**: Performance degrades with 100k+ feedback entries
-- **Solution**: Implement limit/offset or cursor-based pagination
-- **Priority**: CRITICAL for scalability
-- [ ] Add pagination logic to feedback API endpoint
-- [ ] Implement frontend pagination/infinite scroll UI
-- [ ] Test with large datasets
+- Durable, distributed rate limiting for widget and auth endpoints
+- Strong tenant/workspace authorization model
+- CI/CD workflow and deployment smoke checks
+- Security headers and CSP/csrf hardening for browser-authenticated routes
+- Key operational docs for rollback, backups, retention, and incident response
+- Performance work for pagination and bounded analytics
 
----
+## Blocked
 
-## 🟠 High Priority (Before Public Release)
+- Workspace/teams/role model and membership migration
+- Account-scoped AI assistant and permission-aware context
+- Public ingestion abuse controls beyond origin checks
+- Webhook SSRF protection and secret handling hardening
+- Owned audit log and retention policy
 
-### 5. Make CORS Configurable Per Project
-- **Current Issue**: Allowed origins are hardcoded in API routes
-- **Impact**: Cannot easily support custom domains
-- **Solution**: Store CORS settings per project in database
-- **Affected Components**: API feedback, widget routes
-- [ ] Add CORS configuration to Project schema (if needed)
-- [ ] Create endpoint to update CORS settings
-- [ ] Update API routes to check project-specific CORS
-- [ ] Test with multiple custom domains
+## Deferred
 
-### 6. Email Notifications
-- **Current Issue**: No emails sent on feedback submission
-- **Solution**: Integrate email service (SendGrid/Resend)
-- [ ] Set up email service integration
-- [ ] Create email templates for feedback alerts
-- [ ] Implement email sending on new feedback
-- [ ] Add optional email digest feature
-- [ ] Create email unsubscribe mechanism
+- Billing and subscription flows
+- Broad public feedback board features and growth integrations
+- Advanced AI integrations beyond the scoped assistant work
 
-### 7. Project Name Editing
-- **Current Issue**: Name can be set on creation but not edited
-- **UI Status**: Settings tab exists but API not functional
-- [ ] Test/verify existing PATCH endpoint
-- [ ] Create/fix frontend component for name editing
-- [ ] Add validation for project names
-- [ ] Test with special characters and edge cases
+## Removed / superseded
 
-### 8. Add Automated Tests
-- **Current Issue**: No automated tests (manual testing only)
-- **Recommended**: Jest + React Testing Library for critical flows
-- [ ] Set up Jest configuration
-- [ ] Set up React Testing Library
-- [ ] Create tests for authentication flow
-- [ ] Create tests for feedback submission
-- [ ] Create tests for project management
-- [ ] Set up CI/CD test pipeline
+- Old stale backlog items that described the project as missing basic tests, hooks, webhooks, or email support. Those items have been marked as shipped or replaced by the current plan.
 
-### 9. Advanced Feedback Filtering
-- **Current Issue**: No date range, project, or status filtering
-- **Missing Features**: Search, export (CSV/JSON)
-- [ ] Add date range filter UI
-- [ ] Add status filter UI
-- [ ] Add project filter in "All Feedback" view
-- [ ] Implement backend filtering logic
-- [ ] Add CSV export functionality
-- [ ] Add JSON export functionality
-- [ ] Test with large datasets
+## Active work
 
-### 10. Widget Email Validation
-- **Current Issue**: No client-side email validation
-- **Impact**: Invalid emails accepted and stored
-- **Note**: Server-side validation exists, but UX can improve
-- [ ] Add client-side email format validation in widget
-- [ ] Add visual feedback for invalid emails
-- [ ] Test with various invalid formats
-
----
-
-## 🟡 Medium Priority (Nice-to-Have)
-
-### 11. API Key Management
-- **Current Issue**: Displays hardcoded masked API key
-- **Missing**: Generation, rotation, and management logic
-- [ ] Implement API key generation
-- [ ] Create API key storage in database
-- [ ] Build API key revocation feature
-- [ ] Create API key management UI
-- [ ] Add rate limiting per API key
-- [ ] Document API key usage
-
-### 12. Delete Account Functionality
-- **Current Issue**: Button exists but does nothing
-- **Missing**: Confirmation modal, cascading deletion
-- [ ] Create confirmation modal component
-- [ ] Implement account deletion endpoint
-- [ ] Add cascading deletion for user's projects and feedback
-- [ ] Add audit logging for deletions
-- [ ] Send confirmation email after deletion
-
-### 13. Widget Custom Styling
-- **Current Limitations**: Only color, position, and label configurable
-- **Missing**: Fonts, sizes, animations, dark/light mode
-- [ ] Add font selection options
-- [ ] Add size customization
-- [ ] Add animation options
-- [ ] Add dark/light mode toggle for widget
-- [ ] Create widget preview with all options
-- [ ] Store styling preferences in database
-
-### 14. Widget Analytics
-- **Current Issue**: No tracking of impressions or submission rates
-- **Missing**: View tracking, interaction tracking, funnel analysis
-- [ ] Add widget view tracking table to schema
-- [ ] Implement view tracking on widget load
-- [ ] Track submission rates and success/failure
-- [ ] Create analytics dashboard
-- [ ] Add funnel analysis
-- [ ] Add conversion rate metrics
-
-### 15. Team/Organization Support
-- **Current Limitation**: Single user per project (no collaboration)
-- **Missing**: Role-based access control (RBAC), team invitations
-- [ ] Add Organization model to schema
-- [ ] Add Team/Organization management endpoints
-- [ ] Implement role-based access control
-- [ ] Create team invitation system
-- [ ] Build team member management UI
-- [ ] Test with multiple users and roles
-
-### 16. Webhook Integrations
-- **Current Issue**: No way to push feedback to Slack, Discord, etc.
-- **Missing**: Webhook delivery system, custom webhooks
-- [ ] Add webhooks table to schema
-- [ ] Create webhook management endpoints
-- [ ] Implement webhook payload formatting
-- [ ] Add Slack webhook integration
-- [ ] Add Discord webhook integration
-- [ ] Add custom webhook support
-- [ ] Implement webhook delivery retry logic
-- [ ] Add webhook event logging
-
-### 17. Data Export & Bulk Operations
-- **Current Issue**: Cannot export or perform bulk operations
-- **Missing**: CSV/JSON export, bulk delete, bulk status update
-- [ ] Implement CSV export for feedback
-- [ ] Implement JSON export for feedback
-- [ ] Add bulk delete functionality
-- [ ] Add bulk status update functionality
-- [ ] Create export scheduling (scheduled exports)
-- [ ] Add export history/archives
-
-### 18. Feedback Threading
-- **Current Issue**: Feedback is flat (no replies or context)
-- **Limitation**: Cannot follow up with users or provide responses
-- [ ] Add reply/thread support to schema
-- [ ] Create nested comment UI component
-- [ ] Implement thread management endpoints
-- [ ] Add notification for new replies
-- [ ] Create rich text editor for responses
-- [ ] Add @mention support for team collaboration
-
----
-
-## 🔵 Code Quality Improvements
-
-### 19. ESLint Configuration
-- **Current State**: Config exists but rules not enabled
-- [ ] Enable recommended ESLint rules
-- [ ] Add TypeScript ESLint rules
-- [ ] Configure import sorting rules
-- [ ] Add accessibility rules
-- [ ] Configure pre-commit hooks
-
-### 20. TypeScript Strict Mode
-- **Current State**: Not in strict mode
-- [ ] Enable `strict` mode in tsconfig.json
-- [ ] Fix all strict mode violations
-- [ ] Enable `noImplicitAny`
-- [ ] Enable `noImplicitThis`
-- [ ] Enable `strictNullChecks`
-
-### 21. Code Documentation
-- [ ] Add JSDoc comments to complex functions
-- [ ] Document all API endpoints
-- [ ] Create inline comments for business logic
-- [ ] Improve error boundary components
-- [ ] Add function return type documentation
-
-### 22. UI/UX Improvements
-- [ ] Add loading skeletons for better UX
-- [ ] Improve error messages for users
-- [ ] Add success notifications
-- [ ] Standardize form validation messages
-- [ ] Add empty state messages
+The current priority phase is Module 0, Phase 0.2: make the repository docs truthful and actionable. After that, the next implementation work continues in Module 1 with security and quality baseline hardening.
 
 ### 23. Magic String Extraction
 - [ ] Identify all hardcoded strings
