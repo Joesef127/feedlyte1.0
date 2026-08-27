@@ -35,4 +35,19 @@ describe("shared validation contracts", () => {
       false,
     );
   });
+
+  it("normalizes a configured origin and rejects non-origin URL parts", () => {
+    expect(
+      createProjectSchema.parse({
+        name: "Acme",
+        allowedOrigin: "HTTPS://Example.COM:443/",
+      }).allowedOrigin,
+    ).toBe("https://example.com");
+    expect(
+      createProjectSchema.safeParse({
+        name: "Acme",
+        allowedOrigin: "https://example.com/embed?preview=true",
+      }).success,
+    ).toBe(false);
+  });
 });

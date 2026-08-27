@@ -29,6 +29,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { POST as registerPost } from "@/app/api/auth/register/route";
 import { GET as listUsers } from "@/app/api/users/route";
+import { GET as getUser } from "@/app/api/users/[id]/route";
 
 const mockAuth = auth as ReturnType<typeof vi.fn>;
 const mockPrisma = prisma as unknown as {
@@ -69,34 +70,7 @@ describe("security baseline", () => {
     expect(json.email).toBe("user@example.com");
   });
 
-  it("returns the plural users list from the users endpoint for authenticated requests", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
-    mockPrisma.user.findMany.mockResolvedValue([
-      {
-        id: "user_1",
-        name: "Test User",
-        email: "user@example.com",
-        image: null,
-        createdAt: new Date("2024-01-15T10:00:00.000Z"),
-      },
-      {
-        id: "user_2",
-        name: "Another User",
-        email: "other@example.com",
-        image: null,
-        createdAt: new Date("2024-01-16T10:00:00.000Z"),
-      },
-    ]);
-
-    const res = await listUsers(new Request("http://localhost/api/users"));
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(Array.isArray(json)).toBe(true);
-    expect(json).toHaveLength(2);
-    expect(json[0].email).toBe("user@example.com");
-  });
-
-  it("returns a single user when id query parameter is provided", async () => {
+  it("returns only the authenticated account from the legacy users endpoint", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user_1" } });
     mockPrisma.user.findUnique.mockResolvedValue({
       id: "user_1",
@@ -106,7 +80,23 @@ describe("security baseline", () => {
       createdAt: new Date("2024-01-15T10:00:00.000Z"),
     });
 
-    const res = await listUsers(new Request("http://localhost/api/users?id=user_1"));
+    const res = await listUsers();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.id).toBe("user_1");
+  });
+
+  it("ignores account identifiers supplied to the legacy users endpoint", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: "user_1",
+      name: "Test User",
+      email: "user@example.com",
+      image: null,
+      createdAt: new Date("2024-01-15T10:00:00.000Z"),
+    });
+
+    const res = await listUsers();
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.id).toBe("user_1");
@@ -124,20 +114,32 @@ describe("security baseline", () => {
     });
   });
 
-  it("returns 404 when single user is not found", async () => {
+  it("returns 404 when the authenticated account no longer exists", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user_1" } });
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
-    const res = await listUsers(new Request("http://localhost/api/users?id=non_existent"));
+    const res = await listUsers();
     expect(res.status).toBe(404);
     const json = await res.json();
     expect(json.error).toBe("User not found");
   });
 
+  it("does not disclose another account through the user ID route", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
+
+    const res = await getUser(
+      new Request("http://localhost/api/users/user_2"),
+      { params: Promise.resolve({ id: "user_2" }) },
+    );
+
+    expect(res.status).toBe(404);
+    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+  });
+
   it("returns 401 for unauthenticated requests to users endpoint", async () => {
     mockAuth.mockResolvedValue(null);
 
-    const res = await listUsers(new Request("http://localhost/api/users"));
+    const res = await listUsers();
     expect(res.status).toBe(401);
     const json = await res.json();
     expect(json.error).toBe("Unauthorized");

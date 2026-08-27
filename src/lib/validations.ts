@@ -43,9 +43,31 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 const originSchema = z
   .string()
-  .url("Allowed origin must be a valid URL")
-  .regex(/^https?:\/\//, "Origin must start with http:// or https://")
-  .transform((val) => val.replace(/\/$/, ""))
+  .trim()
+  .superRefine((value, context) => {
+    try {
+      const url = new URL(value);
+      if (
+        !["http:", "https:"].includes(url.protocol) ||
+        url.username ||
+        url.password ||
+        url.pathname !== "/" ||
+        url.search ||
+        url.hash
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "Allowed origin must be an http or https origin without a path, query, fragment, or credentials",
+        });
+      }
+    } catch {
+      context.addIssue({
+        code: "custom",
+        message: "Allowed origin must be a valid URL",
+      });
+    }
+  })
+  .transform((value) => new URL(value).origin)
   .optional()
   .nullable();
 
