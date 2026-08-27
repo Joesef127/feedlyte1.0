@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "validate:env": "node scripts/validate-env.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
