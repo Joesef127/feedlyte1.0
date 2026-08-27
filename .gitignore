@@ -43,3 +43,5 @@ next-env.d.ts
 /src/generated/prisma
 
 .idea
+PROJECT_APPRAISAL.md
+IMPLEMENTATION_PLAN.md
