@@ -16,11 +16,101 @@ model User {
   passwordHash  String?
   createdAt     DateTime  @default(now())
 
-  accounts Account[]
-  sessions Session[]
-  projects Project[]
+  accounts        Account[]
+  sessions        Session[]
+  memberships     Membership[]
+  projects        Project[]
+  invitations     Invitation[]
+  auditEvents     AuditEvent[]
+  ownedWorkspaces Workspace[]  @relation("WorkspaceOwner")
 
   @@map("users")
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?
+
+  owner       User         @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     Membership[]
+  projects    Project[]
+  invitations Invitation[]
+  auditEvents AuditEvent[]
+
+  @@map("workspaces")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  ANALYST
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  PENDING
+  REMOVED
+}
+
+model Membership {
+  id        String          @id @default(cuid())
+  workspaceId String
+  userId    String
+  role      MembershipRole  @default(VIEWER)
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, role])
+  @@map("memberships")
+}
+
+model Invitation {
+  id         String   @id @default(cuid())
+  workspaceId String
+  email      String
+  invitedBy  String
+  role       MembershipRole @default(VIEWER)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter   User      @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, email])
+  @@map("invitations")
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  workspaceId  String?
+  userId      String?
+  entityType  String
+  entityId    String
+  action      String
+  details     String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_events")
 }
 
 model Account {
@@ -67,6 +157,7 @@ model Project {
   id                      String   @id @default(cuid())
   name                    String
   userId                  String
+  workspaceId             String?
   color                   String   @default("#F59E0B")
   position                String   @default("bottom-right")
   label                   String   @default("Feedback")
@@ -80,10 +171,12 @@ model Project {
   lastDigestSentAt        DateTime?                        // NEW: for daily digest dedup
   createdAt               DateTime @default(now())
 
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  feedback Feedback[]
-  webhooks Webhook[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  feedback  Feedback[]
+  webhooks  Webhook[]
 
+  @@index([workspaceId, createdAt])
   @@map("projects")
 }
 

@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "validate:env": "node scripts/validate-env.mjs",
+    "smoke:deploy": "node scripts/deploy-smoke.mjs",
     "audit:production": "npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
