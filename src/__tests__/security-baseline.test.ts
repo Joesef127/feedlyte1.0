@@ -70,58 +70,13 @@ describe("security baseline", () => {
     expect(json.email).toBe("user@example.com");
   });
 
-  it("returns only the authenticated account from the legacy users endpoint", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
-    mockPrisma.user.findUnique.mockResolvedValue({
-      id: "user_1",
-      name: "Test User",
-      email: "user@example.com",
-      image: null,
-      createdAt: new Date("2024-01-15T10:00:00.000Z"),
-    });
-
+  it("reserves the users collection endpoint for future RBAC directory access", async () => {
     const res = await listUsers();
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(405);
+    expect(res.headers.get("Allow")).toBe("PATCH, PUT");
     const json = await res.json();
-    expect(json.id).toBe("user_1");
-  });
-
-  it("ignores account identifiers supplied to the legacy users endpoint", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
-    mockPrisma.user.findUnique.mockResolvedValue({
-      id: "user_1",
-      name: "Test User",
-      email: "user@example.com",
-      image: null,
-      createdAt: new Date("2024-01-15T10:00:00.000Z"),
-    });
-
-    const res = await listUsers();
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.id).toBe("user_1");
-    expect(json.name).toBe("Test User");
-    expect(json.email).toBe("user@example.com");
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-      where: { id: "user_1" },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        createdAt: true,
-      },
-    });
-  });
-
-  it("returns 404 when the authenticated account no longer exists", async () => {
-    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
-    mockPrisma.user.findUnique.mockResolvedValue(null);
-
-    const res = await listUsers();
-    expect(res.status).toBe(404);
-    const json = await res.json();
-    expect(json.error).toBe("User not found");
+    expect(json.error).toBe("User directory is not available.");
+    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
   });
 
   it("does not disclose another account through the user ID route", async () => {
@@ -136,12 +91,12 @@ describe("security baseline", () => {
     expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
   });
 
-  it("returns 401 for unauthenticated requests to users endpoint", async () => {
+  it("does not enable collection reads for unauthenticated requests", async () => {
     mockAuth.mockResolvedValue(null);
 
     const res = await listUsers();
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(405);
     const json = await res.json();
-    expect(json.error).toBe("Unauthorized");
+    expect(json.error).toBe("User directory is not available.");
   });
 });
