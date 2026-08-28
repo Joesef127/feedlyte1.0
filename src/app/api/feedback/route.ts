@@ -5,6 +5,7 @@ import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { checkWidgetRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { handleError, withApiVersionHeaders } from "@/lib/api-helpers";
 import { fireWebhooks } from "@/lib/webhooks";
+import { enqueueOutboxEvent } from "@/lib/outbox";
 import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
 
 const MAX_FEEDBACK_PAGE_SIZE = 100;
@@ -369,6 +370,17 @@ export async function POST(req: Request) {
     }
 
 
+
+    // Queue the durable event first so feedback creation is never lost if downstream work fails.
+    await enqueueOutboxEvent("feedback.created", {
+      id: feedback.id,
+      projectId: feedback.projectId,
+      message: feedback.message,
+      email: feedback.email,
+      pageUrl: feedback.pageUrl,
+      status: feedback.status,
+      createdAt: feedback.createdAt.toISOString(),
+    });
 
     // Fire webhooks async — does not block the response
     fireWebhooks({

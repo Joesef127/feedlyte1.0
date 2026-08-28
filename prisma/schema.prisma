@@ -231,3 +231,20 @@ model WebhookDelivery {
   @@index([createdAt])
   @@map("webhook_deliveries")
 }
+
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  eventType     String
+  payload       String    @db.Text
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(5)
+  nextAttemptAt DateTime  @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([eventType, createdAt])
+  @@map("outbox_events")
+}

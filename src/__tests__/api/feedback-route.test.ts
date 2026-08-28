@@ -32,6 +32,10 @@ vi.mock("@/lib/webhooks", () => ({
   fireWebhooks: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/lib/outbox", () => ({
+  enqueueOutboxEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("@/lib/api-helpers", () => ({
   withApiVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
   withWidgetVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
@@ -44,11 +48,13 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { checkWidgetRateLimit } from "@/lib/rate-limit";
 import { fireWebhooks } from "@/lib/webhooks";
+import { enqueueOutboxEvent } from "@/lib/outbox";
 import { GET, POST, OPTIONS } from "@/app/api/feedback/route";
 
 const mockAuth              = auth as ReturnType<typeof vi.fn>;
 const mockCheckRateLimit    = checkWidgetRateLimit as ReturnType<typeof vi.fn>;
 const mockFireWebhooks      = fireWebhooks as ReturnType<typeof vi.fn>;
+const mockEnqueueOutbox     = enqueueOutboxEvent as ReturnType<typeof vi.fn>;
 const mockPrisma = prisma as unknown as {
   project:  { findUnique: ReturnType<typeof vi.fn> };
   feedback: { findMany: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
@@ -320,6 +326,14 @@ describe("POST /api/feedback", () => {
 
     await POST(makePostRequest(baseFeedbackBody));
 
+    expect(mockEnqueueOutbox).toHaveBeenCalledWith(
+      "feedback.created",
+      expect.objectContaining({
+        id: "fb_1",
+        projectId: "proj_1",
+        status: "unreviewed",
+      }),
+    );
     expect(mockFireWebhooks).toHaveBeenCalledOnce();
     const payload = mockFireWebhooks.mock.calls[0][0];
     expect(payload.id).toBe("fb_1");
