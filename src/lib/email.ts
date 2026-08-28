@@ -1,14 +1,52 @@
 import { Resend } from "resend";
 import { createEmailVerificationToken, validateEmailVerificationToken } from "@/lib/tokens";
 
+interface EmailMessage {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+}
+
+export interface EmailTransport {
+  send(message: EmailMessage): Promise<{ id?: string } | void>;
+}
+
+let configuredTransport: EmailTransport | null = null;
+
+export function setEmailTransport(transport: EmailTransport | null): void {
+  configuredTransport = transport;
+}
+
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
   return apiKey ? new Resend(apiKey) : null;
 }
 
-const FROM = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+function getEmailTransport(): EmailTransport | null {
+  if (configuredTransport) return configuredTransport;
 
-const TO = process.env.EMAIL_TO || "Adegboladayor@gmail.com";
+  const resend = getResendClient();
+  if (resend) {
+    return {
+      send: async (message) => {
+        const { data, error } = await resend.emails.send(message);
+        if (error) throw error;
+        return { id: data?.id };
+      },
+    };
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return {
+      send: async () => undefined,
+    };
+  }
+
+  return null;
+}
+
+const FROM = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
 
 export interface SendEmailResult {
   success: boolean;
@@ -32,48 +70,45 @@ export async function sendPasswordResetEmail(
   if (!to) {
     return { success: false, error: "Recipient email is required" };
   }
-  const resend = getResendClient();
-  if (!resend) {
+  const transport = getEmailTransport();
+  if (!transport) {
     return { success: false, error: "Email delivery is not configured" };
   }
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to,
-    subject: "Reset your Feedlyte password",
-    html: passwordResetTemplate(resetUrl),
-  });
-
-  if (error) {
+  try {
+    const result = await transport.send({
+      from: FROM,
+      to,
+      subject: "Reset your Feedlyte password",
+      html: passwordResetTemplate(resetUrl),
+    });
+    console.log("[email] Password reset email sent", { id: result?.id });
+    return { success: true };
+  } catch (error) {
     console.error("[email] sendPasswordResetEmail failed", error);
     return { success: false, error: "Failed to send email." };
   }
-
-  console.log("[email] Password reset email sent", { id: data?.id });
-  return { success: true };
 }
 
 export async function sendVerificationEmail(
   to: string,
   verifyUrl: string,
 ): Promise<SendEmailResult> {
-  const resend = getResendClient();
-  if (!resend) {
+  const transport = getEmailTransport();
+  if (!transport) {
     return { success: false, error: "Email delivery is not configured" };
   }
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to,
-    subject: "Verify your Feedlyte email address",
-    html: verificationTemplate(verifyUrl),
-  });
-
-  if (error) {
+  try {
+    await transport.send({
+      from: FROM,
+      to,
+      subject: "Verify your Feedlyte email address",
+      html: verificationTemplate(verifyUrl),
+    });
+    return { success: true };
+  } catch (error) {
     console.error("[email] sendVerificationEmail failed", error);
     return { success: false, error: "Failed to send email." };
   }
-
-  console.log("[email] Verification email sent", { id: data?.id });
-  return { success: true };
 }
 
 function parseUserAgent(ua: string): { browser: string; os: string } {
@@ -113,24 +148,23 @@ export async function sendFeedbackNotificationEmail(
   dashboardUrl: string,
   unsubscribeUrl: string
 ): Promise<SendEmailResult> {
-  const resend = getResendClient();
-  if (!resend) {
+  const transport = getEmailTransport();
+  if (!transport) {
     return { success: false, error: "Email delivery is not configured" };
   }
   const { browser, os } = parseUserAgent(feedback.userAgent || "");
-  
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to,
-    subject: `New feedback on ${projectName}`,
-    html: feedbackNotificationTemplate(projectName, feedback, browser, os, dashboardUrl, unsubscribeUrl),
-  });
-
-  if (error) {
+  try {
+    await transport.send({
+      from: FROM,
+      to,
+      subject: `New feedback on ${projectName}`,
+      html: feedbackNotificationTemplate(projectName, feedback, browser, os, dashboardUrl, unsubscribeUrl),
+    });
+    return { success: true };
+  } catch (error) {
     console.error("[email] sendFeedbackNotificationEmail failed", error);
     return { success: false, error: "Failed to send email." };
   }
-  return { success: true };
 }
 
 // NEW: Daily digest email with unsubscribe link
@@ -148,22 +182,22 @@ export async function sendDailyDigestEmail(
   dashboardUrl: string,
   unsubscribeUrl: string
 ): Promise<SendEmailResult> {
-  const resend = getResendClient();
-  if (!resend) {
+  const transport = getEmailTransport();
+  if (!transport) {
     return { success: false, error: "Email delivery is not configured" };
   }
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to,
-    subject: `Daily digest: ${feedbackItems.length} new feedback item(s) on ${projectName}`,
-    html: dailyDigestTemplate(projectName, feedbackItems, dashboardUrl, unsubscribeUrl),
-  });
-
-  if (error) {
+  try {
+    await transport.send({
+      from: FROM,
+      to,
+      subject: `Daily digest: ${feedbackItems.length} new feedback item(s) on ${projectName}`,
+      html: dailyDigestTemplate(projectName, feedbackItems, dashboardUrl, unsubscribeUrl),
+    });
+    return { success: true };
+  } catch (error) {
     console.error("[email] sendDailyDigestEmail failed", error);
     return { success: false, error: "Failed to send email." };
   }
-  return { success: true };
 }
 
 export function escapeHtml(str: string): string {

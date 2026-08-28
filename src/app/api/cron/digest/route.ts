@@ -108,7 +108,21 @@ export async function GET(req: Request) {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${unsubscribeToken}`;
         const dashboardUrl = `${baseUrl}/dashboard/projects/${project.id}`;
-        await sendDailyDigestEmail(
+        const claim = await prisma.project.updateMany({
+          where: {
+            id: project.id,
+            ...(lastSent
+              ? { lastDigestSentAt: lastSent }
+              : { lastDigestSentAt: null }),
+          },
+          data: { lastDigestSentAt: now },
+        });
+
+        if (claim.count === 0) {
+          return { skipped: true, reason: "claimed_by_another_run" };
+        }
+
+        const delivery = await sendDailyDigestEmail(
           project.user.email,
           project.name,
           feedback.map(f => ({
@@ -122,11 +136,13 @@ export async function GET(req: Request) {
           unsubscribeUrl
         );
 
-        // Mark as sent for today (atomic update with conditional)
-        await prisma.project.update({
-          where: { id: project.id },
-          data: { lastDigestSentAt: now },
-        });
+        if (!delivery.success) {
+          await prisma.project.updateMany({
+            where: { id: project.id, lastDigestSentAt: now },
+            data: { lastDigestSentAt: lastSent },
+          });
+          throw new Error(delivery.error || "Digest email delivery failed");
+        }
 
         return { sent: true };
       })
