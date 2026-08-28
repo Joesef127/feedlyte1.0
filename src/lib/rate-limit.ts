@@ -30,6 +30,9 @@ const widgetLimiter = new RateLimiterMemory({
   duration: 60, // 1 min
 });
 
+const makeWidgetLimiterKey = (projectId: string, clientIp?: string) =>
+  [projectId, clientIp].filter(Boolean).join(":");
+
 export async function checkAuthRateLimit(
   ip: string,
 ): Promise<RateLimitResult> {
@@ -56,9 +59,11 @@ export async function checkAuthRateLimit(
 
 export async function checkWidgetRateLimit(
   projectId: string,
+  clientIp = "default",
 ): Promise<RateLimitResult> {
   try {
-    const result = await widgetLimiter.consume(projectId);
+    const key = makeWidgetLimiterKey(projectId, clientIp);
+    const result = await widgetLimiter.consume(key);
 
     return {
       success: true,

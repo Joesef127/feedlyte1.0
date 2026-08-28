@@ -8,6 +8,19 @@ import { fireWebhooks } from "@/lib/webhooks";
 import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
 
 const MAX_FEEDBACK_PAGE_SIZE = 100;
+const MAX_FEEDBACK_BODY_BYTES = 16_384;
+const HONEYPOT_FIELDS = new Set([
+  "website",
+  "homepage",
+  "url",
+  "company",
+  "fax",
+  "nickname",
+  "botfield",
+  "hpfield",
+]);
+const IDEMPOTENCY_TTL_MS = 60 * 60 * 1000;
+const IDEMPOTENCY_CACHE = new Map<string, number>();
 
 const FALLBACK_ORIGINS = [
   "https://feedlyte.vercel.app",
@@ -32,6 +45,30 @@ function getListQueryOptions(req: Request) {
     take,
     cursor: cursorParam?.trim() || null,
   };
+}
+
+function getTrustedClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",").map((value) => value.trim()).find(Boolean);
+    if (first && first !== "unknown") return first;
+  }
+
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp && realIp !== "unknown") return realIp.trim();
+
+  return "unknown";
+}
+
+function hasHoneypotFields(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  return Object.keys(value as Record<string, unknown>).some((key) =>
+    HONEYPOT_FIELDS.has(key.toLowerCase()),
+  );
+}
+
+function getDuplicateKey(projectId: string, idempotencyKey: string): string {
+  return `${projectId}:${idempotencyKey}`;
 }
 
 function isOriginAllowed(
@@ -166,7 +203,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const rateLimit = await checkWidgetRateLimit(projectId);
+    const clientIp = getTrustedClientIp(req);
+    const rateLimit = await checkWidgetRateLimit(projectId, clientIp);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -177,7 +215,50 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
+    const rawBodyText = await req.clone().text();
+    if (rawBodyText.length > MAX_FEEDBACK_BODY_BYTES) {
+      return NextResponse.json(
+        { error: "Request body is too large." },
+        { status: 413, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = JSON.parse(rawBodyText || "{}");
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body." },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    if (hasHoneypotFields(body)) {
+      return NextResponse.json(
+        { error: "Request rejected." },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    const idempotencyKey = req.headers.get("x-idempotency-key")?.trim();
+    if (idempotencyKey) {
+      const dedupeKey = getDuplicateKey(projectId, idempotencyKey);
+      const now = Date.now();
+      for (const [key, timestamp] of IDEMPOTENCY_CACHE.entries()) {
+        if (now - timestamp > IDEMPOTENCY_TTL_MS) {
+          IDEMPOTENCY_CACHE.delete(key);
+        }
+      }
+      const previous = IDEMPOTENCY_CACHE.get(dedupeKey);
+      if (previous && now - previous < IDEMPOTENCY_TTL_MS) {
+        return NextResponse.json(
+          { error: "Duplicate request detected." },
+          { status: 409, headers: withApiVersionHeaders(corsHeaders) },
+        );
+      }
+      IDEMPOTENCY_CACHE.set(dedupeKey, now);
+    }
+
     const parsed = submitFeedbackSchema.safeParse(body);
 
     if (!parsed.success) {

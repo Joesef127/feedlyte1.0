@@ -430,6 +430,67 @@ describe("POST /api/feedback", () => {
       data: expect.objectContaining({ pageUrl: null }),
     });
   });
+
+  it("rejects honeypot fields before creating feedback", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+
+    const res = await POST(makePostRequest({
+      ...baseFeedbackBody,
+      website: "https://spam.example",
+    }));
+
+    expect(res.status).toBe(400);
+    expect(mockPrisma.feedback.create).not.toHaveBeenCalled();
+  });
+
+  it("keys rate limits by project and trusted client IP", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const req = new Request("http://localhost/api/feedback?project=proj_1", {
+      method:  "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://feedlyte.vercel.app",
+        "x-forwarded-for": "203.0.113.9, 10.0.0.2",
+      },
+      body: JSON.stringify(baseFeedbackBody),
+    });
+
+    await POST(req);
+
+    expect(mockCheckRateLimit).toHaveBeenCalledWith("proj_1", "203.0.113.9");
+  });
+
+  it("rejects duplicate submissions when the same idempotency key is reused", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const requestFactory = () => new Request("http://localhost/api/feedback?project=proj_1", {
+      method:  "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://feedlyte.vercel.app",
+        "x-idempotency-key": "dup-1",
+      },
+      body: JSON.stringify(baseFeedbackBody),
+    });
+
+    const first = await POST(requestFactory());
+    const second = await POST(requestFactory());
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(409);
+  });
 });
 
 // ── CORS origin logic (isOriginAllowed) ───────────────────────────────────────
