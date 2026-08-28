@@ -22,13 +22,11 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Ensure widget.js is never served stale from Vercel's CDN edge cache.
-        // Without this, old versions of the file survive redeployment.
         source: "/widget.js",
         headers: [
           {
             key: "Cache-Control",
-            value: "no-store, must-revalidate",
+            value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
           },
         ],
       },

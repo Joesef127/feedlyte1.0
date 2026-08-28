@@ -5,6 +5,14 @@ import { useState, useEffect, useRef, use } from "react";
 interface WidgetSearchParams {
   project?: string;
   position?: string;
+  color?: string;
+  label?: string;
+  offset?: string;
+  width?: string;
+  theme?: string;
+  fields?: string;
+  consent?: string;
+  launcher?: string;
   url?: string;
   lang?: string;
   rtl?: string;
@@ -32,6 +40,27 @@ function sanitizePageUrl(url: string): string {
   }
 }
 
+function sanitizeWidgetColor(color: string | undefined): string {
+  return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#F59E0B";
+}
+
+function sanitizeWidgetLabel(label: string | undefined): string {
+  return label && label.length <= 40 ? label : "Feedback";
+}
+
+function sanitizeWidgetNumber(value: string | undefined, fallback: number, min: number, max: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max ? Math.round(parsed) : fallback;
+}
+
+function sanitizeWidgetTheme(theme: string | undefined): "dark" | "light" {
+  return theme === "light" ? "light" : "dark";
+}
+
+function sanitizeWidgetFields(fields: string | undefined): { email: boolean } {
+  return { email: fields?.split(",").map((field) => field.trim()).includes("email") ?? true };
+}
+
 export default function WidgetPage({
   searchParams = EMPTY_PARAMS_PROMISE,
 }: {
@@ -44,8 +73,14 @@ export default function WidgetPage({
 
   const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
   const [position, setPosition] = useState(resolvedParams?.position ?? "");
-  const [widgetColor, setWidgetColor] = useState("#F59E0B");
-  const [widgetLabel, setWidgetLabel] = useState("Feedback");
+  const [widgetColor, setWidgetColor] = useState(sanitizeWidgetColor(resolvedParams?.color));
+  const [widgetLabel, setWidgetLabel] = useState(sanitizeWidgetLabel(resolvedParams?.label));
+  const [width, setWidth] = useState(sanitizeWidgetNumber(resolvedParams?.width, 360, 280, 480));
+  const [theme, setTheme] = useState(sanitizeWidgetTheme(resolvedParams?.theme));
+  const [fields, setFields] = useState(sanitizeWidgetFields(resolvedParams?.fields));
+  const [consentText, setConsentText] = useState((resolvedParams?.consent ?? "").slice(0, 160));
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [launcherStyle] = useState(resolvedParams?.launcher === "tab" ? "tab" : "pill");
   const [isRtl, setIsRtl] = useState(Boolean(resolvedParams?.rtl === "true" || resolvedParams?.rtl === "1"));
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -57,6 +92,8 @@ export default function WidgetPage({
   const [error, setError] = useState("");
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Prefer the value from searchParams prop (most reliable). The window.location
   // fallback below handles the case where the prop is absent.
@@ -70,6 +107,12 @@ export default function WidgetPage({
     const params = new URLSearchParams(window.location.search);
     setProjectId(params.get("project") ?? "");
     setPosition(params.get("position") ?? "bottom-right");
+    setWidgetColor(sanitizeWidgetColor(params.get("color") ?? undefined));
+    setWidgetLabel(sanitizeWidgetLabel(params.get("label") ?? undefined));
+    setWidth(sanitizeWidgetNumber(params.get("width") ?? undefined, 360, 280, 480));
+    setTheme(sanitizeWidgetTheme(params.get("theme") ?? undefined));
+    setFields(sanitizeWidgetFields(params.get("fields") ?? undefined));
+    setConsentText((params.get("consent") ?? "").slice(0, 160));
     setIsRtl(params.get("rtl") === "true" || params.get("rtl") === "1");
     // Prefer the URL passed by widget.js (most reliable — runs on host page
     // before any cross-origin restrictions). Fall back to document.referrer
@@ -105,8 +148,8 @@ export default function WidgetPage({
     fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)      .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
-        if (data.color) setWidgetColor(data.color);
-        if (data.label) setWidgetLabel(data.label);
+        if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
+        if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
         if (data.position) setPosition(data.position);
       })
       .catch(() => {});
@@ -131,6 +174,21 @@ export default function WidgetPage({
     const h = containerRef.current?.scrollHeight ?? 68;
     window.parent.postMessage({ type: "feedlyte:resize", height: h }, targetOrigin);
   }, [open, submitted, pageUrl]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => launcherRef.current?.focus());
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    requestAnimationFrame(() => messageInputRef.current?.focus());
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   const handleSubmit = async () => {
     const trimmedMessage = message.trim();
@@ -173,7 +231,10 @@ export default function WidgetPage({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
+        if (res.status === 403) setError("This widget is not authorized for this website.");
+        else if (res.status === 409) setError("This feedback was already submitted. You can try again with a new message.");
+        else if (res.status === 429) setError(data.error ?? "Too many requests. Please wait a moment and try again.");
+        else setError(data.error ?? "Something went wrong. Please try again.");
         return;
       }
       setSubmitted(true);
@@ -186,9 +247,13 @@ export default function WidgetPage({
     }
   };
 
+  const normalizedPosition = position === "bottom-left" ? "bottom-left" : "bottom-right";
   const primaryColor = widgetColor;
-  const isRight = position !== "bottom-left";
-  const canSubmit = message.trim().length > 0 && !submitting && (!email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()));
+  const isRight = normalizedPosition !== "bottom-left";
+  const canSubmit = message.trim().length > 0 && !submitting && (!fields.email || !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) && (!consentText || consentGiven);
+  const palette = theme === "light"
+    ? { panel: "#ffffff", field: "#f5f5f5", border: "#d4d4d4", text: "#171717", muted: "#525252" }
+    : { panel: "#1a1a1a", field: "#111111", border: "#2d2d2d", text: "#e5e5e5", muted: "#a3a3a3" };
 
   return (
     <div
@@ -212,13 +277,13 @@ export default function WidgetPage({
           role="dialog"
           aria-label="Feedback form"
           style={{
-            background: "#1a1a1a",
-            border: "1px solid #2d2d2d",
+            background: palette.panel,
+            border: `1px solid ${palette.border}`,
             borderRadius: "12px",
             padding: "16px",
             marginBottom: "10px",
-            width: "340px",
-            maxWidth: "calc(100vw - 48px)",
+            width: `${width}px`,
+            maxWidth: "calc(100vw - 32px)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
           }}
         >
@@ -228,7 +293,7 @@ export default function WidgetPage({
               <p
                 aria-live="polite"
                 style={{
-                  color: "#e5e5e5",
+                  color: palette.text,
                   fontSize: "14px",
                   fontWeight: 600,
                   margin: "0 0 4px",
@@ -236,7 +301,7 @@ export default function WidgetPage({
               >
                 Thanks for your feedback!
               </p>
-              <p style={{ color: "#737373", fontSize: "12px", margin: 0 }}>
+              <p style={{ color: palette.muted, fontSize: "12px", margin: 0 }}>
                 We appreciate you taking the time.
               </p>
               <button
@@ -270,7 +335,7 @@ export default function WidgetPage({
               >
                 <p
                   style={{
-                    color: "#e5e5e5",
+                    color: palette.text,
                     fontSize: "13px",
                     fontWeight: 600,
                     margin: 0,
@@ -279,11 +344,14 @@ export default function WidgetPage({
                   Share your feedback
                 </p>
                 <button
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    setOpen(false);
+                    requestAnimationFrame(() => launcherRef.current?.focus());
+                  }}
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#737373",
+                    color: palette.muted,
                     fontSize: "18px",
                     cursor: "pointer",
                     lineHeight: 1,
@@ -298,6 +366,7 @@ export default function WidgetPage({
                 Feedback message
               </label>
               <textarea
+                ref={messageInputRef}
                 id="feedlyte-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -322,32 +391,26 @@ export default function WidgetPage({
                 onFocus={(e) => (e.target.style.borderColor = primaryColor)}
                 onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
               />
-              <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "12px", fontWeight: 600 }}>
-                Email
-              </label>
-              <input
-                id="feedlyte-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email (optional)"
-                aria-label="Email"
-                style={{
-                  width: "100%",
-                  background: "#111",
-                  border: "1px solid #2d2d2d",
-                  borderRadius: "7px",
-                  color: "#e5e5e5",
-                  fontSize: "13px",
-                  padding: "7px 10px",
-                  outline: "none",
-                  boxSizing: "border-box",
-                  marginBottom: "10px",
-                  fontFamily: "inherit",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = primaryColor)}
-                onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
-              />
+              {fields.email && <>
+                <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: palette.text, fontSize: "12px", fontWeight: 600 }}>
+                  Email
+                </label>
+                <input
+                  id="feedlyte-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email (optional)"
+                  aria-label="Email"
+                  style={{ width: "100%", background: palette.field, border: `1px solid ${palette.border}`, borderRadius: "7px", color: palette.text, fontSize: "13px", padding: "7px 10px", outline: "none", boxSizing: "border-box", marginBottom: "10px", fontFamily: "inherit" }}
+                  onFocus={(e) => (e.target.style.borderColor = primaryColor)}
+                  onBlur={(e) => (e.target.style.borderColor = palette.border)}
+                />
+              </>}
+              {consentText && <label style={{ display: "flex", gap: "8px", alignItems: "flex-start", color: palette.muted, fontSize: "11px", marginBottom: "10px" }}>
+                <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} aria-label="Consent" />
+                <span>{consentText}</span>
+              </label>}
               {error && (
                 <p
                   aria-live="polite"
@@ -364,7 +427,7 @@ export default function WidgetPage({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                aria-label="Send feedback"
+                aria-label={error ? "Try again" : "Send feedback"}
                 style={{
                   width: "100%",
                   background: !canSubmit ? "#d3d0d0" : primaryColor,
@@ -379,7 +442,7 @@ export default function WidgetPage({
                   transition: prefersReducedMotion ? "none" : "background 0.15s",
                 }}
               >
-                {submitting ? "Sending..." : "Send Feedback"}
+                {submitting ? "Sending..." : error ? "Try again" : "Send Feedback"}
               </button>
             </>
           )}
@@ -388,8 +451,17 @@ export default function WidgetPage({
 
       {/* Toggle button */}
       <button
+        ref={launcherRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          if (next) {
+            requestAnimationFrame(() => messageInputRef.current?.focus());
+          } else {
+            requestAnimationFrame(() => launcherRef.current?.focus());
+          }
+        }}
         aria-label="Toggle feedback form"
         aria-controls="feedlyte-feedback-form"
         aria-expanded={open}
@@ -398,7 +470,7 @@ export default function WidgetPage({
         style={{
           background: primaryColor,
           border: "none",
-          borderRadius: "22px",
+          borderRadius: launcherStyle === "tab" ? "7px 7px 0 0" : "22px",
           color: "#ffffff",
           fontSize: "13px",
           fontWeight: 600,

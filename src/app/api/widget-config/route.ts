@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { withWidgetVersionHeaders, WIDGET_CONFIG_VERSION } from "@/lib/api-helpers";
 
+function sanitizeColor(value: string): string {
+  return /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#F59E0B";
+}
+
+function sanitizeLabel(value: string): string {
+  return value.length > 0 && value.length <= 30 ? value : "Feedback";
+}
+
 // Public — no auth. Returns only non-sensitive widget config for a given project.
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -23,9 +31,9 @@ export async function GET(req: Request) {
   return NextResponse.json(
     {
       version: WIDGET_CONFIG_VERSION,
-      color: project.color,
-      position: project.position,
-      label: project.label,
+      color: sanitizeColor(project.color),
+      position: project.position === "bottom-left" ? "bottom-left" : "bottom-right",
+      label: sanitizeLabel(project.label),
       allowedOrigin: project.allowedOrigin ?? null,
     },
     {

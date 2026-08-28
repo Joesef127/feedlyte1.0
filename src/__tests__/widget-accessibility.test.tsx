@@ -7,6 +7,10 @@ import WidgetPage from "../app/(widget)/widget/page";
 describe("widget accessibility contract", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: true,
+    });
   });
 
   it("exposes the toggle and form with accessible labels", async () => {
@@ -101,5 +105,64 @@ describe("widget accessibility contract", () => {
     await user.click(screen.getByRole("button", { name: /send feedback/i }));
 
     expect(screen.getByText(/offline/i)).toBeInTheDocument();
+  });
+
+  it("moves focus into the form and restores focus to the launcher when closed with Escape", async () => {
+    const user = userEvent.setup();
+
+    await act(async () => {
+      render(
+        <WidgetPage
+          searchParams={Promise.resolve({
+            project: "proj_123",
+            position: "bottom-right",
+            url: "https://example.com",
+          })}
+        />,
+      );
+    });
+
+    const toggle = screen.getByRole("button", { name: /toggle feedback form/i });
+    await user.click(toggle);
+
+    const message = screen.getByRole("textbox", { name: /feedback message/i });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(message);
+    });
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: /feedback form/i })).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(toggle);
+    });
+  });
+
+  it("shows a retry path when the submission is rate limited", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: "Too many requests. Please try again in a minute." }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await act(async () => {
+      render(
+        <WidgetPage
+          searchParams={Promise.resolve({
+            project: "proj_123",
+            position: "bottom-right",
+            url: "https://example.com",
+          })}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /toggle feedback form/i }));
+    await user.type(screen.getByRole("textbox", { name: /feedback message/i }), "A message");
+    await user.click(screen.getByRole("button", { name: /send feedback/i }));
+
+    expect(await screen.findByText(/too many requests/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
 });

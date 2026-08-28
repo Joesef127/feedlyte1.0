@@ -52,6 +52,24 @@ describe("API contract compatibility", () => {
     });
   });
 
+  it("sanitizes invalid public widget configuration", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      color: "javascript:alert(1)",
+      position: "overlay",
+      label: "",
+      allowedOrigin: null,
+    });
+
+    const response = await getWidgetConfig(new Request("http://localhost/api/widget-config?project=proj_1"));
+    const json = await response.json();
+
+    expect(json).toMatchObject({
+      color: "#F59E0B",
+      position: "bottom-right",
+      label: "Feedback",
+    });
+  });
+
   it("returns the versioned feedback list contract with pagination metadata", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user_1" } });
     mockPrisma.feedback.findMany.mockResolvedValue([
