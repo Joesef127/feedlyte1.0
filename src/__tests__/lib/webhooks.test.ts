@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import crypto from "crypto";
+import dns from "node:dns/promises";
+
+vi.mock("node:dns/promises", () => ({
+  default: {
+    lookup: vi.fn().mockResolvedValue([
+      { address: "93.184.216.34", family: 4 },
+    ]),
+  },
+}));
 
 // Mock prisma before importing the module under test
 vi.mock("@/lib/prisma", () => ({
@@ -20,6 +29,7 @@ const mockPrisma = prisma as unknown as {
   webhook: { findMany: ReturnType<typeof vi.fn> };
   webhookDelivery: { create: ReturnType<typeof vi.fn> };
 };
+const mockDnsLookup = dns.lookup as ReturnType<typeof vi.fn>;
 
 const baseFeedback = {
   id: "fb_1",
@@ -65,6 +75,7 @@ describe("fireWebhooks", () => {
     const [url, options] = mockFetch.mock.calls[0];
     expect(url).toBe("https://hooks.example.com/receive");
     expect(options.method).toBe("POST");
+    expect(options.redirect).toBe("error");
     expect(options.headers["Content-Type"]).toBe("application/json");
     expect(options.headers["User-Agent"]).toBe("Feedlyte-Webhook/1.0");
 
@@ -246,6 +257,50 @@ describe("fireWebhooks", () => {
     const body = JSON.parse(options.body);
     expect(body.feedback.email).toBeNull();
     expect(body.feedback.pageUrl).toBeNull();
+  });
+
+  it("rejects loopback webhook destinations without fetching", async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
+
+    mockPrisma.webhook.findMany.mockResolvedValue([
+      { id: "wh_1", url: "https://127.0.0.1/internal", secret: null },
+    ]);
+
+    await fireWebhooks(baseFeedback);
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockPrisma.webhookDelivery.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        webhookId: "wh_1",
+        success: false,
+        statusCode: null,
+        error: "Webhook URL resolves to a blocked destination.",
+      }),
+    });
+  });
+
+  it("rejects a hostname that resolves to a private address", async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal("fetch", mockFetch);
+    mockDnsLookup.mockResolvedValueOnce([
+      { address: "10.0.0.5", family: 4 },
+    ]);
+
+    mockPrisma.webhook.findMany.mockResolvedValue([
+      { id: "wh_1", url: "https://internal.example.com/receive", secret: null },
+    ]);
+
+    await fireWebhooks(baseFeedback);
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockPrisma.webhookDelivery.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        webhookId: "wh_1",
+        success: false,
+        error: "Webhook URL resolves to a blocked destination.",
+      }),
+    });
   });
 
   it("queries only enabled webhooks for the given project", async () => {
