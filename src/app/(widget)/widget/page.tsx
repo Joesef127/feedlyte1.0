@@ -6,6 +6,8 @@ interface WidgetSearchParams {
   project?: string;
   position?: string;
   url?: string;
+  lang?: string;
+  rtl?: string;
 }
 
 // Stable fallback used when the Next.js searchParams prop is not provided
@@ -41,9 +43,11 @@ export default function WidgetPage({
   const resolvedParams = use(searchParams);
 
   const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
-  const [position, setPosition] = useState(resolvedParams?.position ?? "bottom-right");
+  const [position, setPosition] = useState(resolvedParams?.position ?? "");
   const [widgetColor, setWidgetColor] = useState("#F59E0B");
   const [widgetLabel, setWidgetLabel] = useState("Feedback");
+  const [isRtl, setIsRtl] = useState(Boolean(resolvedParams?.rtl === "true" || resolvedParams?.rtl === "1"));
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -66,11 +70,31 @@ export default function WidgetPage({
     const params = new URLSearchParams(window.location.search);
     setProjectId(params.get("project") ?? "");
     setPosition(params.get("position") ?? "bottom-right");
+    setIsRtl(params.get("rtl") === "true" || params.get("rtl") === "1");
     // Prefer the URL passed by widget.js (most reliable — runs on host page
     // before any cross-origin restrictions). Fall back to document.referrer
     // which browsers set on iframes when no referrer policy blocks it.
     setPageUrl(params.get("url") ?? document.referrer ?? "");
   }, [resolvedParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      setPrefersReducedMotion(false);
+      return;
+    }
+
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateReducedMotion = () => setPrefersReducedMotion(media.matches);
+    updateReducedMotion();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", updateReducedMotion);
+      return () => media.removeEventListener("change", updateReducedMotion);
+    }
+
+    media.addListener(updateReducedMotion);
+    return () => media.removeListener(updateReducedMotion);
+  }, []);
 
   // Fetch project config (color, label) from the public widget-config endpoint.
   // This ensures the widget always reflects what’s saved in the dashboard.
@@ -109,18 +133,37 @@ export default function WidgetPage({
   }, [open, submitted, pageUrl]);
 
   const handleSubmit = async () => {
-    if (!message.trim() || !projectId) return;
+    const trimmedMessage = message.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedMessage) {
+      setError("Please add a message before sending.");
+      return;
+    }
+
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError("Enter a valid email address or leave the field blank.");
+      return;
+    }
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setError("You appear to be offline. Please reconnect and try again.");
+      return;
+    }
+
+    if (!projectId) return;
     setSubmitting(true);
     setError("");
     try {
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
       const apiBase = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
-      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {        method: "POST",
+      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: message.trim(),
-          email: email.trim() || undefined,
+          message: trimmedMessage,
+          email: trimmedEmail || undefined,
           // Sanitize before sending — server validation is the authoritative
           // check, but stripping non-http(s) protocols client-side adds
           // defence-in-depth against protocol-injection via the url param.
@@ -145,10 +188,13 @@ export default function WidgetPage({
 
   const primaryColor = widgetColor;
   const isRight = position !== "bottom-left";
+  const canSubmit = message.trim().length > 0 && !submitting && (!email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()));
 
   return (
     <div
       ref={containerRef}
+      dir={isRtl ? "rtl" : "ltr"}
+      lang={resolvedParams?.lang ?? "en"}
       style={{
         fontFamily: "'DM Sans', system-ui, sans-serif",
         display: "flex",
@@ -162,6 +208,9 @@ export default function WidgetPage({
       {/* Feedback panel */}
       {open && (
         <div
+          id="feedlyte-feedback-form"
+          role="dialog"
+          aria-label="Feedback form"
           style={{
             background: "#1a1a1a",
             border: "1px solid #2d2d2d",
@@ -177,6 +226,7 @@ export default function WidgetPage({
             <div style={{ textAlign: "center", padding: "8px 0" }}>
               <div style={{ fontSize: "28px", marginBottom: "8px" }}>✓</div>
               <p
+                aria-live="polite"
                 style={{
                   color: "#e5e5e5",
                   fontSize: "14px",
@@ -244,12 +294,17 @@ export default function WidgetPage({
                   ×
                 </button>
               </div>
+              <label htmlFor="feedlyte-message" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "12px", fontWeight: 600 }}>
+                Feedback message
+              </label>
               <textarea
+                id="feedlyte-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="What's on your mind?"
                 maxLength={2000}
                 rows={3}
+                aria-label="Feedback message"
                 style={{
                   width: "100%",
                   background: "#111",
@@ -267,11 +322,16 @@ export default function WidgetPage({
                 onFocus={(e) => (e.target.style.borderColor = primaryColor)}
                 onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
               />
+              <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "12px", fontWeight: 600 }}>
+                Email
+              </label>
               <input
+                id="feedlyte-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email (optional)"
+                aria-label="Email"
                 style={{
                   width: "100%",
                   background: "#111",
@@ -290,6 +350,7 @@ export default function WidgetPage({
               />
               {error && (
                 <p
+                  aria-live="polite"
                   style={{
                     color: "#ef4444",
                     fontSize: "12px",
@@ -300,23 +361,22 @@ export default function WidgetPage({
                 </p>
               )}
               <button
+                type="button"
                 onClick={handleSubmit}
-                disabled={!message.trim() || submitting}
+                disabled={!canSubmit}
+                aria-label="Send feedback"
                 style={{
                   width: "100%",
-                  background:
-                    !message.trim() || submitting ? "#d3d0d0" : primaryColor,
+                  background: !canSubmit ? "#d3d0d0" : primaryColor,
                   border: "none",
                   borderRadius: "7px",
-                  color:
-                    !message.trim() || submitting ? "#737373" : "#1a1a1a",
+                  color: !canSubmit ? "#737373" : "#1a1a1a",
                   fontSize: "13px",
                   fontWeight: 600,
                   padding: "8px 16px",
-                  cursor:
-                    !message.trim() || submitting ? "not-allowed" : "pointer",
+                  cursor: !canSubmit ? "not-allowed" : "pointer",
                   fontFamily: "inherit",
-                  transition: "background 0.15s",
+                  transition: prefersReducedMotion ? "none" : "background 0.15s",
                 }}
               >
                 {submitting ? "Sending..." : "Send Feedback"}
@@ -328,7 +388,13 @@ export default function WidgetPage({
 
       {/* Toggle button */}
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-label="Toggle feedback form"
+        aria-controls="feedlyte-feedback-form"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        data-state={open ? "open" : "closed"}
         style={{
           background: primaryColor,
           border: "none",
@@ -344,8 +410,15 @@ export default function WidgetPage({
           boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
           fontFamily: "inherit",
           whiteSpace: "nowrap",
+          transition: prefersReducedMotion ? "none" : "transform 0.15s ease",
+          outline: "none",
         }}
-        aria-label="Toggle feedback form"
+        onFocus={(e) => {
+          e.currentTarget.style.boxShadow = "0 0 0 2px rgba(255,255,255,0.75), 0 4px 16px rgba(245,158,11,0.35)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,0.35)";
+        }}
       >
         <span style={{ fontSize: "15px" }}>💬</span>
         {widgetLabel}
