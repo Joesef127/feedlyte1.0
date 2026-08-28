@@ -29,6 +29,7 @@
   }).join(",") || "message,email";
   var consent = (script.getAttribute("data-consent") || "").slice(0, 160);
   var launcher = script.getAttribute("data-launcher") === "tab" ? "tab" : "pill";
+  var telemetryEnabled = script.getAttribute("data-telemetry") === "true";
 
   // Derive the origin from where this script was loaded
   var src = script.src || "";
@@ -51,6 +52,7 @@
     "&fields=" + encodeURIComponent(resolvedFields) +
     (consent ? "&consent=" + encodeURIComponent(consent) : "") +
     "&launcher=" + encodeURIComponent(launcher) +
+    (telemetryEnabled ? "&telemetry=true" : "") +
     "&url=" + encodeURIComponent(window.location.href);
   iframe.id = "feedlyte-widget-frame";
   Object.assign(iframe.style, {
@@ -84,6 +86,21 @@
     if (typeof e.data.height !== "number" || !Number.isFinite(e.data.height)) return;
     var safeHeight = Math.min(Math.max(e.data.height, 68), 420);
     iframe.style.height = safeHeight + "px";
+  });
+
+  window.addEventListener("message", function (e) {
+    if (!telemetryEnabled || !origin || e.origin !== origin || e.source !== iframe.contentWindow) return;
+    if (!e.data || typeof e.data !== "object" || e.data.type !== "feedlyte:metric") return;
+    if (typeof e.data.name !== "string" || !/^(load|open|submission_success|submission_failure)$/.test(e.data.name)) return;
+    window.dispatchEvent(new CustomEvent("feedlyte:metric", {
+      detail: { name: e.data.name, durationMs: typeof e.data.durationMs === "number" ? e.data.durationMs : undefined },
+    }));
+  });
+
+  iframe.addEventListener("load", function () {
+    if (telemetryEnabled) {
+      window.dispatchEvent(new CustomEvent("feedlyte:metric", { detail: { name: "load" } }));
+    }
   });
 
   document.body.appendChild(iframe);

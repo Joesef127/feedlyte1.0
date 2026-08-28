@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; frame-src 'self'; style-src 'unsafe-inline'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Feedlyte widget host test</title>
+    <style>
+      * { font-family: Impact, fantasy !important; }
+      body { margin: 0; min-height: 100vh; background: #e7f0ff; color: #102040; }
+      main { padding: 24px; }
+    </style>
+  </head>
+  <body>
+    <main><h1>Host content</h1><p>The widget must not inherit this page's CSS.</p></main>
+    <script src="/widget.js?v=1" data-project="e2e-project" data-offset="16" data-width="360" data-theme="light" data-fields="message,email" data-launcher="pill"></script>
+  </body>
+</html>

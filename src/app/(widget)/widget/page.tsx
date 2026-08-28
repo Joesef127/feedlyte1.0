@@ -13,6 +13,7 @@ interface WidgetSearchParams {
   fields?: string;
   consent?: string;
   launcher?: string;
+  telemetry?: string;
   url?: string;
   lang?: string;
   rtl?: string;
@@ -81,6 +82,7 @@ export default function WidgetPage({
   const [consentText, setConsentText] = useState((resolvedParams?.consent ?? "").slice(0, 160));
   const [consentGiven, setConsentGiven] = useState(false);
   const [launcherStyle] = useState(resolvedParams?.launcher === "tab" ? "tab" : "pill");
+  const telemetryEnabled = resolvedParams?.telemetry === "true";
   const [isRtl, setIsRtl] = useState(Boolean(resolvedParams?.rtl === "true" || resolvedParams?.rtl === "1"));
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -119,6 +121,17 @@ export default function WidgetPage({
     // which browsers set on iframes when no referrer policy blocks it.
     setPageUrl(params.get("url") ?? document.referrer ?? "");
   }, [resolvedParams]);
+
+  const reportMetric = (name: "open" | "submission_success" | "submission_failure", durationMs?: number) => {
+    if (!telemetryEnabled || typeof window === "undefined") return;
+    try {
+      const targetOrigin = new URL(pageUrl || document.referrer).origin;
+      if (targetOrigin === "null") return;
+      window.parent.postMessage({ type: "feedlyte:metric", name, durationMs }, targetOrigin);
+    } catch {
+      return;
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -171,8 +184,15 @@ export default function WidgetPage({
         return "*";
       }
     })();
-    const h = containerRef.current?.scrollHeight ?? 68;
-    window.parent.postMessage({ type: "feedlyte:resize", height: h }, targetOrigin);
+    const notifySize = () => {
+      const height = Math.max(containerRef.current?.scrollHeight ?? 68, 68);
+      window.parent.postMessage({ type: "feedlyte:resize", height }, targetOrigin);
+    };
+    notifySize();
+    if (typeof ResizeObserver === "undefined" || !containerRef.current) return;
+    const observer = new ResizeObserver(notifySize);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [open, submitted, pageUrl]);
 
   useEffect(() => {
@@ -212,6 +232,7 @@ export default function WidgetPage({
     if (!projectId) return;
     setSubmitting(true);
     setError("");
+    const submissionStartedAt = performance.now();
     try {
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
@@ -231,6 +252,7 @@ export default function WidgetPage({
       });
       const data = await res.json();
       if (!res.ok) {
+        reportMetric("submission_failure");
         if (res.status === 403) setError("This widget is not authorized for this website.");
         else if (res.status === 409) setError("This feedback was already submitted. You can try again with a new message.");
         else if (res.status === 429) setError(data.error ?? "Too many requests. Please wait a moment and try again.");
@@ -238,9 +260,11 @@ export default function WidgetPage({
         return;
       }
       setSubmitted(true);
+      reportMetric("submission_success", performance.now() - submissionStartedAt);
       setMessage("");
       setEmail("");
     } catch {
+      reportMetric("submission_failure");
       setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
@@ -456,6 +480,10 @@ export default function WidgetPage({
         onClick={() => {
           const next = !open;
           setOpen(next);
+          if (next) {
+            const openedAt = performance.now();
+            requestAnimationFrame(() => reportMetric("open", performance.now() - openedAt));
+          }
           if (next) {
             requestAnimationFrame(() => messageInputRef.current?.focus());
           } else {

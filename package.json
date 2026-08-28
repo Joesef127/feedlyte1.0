@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
     "validate:env": "node scripts/validate-env.mjs",
     "smoke:deploy": "node scripts/deploy-smoke.mjs",
     "audit:production": "npm audit --omit=dev --audit-level=high"
@@ -57,6 +59,8 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
