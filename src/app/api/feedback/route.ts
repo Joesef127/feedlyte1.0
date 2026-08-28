@@ -351,20 +351,17 @@ export async function POST(req: Request) {
           const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
           const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
           
-          // Fire async - errors are caught and logged, don't affect feedback response
-          sendFeedbackNotificationEmail(
-            projectWithPrefs.user.email,
-            projectWithPrefs.name,
-            {
-              message: feedback.message,
-              email: feedback.email,
-              pageUrl: feedback.pageUrl,
-              userAgent: feedback.userAgent,
-              createdAt: feedback.createdAt.toISOString(),
-            },
+          await enqueueOutboxEvent("email.notification", {
+            to: projectWithPrefs.user.email,
+            projectName: projectWithPrefs.name,
+            message: feedback.message,
+            email: feedback.email,
+            pageUrl: feedback.pageUrl,
+            userAgent: feedback.userAgent,
+            createdAt: feedback.createdAt.toISOString(),
             dashboardUrl,
-            unsubscribeUrl
-          ).catch((err) => console.error("[feedback] Failed to send notification email:", err));
+            unsubscribeUrl,
+          });
         }
       }
     }

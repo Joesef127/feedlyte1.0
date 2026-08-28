@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { sendDailyDigestEmail, createUnsubscribeToken } from "@/lib/email";
+import { createUnsubscribeToken } from "@/lib/email";
+import { enqueueOutboxEvent } from "@/lib/outbox";
 
 function is8AMInTimezone(timezone: string): boolean {
   try {
@@ -122,42 +123,43 @@ export async function GET(req: Request) {
           return { skipped: true, reason: "claimed_by_another_run" };
         }
 
-        const delivery = await sendDailyDigestEmail(
-          project.user.email,
-          project.name,
-          feedback.map(f => ({
-            message: f.message,
-            email: f.email,
-            pageUrl: f.pageUrl,
-            status: f.status,
-            createdAt: f.createdAt.toISOString(),
-          })),
-          dashboardUrl,
-          unsubscribeUrl
-        );
+        try {
+          await enqueueOutboxEvent("email.digest", {
+            to: project.user.email,
+            projectName: project.name,
+            feedbackItems: feedback.map((f) => ({
+              message: f.message,
+              email: f.email,
+              pageUrl: f.pageUrl,
+              userAgent: f.userAgent,
+              status: f.status,
+              createdAt: f.createdAt.toISOString(),
+            })),
+            dashboardUrl,
+            unsubscribeUrl,
+          });
 
-        if (!delivery.success) {
+          return { queued: true };
+        } catch (error) {
           await prisma.project.updateMany({
             where: { id: project.id, lastDigestSentAt: now },
             data: { lastDigestSentAt: lastSent },
           });
-          throw new Error(delivery.error || "Digest email delivery failed");
+          throw error;
         }
-
-        return { sent: true };
       })
     );
 
-    const sent = results.filter(r => r.status === "fulfilled" && r.value?.sent).length;
+    const queued = results.filter(r => r.status === "fulfilled" && r.value?.queued).length;
     const skipped = results.filter(r => r.status === "fulfilled" && r.value?.skipped).length;
     const failed = results.filter(r => r.status === "rejected").length;
 
     return NextResponse.json({ 
-      message: `Digest sent for ${sent} project(s), ${skipped} skipped`,
+      message: `Digest queued for ${queued} project(s), ${skipped} skipped`,
       failed,
       checked: projects.length,
       eligible: eligibleProjects.length,
-      sent,
+      queued,
       skipped,
     });
   } catch (error) {

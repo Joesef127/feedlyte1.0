@@ -13,10 +13,12 @@ vi.mock("@/lib/webhooks", () => ({
 
 vi.mock("@/lib/email", () => ({
   sendFeedbackNotificationEmail: vi.fn().mockResolvedValue({ success: true }),
+  sendDailyDigestEmail: vi.fn().mockResolvedValue({ success: true }),
   createUnsubscribeToken: vi.fn().mockResolvedValue("token_123"),
 }));
 
 import prisma from "@/lib/prisma";
+import { sendDailyDigestEmail } from "@/lib/email";
 import { fireWebhooks } from "@/lib/webhooks";
 import { enqueueOutboxEvent, processDueOutboxEvents } from "@/lib/outbox";
 
@@ -26,6 +28,7 @@ const mockPrisma = prisma as unknown as {
 };
 
 const mockFireWebhooks = fireWebhooks as ReturnType<typeof vi.fn>;
+const mockSendDailyDigestEmail = sendDailyDigestEmail as ReturnType<typeof vi.fn>;
 
 describe("outbox job system", () => {
   beforeEach(() => {
@@ -92,5 +95,56 @@ describe("outbox job system", () => {
     );
 
     expect(completedCall).toBeDefined();
+  });
+
+  it("processes due digest email events and sends digest emails", async () => {
+    const digestPayload = {
+      to: "owner@example.com",
+      projectName: "Acme",
+      feedbackItems: [{
+        message: "Looks good",
+        email: "user@example.com",
+        status: "unreviewed",
+        createdAt: "2024-01-01T00:00:00.000Z",
+      }],
+      dashboardUrl: "https://app.example.com/projects/proj_123",
+      unsubscribeUrl: "https://app.example.com/unsubscribe/token",
+    };
+
+    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+      {
+        id: "evt_2",
+        eventType: "email.digest",
+        payload: JSON.stringify(digestPayload),
+        status: "pending",
+        attempts: 0,
+        maxAttempts: 5,
+        nextAttemptAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ]);
+    mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
+
+    await processDueOutboxEvents(10);
+
+    expect(mockSendDailyDigestEmail).toHaveBeenCalledWith(
+      "owner@example.com",
+      "Acme",
+      [
+        expect.objectContaining({
+          message: "Looks good",
+          email: "user@example.com",
+          status: "unreviewed",
+        }),
+      ],
+      "https://app.example.com/projects/proj_123",
+      "https://app.example.com/unsubscribe/token",
+    );
+
+    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE outbox_events\n      SET status = 'completed'"),
+      "evt_2",
+    );
   });
 });

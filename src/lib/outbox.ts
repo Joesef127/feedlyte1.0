@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { fireWebhooks } from "@/lib/webhooks";
+import { sendDailyDigestEmail, sendFeedbackNotificationEmail } from "@/lib/email";
 
 export type OutboxStatus = "pending" | "processing" | "completed" | "failed" | "dead_letter";
 
@@ -116,6 +117,64 @@ export async function processDueOutboxEvents(limit = 25): Promise<number> {
             status: typeof payload.status === "string" ? payload.status : "unreviewed",
             createdAt: typeof payload.createdAt === "string" ? payload.createdAt : new Date().toISOString(),
           });
+          break;
+        }
+        case "email.notification": {
+          const recipient = typeof payload.to === "string" ? payload.to : null;
+          const projectName = typeof payload.projectName === "string" ? payload.projectName : "Project";
+          const feedbackPayload = {
+            message: String(payload.message ?? ""),
+            email: typeof payload.email === "string" ? payload.email : null,
+            pageUrl: typeof payload.pageUrl === "string" ? payload.pageUrl : null,
+            userAgent: typeof payload.userAgent === "string" ? payload.userAgent : null,
+            createdAt: typeof payload.createdAt === "string" ? payload.createdAt : new Date().toISOString(),
+          };
+
+          if (!recipient) break;
+
+          await sendFeedbackNotificationEmail(
+            recipient,
+            projectName,
+            feedbackPayload,
+            typeof payload.dashboardUrl === "string" ? payload.dashboardUrl : "",
+            typeof payload.unsubscribeUrl === "string" ? payload.unsubscribeUrl : "",
+          );
+          break;
+        }
+        case "email.digest": {
+          const recipient = typeof payload.to === "string" ? payload.to : null;
+          const projectName = typeof payload.projectName === "string" ? payload.projectName : "Project";
+          const feedbackItems = Array.isArray(payload.feedbackItems)
+            ? payload.feedbackItems.map((item) => {
+                if (!item || typeof item !== "object") return null;
+                const record = item as Record<string, unknown>;
+                return {
+                  message: String(record.message ?? ""),
+                  email: typeof record.email === "string" ? record.email : null,
+                  pageUrl: typeof record.pageUrl === "string" ? record.pageUrl : null,
+                  userAgent: typeof record.userAgent === "string" ? record.userAgent : null,
+                  status: typeof record.status === "string" ? record.status : "unreviewed",
+                  createdAt: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),
+                };
+              })
+            : [];
+
+          if (!recipient) break;
+
+          await sendDailyDigestEmail(
+            recipient,
+            projectName,
+            feedbackItems.filter(Boolean) as Array<{
+              message: string;
+              email?: string | null;
+              pageUrl?: string | null;
+              userAgent?: string | null;
+              status: string;
+              createdAt: string;
+            }>,
+            typeof payload.dashboardUrl === "string" ? payload.dashboardUrl : "",
+            typeof payload.unsubscribeUrl === "string" ? payload.unsubscribeUrl : "",
+          );
           break;
         }
         default:
