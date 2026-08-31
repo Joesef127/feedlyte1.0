@@ -158,14 +158,14 @@ export default function WidgetPage({
     const id = projectId || resolvedParams?.project;
     if (!id) return;
     const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
-    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)      .then((r) => r.ok ? r.json() : null)
+    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`).then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
         if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
         if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
         if (data.position) setPosition(data.position);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [projectId, resolvedParams?.project]);
 
   // Notify parent of height changes
@@ -325,7 +325,7 @@ export default function WidgetPage({
               >
                 Thanks for your feedback!
               </p>
-              <p style={{ color: palette.muted, fontSize: "12px", margin: 0 }}>
+              <p style={{ color: palette.muted, fontSize: "14px", margin: 0 }}>
                 We appreciate you taking the time.
               </p>
               <button
@@ -360,7 +360,7 @@ export default function WidgetPage({
                 <p
                   style={{
                     color: palette.text,
-                    fontSize: "13px",
+                    fontSize: "18px",
                     fontWeight: 600,
                     margin: 0,
                   }}
@@ -386,7 +386,7 @@ export default function WidgetPage({
                   ×
                 </button>
               </div>
-              <label htmlFor="feedlyte-message" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "12px", fontWeight: 600 }}>
+              <label htmlFor="feedlyte-message" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "14px", fontWeight: 600 }}>
                 Feedback message
               </label>
               <textarea
@@ -404,7 +404,7 @@ export default function WidgetPage({
                   border: "1px solid #2d2d2d",
                   borderRadius: "7px",
                   color: "#e5e5e5",
-                  fontSize: "13px",
+                  fontSize: "14px",
                   padding: "8px 10px",
                   resize: "vertical",
                   outline: "none",
@@ -416,7 +416,7 @@ export default function WidgetPage({
                 onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
               />
               {fields.email && <>
-                <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: palette.text, fontSize: "12px", fontWeight: 600 }}>
+                <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
                   Email
                 </label>
                 <input
@@ -426,7 +426,7 @@ export default function WidgetPage({
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email (optional)"
                   aria-label="Email"
-                  style={{ width: "100%", background: palette.field, border: `1px solid ${palette.border}`, borderRadius: "7px", color: palette.text, fontSize: "13px", padding: "7px 10px", outline: "none", boxSizing: "border-box", marginBottom: "10px", fontFamily: "inherit" }}
+                  style={{ width: "100%", background: palette.field, border: `1px solid ${palette.border}`, borderRadius: "7px", color: palette.text, fontSize: "14px", padding: "7px 10px", outline: "none", boxSizing: "border-box", marginBottom: "10px", fontFamily: "inherit" }}
                   onFocus={(e) => (e.target.style.borderColor = primaryColor)}
                   onBlur={(e) => (e.target.style.borderColor = palette.border)}
                 />
@@ -440,7 +440,7 @@ export default function WidgetPage({
                   aria-live="polite"
                   style={{
                     color: "#ef4444",
-                    fontSize: "12px",
+                    fontSize: "14px",
                     margin: "0 0 8px",
                   }}
                 >
@@ -458,7 +458,7 @@ export default function WidgetPage({
                   border: "none",
                   borderRadius: "7px",
                   color: !canSubmit ? "#737373" : "#1a1a1a",
-                  fontSize: "13px",
+                  fontSize: "16px",
                   fontWeight: 600,
                   padding: "8px 16px",
                   cursor: !canSubmit ? "not-allowed" : "pointer",

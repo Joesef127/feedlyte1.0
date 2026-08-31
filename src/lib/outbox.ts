@@ -24,37 +24,26 @@ export async function enqueueOutboxEvent(
   const maxAttempts = options.maxAttempts ?? 5;
   const nextAttemptAt = new Date(Date.now() + (options.delayMs ?? 0));
 
-  await prisma.$executeRawUnsafe(
-    `
-      INSERT INTO outbox_events (
-        event_type,
-        payload,
-        status,
-        attempts,
-        max_attempts,
-        next_attempt_at,
-        created_at,
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-    `,
-    eventType,
-    JSON.stringify(payload),
-    "pending",
-    0,
-    maxAttempts,
-    nextAttemptAt,
-  );
+  await prisma.outboxEvent.create({
+    data: {
+      eventType,
+      payload: JSON.stringify(payload),
+      status: "pending",
+      attempts: 0,
+      maxAttempts,
+      nextAttemptAt,
+    },
+  });
 }
 
 async function markEventCompleted(eventId: string): Promise<void> {
-  await prisma.$executeRawUnsafe(
-    `
-      UPDATE outbox_events
-      SET status = 'completed', updated_at = NOW(), completed_at = NOW()
-      WHERE id = $1
-    `,
-    eventId,
-  );
+  await prisma.outboxEvent.update({
+    where: { id: eventId },
+    data: {
+      status: "completed",
+      completedAt: new Date(),
+    },
+  });
 }
 
 async function markEventFailed(eventId: string, attempts: number, maxAttempts: number): Promise<void> {
@@ -62,47 +51,37 @@ async function markEventFailed(eventId: string, attempts: number, maxAttempts: n
   const retryDelayMs = Math.min(5_000 * 2 ** Math.max(attempts - 1, 0), 60_000);
   const nextAttemptAt = new Date(Date.now() + retryDelayMs);
 
-  await prisma.$executeRawUnsafe(
-    `
-      UPDATE outbox_events
-      SET status = $1,
-          attempts = $2,
-          next_attempt_at = $3,
-          updated_at = NOW()
-      WHERE id = $4
-    `,
-    status,
-    attempts,
-    nextAttemptAt,
-    eventId,
-  );
+  await prisma.outboxEvent.update({
+    where: { id: eventId },
+    data: {
+      status,
+      attempts,
+      nextAttemptAt,
+    },
+  });
 }
 
 export async function processDueOutboxEvents(limit = 25): Promise<number> {
   const safeLimit = Number.isFinite(limit)
     ? Math.min(Math.max(Math.trunc(limit), 1), 100)
     : 25;
-  const rows = (await prisma.$queryRawUnsafe<OutboxEventRow[]>(`
-    SELECT *
-    FROM outbox_events
-    WHERE status IN ('pending', 'processing')
-      AND next_attempt_at <= NOW()
-    ORDER BY created_at ASC
-    LIMIT ${safeLimit}
-  `)) as OutboxEventRow[];
+  const rows = await prisma.outboxEvent.findMany({
+    where: {
+      status: { in: ["pending", "processing"] },
+      nextAttemptAt: { lte: new Date() },
+    },
+    orderBy: { createdAt: "asc" },
+    take: safeLimit,
+  });
 
   let processed = 0;
 
   for (const row of rows) {
     try {
-      await prisma.$executeRawUnsafe(
-        `
-          UPDATE outbox_events
-          SET status = 'processing', updated_at = NOW()
-          WHERE id = $1
-        `,
-        row.id,
-      );
+      await prisma.outboxEvent.update({
+        where: { id: row.id },
+        data: { status: "processing" },
+      });
 
       const payload = JSON.parse(row.payload) as Record<string, unknown>;
 

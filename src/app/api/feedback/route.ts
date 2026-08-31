@@ -72,29 +72,68 @@ function getDuplicateKey(projectId: string, idempotencyKey: string): string {
   return `${projectId}:${idempotencyKey}`;
 }
 
+function getOriginFromUrl(urlString: string | null | undefined): string | null {
+  if (!urlString) return null;
+  try {
+    const parsed = new URL(urlString);
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, "").toLowerCase();
+}
+
 function isOriginAllowed(
   origin: string,
   projectOrigin: string | null,
+  pageUrl?: string | null,
 ): boolean {
-  if (projectOrigin) {
-    const normalize = (o: string) => o.replace(/\/$/, "").toLowerCase();
-    return normalize(origin) === normalize(projectOrigin);
+  if (!projectOrigin) {
+    return true;
   }
-  return FALLBACK_ORIGINS.includes(origin);
+
+  const normalizedProjectOrigin = normalizeOrigin(projectOrigin);
+
+  // 1. Direct CORS request with matching Origin header
+  if (origin && normalizeOrigin(origin) === normalizedProjectOrigin) {
+    return true;
+  }
+
+  // 2. Request originating from Feedlyte's embedded widget iframe
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ? normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL) : "";
+  const isFromFeedlyteApp =
+    !origin ||
+    FALLBACK_ORIGINS.map(normalizeOrigin).includes(normalizeOrigin(origin)) ||
+    (appUrl && normalizeOrigin(origin) === appUrl);
+
+  if (isFromFeedlyteApp) {
+    const hostPageOrigin = getOriginFromUrl(pageUrl);
+    if (hostPageOrigin) {
+      return normalizeOrigin(hostPageOrigin) === normalizedProjectOrigin;
+    }
+    // If pageUrl is not provided, allow the widget iframe
+    return true;
+  }
+
+  return false;
 }
 
 function getCorsHeaders(
   req: Request,
   projectOrigin: string | null,
+  pageUrl?: string | null,
 ): Record<string, string> {
   const origin = req.headers.get("origin") ?? "";
-  const allowed = isOriginAllowed(origin, projectOrigin);
+  const allowed = isOriginAllowed(origin, projectOrigin, pageUrl);
   return {
     "Access-Control-Allow-Origin": allowed
-      ? origin
+      ? (origin || "*")
       : (projectOrigin ?? FALLBACK_ORIGINS[0]),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Idempotency-Key",
     Vary: "Origin",
   };
 }
@@ -194,19 +233,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
-    const origin = req.headers.get("origin") ?? "";
-
-    if (!isOriginAllowed(origin, project.allowedOrigin)) {
-      return NextResponse.json(
-        { error: "Origin not allowed." },
-        { status: 403, headers: withApiVersionHeaders(corsHeaders) },
-      );
-    }
-
     const clientIp = getTrustedClientIp(req);
     const rateLimit = await checkWidgetRateLimit(projectId, clientIp);
     if (!rateLimit.success) {
+      const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         {
@@ -218,6 +248,7 @@ export async function POST(req: Request) {
 
     const rawBodyText = await req.clone().text();
     if (rawBodyText.length > MAX_FEEDBACK_BODY_BYTES) {
+      const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
       return NextResponse.json(
         { error: "Request body is too large." },
         { status: 413, headers: withApiVersionHeaders(corsHeaders) },
@@ -228,9 +259,25 @@ export async function POST(req: Request) {
     try {
       body = JSON.parse(rawBodyText || "{}");
     } catch {
+      const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
       return NextResponse.json(
         { error: "Invalid JSON in request body." },
         { status: 400, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    const requestedPageUrl =
+      body && typeof body === "object" && "pageUrl" in body && typeof (body as any).pageUrl === "string"
+        ? (body as any).pageUrl
+        : null;
+
+    const corsHeaders = getCorsHeaders(req, project.allowedOrigin, requestedPageUrl);
+    const origin = req.headers.get("origin") ?? "";
+
+    if (!isOriginAllowed(origin, project.allowedOrigin, requestedPageUrl)) {
+      return NextResponse.json(
+        { error: "Origin not allowed." },
+        { status: 403, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 

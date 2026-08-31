@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/prisma", () => ({
   default: {
-    $queryRawUnsafe: vi.fn(),
-    $executeRawUnsafe: vi.fn(),
+    outboxEvent: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
   },
 }));
 
@@ -23,8 +26,11 @@ import { fireWebhooks } from "@/lib/webhooks";
 import { enqueueOutboxEvent, processDueOutboxEvents } from "@/lib/outbox";
 
 const mockPrisma = prisma as unknown as {
-  $queryRawUnsafe: ReturnType<typeof vi.fn>;
-  $executeRawUnsafe: ReturnType<typeof vi.fn>;
+  outboxEvent: {
+    create: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
 };
 
 const mockFireWebhooks = fireWebhooks as ReturnType<typeof vi.fn>;
@@ -36,7 +42,7 @@ describe("outbox job system", () => {
   });
 
   it("queues a feedback-created event with pending status", async () => {
-    mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
+    mockPrisma.outboxEvent.create.mockResolvedValue({ id: "evt_1" });
 
     await enqueueOutboxEvent("feedback.created", {
       id: "fb_123",
@@ -44,17 +50,16 @@ describe("outbox job system", () => {
       message: "Great product",
     });
 
-    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalled();
-    const [sql, eventType, payload, status, attempts, maxAttempts, nextAttemptAt] =
-      mockPrisma.$executeRawUnsafe.mock.calls[0];
-
-    expect(sql).toContain("INSERT INTO outbox_events");
-    expect(eventType).toBe("feedback.created");
-    expect(payload).toContain('"id":"fb_123"');
-    expect(status).toBe("pending");
-    expect(attempts).toBe(0);
-    expect(maxAttempts).toBe(5);
-    expect(nextAttemptAt).toBeInstanceOf(Date);
+    expect(mockPrisma.outboxEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        eventType: "feedback.created",
+        payload: expect.stringContaining('"id":"fb_123"'),
+        status: "pending",
+        attempts: 0,
+        maxAttempts: 5,
+        nextAttemptAt: expect.any(Date),
+      }),
+    });
   });
 
   it("processes a due feedback event and fires downstream webhooks", async () => {
@@ -68,7 +73,7 @@ describe("outbox job system", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
     };
 
-    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+    mockPrisma.outboxEvent.findMany.mockResolvedValue([
       {
         id: "evt_1",
         eventType: "feedback.created",
@@ -81,20 +86,19 @@ describe("outbox job system", () => {
         updatedAt: new Date(),
       },
     ]);
-    mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
+    mockPrisma.outboxEvent.update.mockResolvedValue({});
 
     await processDueOutboxEvents(10);
 
     expect(mockFireWebhooks).toHaveBeenCalledWith(payload);
-
-    const completedCall = mockPrisma.$executeRawUnsafe.mock.calls.find(
-      ([sql, id]) =>
-        typeof sql === "string" &&
-        sql.includes("SET status = 'completed'") &&
-        id === "evt_1",
-    );
-
-    expect(completedCall).toBeDefined();
+    expect(mockPrisma.outboxEvent.update).toHaveBeenCalledWith({
+      where: { id: "evt_1" },
+      data: { status: "processing" },
+    });
+    expect(mockPrisma.outboxEvent.update).toHaveBeenCalledWith({
+      where: { id: "evt_1" },
+      data: { status: "completed", completedAt: expect.any(Date) },
+    });
   });
 
   it("processes due digest email events and sends digest emails", async () => {
@@ -111,7 +115,7 @@ describe("outbox job system", () => {
       unsubscribeUrl: "https://app.example.com/unsubscribe/token",
     };
 
-    mockPrisma.$queryRawUnsafe.mockResolvedValue([
+    mockPrisma.outboxEvent.findMany.mockResolvedValue([
       {
         id: "evt_2",
         eventType: "email.digest",
@@ -124,7 +128,7 @@ describe("outbox job system", () => {
         updatedAt: new Date(),
       },
     ]);
-    mockPrisma.$executeRawUnsafe.mockResolvedValue(undefined);
+    mockPrisma.outboxEvent.update.mockResolvedValue({});
 
     await processDueOutboxEvents(10);
 
@@ -142,9 +146,9 @@ describe("outbox job system", () => {
       "https://app.example.com/unsubscribe/token",
     );
 
-    expect(mockPrisma.$executeRawUnsafe).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE outbox_events\n      SET status = 'completed'"),
-      "evt_2",
-    );
+    expect(mockPrisma.outboxEvent.update).toHaveBeenCalledWith({
+      where: { id: "evt_2" },
+      data: { status: "completed", completedAt: expect.any(Date) },
+    });
   });
 });

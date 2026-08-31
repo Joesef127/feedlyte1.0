@@ -417,6 +417,31 @@ describe("POST /api/feedback", () => {
     expect(res.status).toBe(201);
   });
 
+  it("allows embedded widget iframe when pageUrl matches allowedOrigin", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: "https://myapp.com",
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const res = await POST(
+      makePostRequest({ ...baseFeedbackBody, pageUrl: "https://myapp.com/contact" }, "http://localhost:3000"),
+    );
+    expect(res.status).toBe(201);
+  });
+
+  it("rejects embedded widget iframe when pageUrl is on an unauthorized domain", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: "https://myapp.com",
+    });
+
+    const res = await POST(
+      makePostRequest({ ...baseFeedbackBody, pageUrl: "https://attacker.com/page" }, "http://localhost:3000"),
+    );
+    expect(res.status).toBe(403);
+  });
+
   it("stores null for blank optional email field", async () => {
     mockPrisma.project.findUnique.mockResolvedValue({
       id:            "proj_1",
