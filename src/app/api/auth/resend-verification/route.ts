@@ -3,17 +3,12 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { createEmailVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/email";
-import { handleError } from "@/lib/api-helpers";
+import { handleError, getClientIp } from "@/lib/api-helpers";
 import { checkAuthRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
-import { headers } from "next/headers";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const headersList = await headers();
-    const ip =
-      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      headersList.get("x-real-ip") ??
-      "anonymous";
+    const ip = getClientIp(req);
     const rateLimit = await checkAuthRateLimit(ip);
     if (!rateLimit.success) {
       return NextResponse.json(

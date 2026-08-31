@@ -144,7 +144,11 @@ export function handleError(
   }
 
   // Unexpected
-  logApiError(context, API_ERROR_CODES.INTERNAL_ERROR, 500, "Unhandled error");
+  const errorMessage = e instanceof Error ? e.message : "Unhandled error";
+  logApiError(context, API_ERROR_CODES.INTERNAL_ERROR, 500, errorMessage);
+  if (e instanceof Error && e.stack) {
+    console.error(e.stack);
+  }
   return err("An unexpected error occurred. Please try again.", 500, extraHeaders);
 }
 

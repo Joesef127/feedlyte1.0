@@ -21,9 +21,13 @@ vi.mock("@/lib/rate-limit", () => ({
   checkAuthRateLimit: vi.fn().mockResolvedValue({ success: true }),
   rateLimitHeaders: vi.fn(() => ({})),
 }));
-vi.mock("@/lib/api-helpers", () => ({
-  handleError: vi.fn((_e, _ctx) => NextResponse.json({ error: "Internal Server Error" }, { status: 500 })),
-}));
+vi.mock("@/lib/api-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api-helpers")>();
+  return {
+    ...actual,
+    handleError: vi.fn((_e, _ctx) => NextResponse.json({ error: "Internal Server Error" }, { status: 500 })),
+  };
+});
 
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
