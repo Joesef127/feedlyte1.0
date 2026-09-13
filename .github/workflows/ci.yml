@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    name: Quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      NODE_ENV: test
+      AUTH_SECRET: test-auth-secret
+      NEXTAUTH_SECRET: test-auth-secret
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      RESEND_API_KEY: test_resend_key
+      RESEND_FROM_EMAIL: no-reply@example.com
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/feedlyte_test
+      CRON_SECRET: test-cron-secret
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: feedlyte_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d feedlyte_test"
+          --health-interval=10s
+          --timeout=5s
+          --retries=5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies with lockfile
+        run: npm ci
+
+      - name: Validate environment shape
+        run: node scripts/validate-env.mjs
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run unit and integration tests
+        run: npm test -- --run
+
+      - name: Generate Prisma client and build
+        run: npx prisma generate && npm run build
+
+      - name: Dependency audit
+        run: npm run audit:production
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -17,6 +17,12 @@ export type ProjectPayload = Partial<
     | "digestFrequency"
     | "timezone"
     | "notificationCooldown"
+    | "categoryEnabled"
+    | "ratingEnabled"
+    | "technicalDetailsEnabled"
+    | "launcherIcon"
+    | "cornerStyle"
+    | "showBranding"
   >
 >;
 // ─── Fetch ───────────────────────────────────────────────────────────────────

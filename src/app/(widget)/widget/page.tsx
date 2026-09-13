@@ -1,11 +1,55 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
+import {
+  MessageSquare,
+  Bug,
+  Lightbulb,
+  Heart,
+  HelpCircle,
+  Star,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+
+const LAUNCHER_ICONS: Record<string, typeof MessageSquare> = {
+  "message-square": MessageSquare,
+  bug: Bug,
+  lightbulb: Lightbulb,
+  heart: Heart,
+  "help-circle": HelpCircle,
+};
+
+const CATEGORY_OPTIONS: { value: string; label: string; Icon: typeof MessageSquare }[] = [
+  { value: "bug", label: "Bug", Icon: Bug },
+  { value: "idea", label: "Idea", Icon: Lightbulb },
+  { value: "praise", label: "Praise", Icon: Heart },
+  { value: "question", label: "Question", Icon: HelpCircle },
+];
+
+const TECHNICAL_DETAIL_FIELDS: { key: string; label: string }[] = [
+  { key: "browser", label: "Browser & OS" },
+  { key: "viewport", label: "Viewport size" },
+  { key: "url", label: "Current URL" },
+  { key: "referrer", label: "Referrer" },
+  { key: "timestamp", label: "Timestamp" },
+];
 
 interface WidgetSearchParams {
   project?: string;
   position?: string;
+  color?: string;
+  label?: string;
+  offset?: string;
+  width?: string;
+  theme?: string;
+  fields?: string;
+  consent?: string;
+  launcher?: string;
+  telemetry?: string;
   url?: string;
+  lang?: string;
+  rtl?: string;
 }
 
 // Stable fallback used when the Next.js searchParams prop is not provided
@@ -30,6 +74,27 @@ function sanitizePageUrl(url: string): string {
   }
 }
 
+function sanitizeWidgetColor(color: string | undefined): string {
+  return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#F59E0B";
+}
+
+function sanitizeWidgetLabel(label: string | undefined): string {
+  return label && label.length <= 40 ? label : "Feedback";
+}
+
+function sanitizeWidgetNumber(value: string | undefined, fallback: number, min: number, max: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max ? Math.round(parsed) : fallback;
+}
+
+function sanitizeWidgetTheme(theme: string | undefined): "dark" | "light" {
+  return theme === "light" ? "light" : "dark";
+}
+
+function sanitizeWidgetFields(fields: string | undefined): { email: boolean } {
+  return { email: fields?.split(",").map((field) => field.trim()).includes("email") ?? true };
+}
+
 export default function WidgetPage({
   searchParams = EMPTY_PARAMS_PROMISE,
 }: {
@@ -41,9 +106,18 @@ export default function WidgetPage({
   const resolvedParams = use(searchParams);
 
   const [projectId, setProjectId] = useState(resolvedParams?.project ?? "");
-  const [position, setPosition] = useState(resolvedParams?.position ?? "bottom-right");
-  const [widgetColor, setWidgetColor] = useState("#F59E0B");
-  const [widgetLabel, setWidgetLabel] = useState("Feedback");
+  const [position, setPosition] = useState(resolvedParams?.position ?? "");
+  const [widgetColor, setWidgetColor] = useState(sanitizeWidgetColor(resolvedParams?.color));
+  const [widgetLabel, setWidgetLabel] = useState(sanitizeWidgetLabel(resolvedParams?.label));
+  const [width, setWidth] = useState(sanitizeWidgetNumber(resolvedParams?.width, 360, 280, 480));
+  const [theme, setTheme] = useState(sanitizeWidgetTheme(resolvedParams?.theme));
+  const [fields, setFields] = useState(sanitizeWidgetFields(resolvedParams?.fields));
+  const [consentText, setConsentText] = useState((resolvedParams?.consent ?? "").slice(0, 160));
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [launcherStyle] = useState(resolvedParams?.launcher === "tab" ? "tab" : "pill");
+  const telemetryEnabled = resolvedParams?.telemetry === "true";
+  const [isRtl, setIsRtl] = useState(Boolean(resolvedParams?.rtl === "true" || resolvedParams?.rtl === "1"));
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -52,7 +126,25 @@ export default function WidgetPage({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
+  // Optional, project-configurable widget capabilities (all default to "off"
+  // so a project keeps today's minimal widget unless the owner opts in).
+  const [categoryEnabled, setCategoryEnabled] = useState(false);
+  const [ratingEnabled, setRatingEnabled] = useState(false);
+  const [technicalDetailsEnabled, setTechnicalDetailsEnabled] = useState(false);
+  const [launcherIcon, setLauncherIcon] = useState("message-square");
+  const [cornerStyle, setCornerStyle] = useState("rounded");
+  const [showBranding, setShowBranding] = useState(true);
+
+  const [category, setCategory] = useState<string>("");
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [showTechnicalPanel, setShowTechnicalPanel] = useState(false);
+  const [technicalSelections, setTechnicalSelections] = useState<Record<string, boolean>>({});
+  const [trackingToken, setTrackingToken] = useState("");
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Prefer the value from searchParams prop (most reliable). The window.location
   // fallback below handles the case where the prop is absent.
@@ -66,26 +158,70 @@ export default function WidgetPage({
     const params = new URLSearchParams(window.location.search);
     setProjectId(params.get("project") ?? "");
     setPosition(params.get("position") ?? "bottom-right");
+    setWidgetColor(sanitizeWidgetColor(params.get("color") ?? undefined));
+    setWidgetLabel(sanitizeWidgetLabel(params.get("label") ?? undefined));
+    setWidth(sanitizeWidgetNumber(params.get("width") ?? undefined, 360, 280, 480));
+    setTheme(sanitizeWidgetTheme(params.get("theme") ?? undefined));
+    setFields(sanitizeWidgetFields(params.get("fields") ?? undefined));
+    setConsentText((params.get("consent") ?? "").slice(0, 160));
+    setIsRtl(params.get("rtl") === "true" || params.get("rtl") === "1");
     // Prefer the URL passed by widget.js (most reliable — runs on host page
     // before any cross-origin restrictions). Fall back to document.referrer
     // which browsers set on iframes when no referrer policy blocks it.
     setPageUrl(params.get("url") ?? document.referrer ?? "");
   }, [resolvedParams]);
 
-  // Fetch project config (color, label) from the public widget-config endpoint.
-  // This ensures the widget always reflects what’s saved in the dashboard.
+  const reportMetric = (name: "open" | "submission_success" | "submission_failure", durationMs?: number) => {
+    if (!telemetryEnabled || typeof window === "undefined") return;
+    try {
+      const targetOrigin = new URL(pageUrl || document.referrer).origin;
+      if (targetOrigin === "null") return;
+      window.parent.postMessage({ type: "feedlyte:metric", name, durationMs }, targetOrigin);
+    } catch {
+      return;
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      setPrefersReducedMotion(false);
+      return;
+    }
+
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateReducedMotion = () => setPrefersReducedMotion(media.matches);
+    updateReducedMotion();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", updateReducedMotion);
+      return () => media.removeEventListener("change", updateReducedMotion);
+    }
+
+    media.addListener(updateReducedMotion);
+    return () => media.removeListener(updateReducedMotion);
+  }, []);
+
+  // Fetch project config (color, label, optional feature toggles) from the
+  // public widget-config endpoint. This ensures the widget always reflects
+  // what's saved in the dashboard.
   useEffect(() => {
     const id = projectId || resolvedParams?.project;
     if (!id) return;
     const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
-    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)      .then((r) => r.ok ? r.json() : null)
+    fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`).then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
-        if (data.color) setWidgetColor(data.color);
-        if (data.label) setWidgetLabel(data.label);
+        if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
+        if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
         if (data.position) setPosition(data.position);
+        setCategoryEnabled(Boolean(data.categoryEnabled));
+        setRatingEnabled(Boolean(data.ratingEnabled));
+        setTechnicalDetailsEnabled(Boolean(data.technicalDetailsEnabled));
+        if (data.launcherIcon && LAUNCHER_ICONS[data.launcherIcon]) setLauncherIcon(data.launcherIcon);
+        if (data.cornerStyle === "sharp" || data.cornerStyle === "rounded") setCornerStyle(data.cornerStyle);
+        setShowBranding(data.showBranding !== false);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [projectId, resolvedParams?.project]);
 
   // Notify parent of height changes
@@ -104,51 +240,155 @@ export default function WidgetPage({
         return "*";
       }
     })();
-    const h = containerRef.current?.scrollHeight ?? 68;
-    window.parent.postMessage({ type: "feedlyte:resize", height: h }, targetOrigin);
+    const notifySize = () => {
+      const height = Math.max(containerRef.current?.scrollHeight ?? 68, 68);
+      window.parent.postMessage({ type: "feedlyte:resize", height }, targetOrigin);
+    };
+    notifySize();
+    if (typeof ResizeObserver === "undefined" || !containerRef.current) return;
+    const observer = new ResizeObserver(notifySize);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [open, submitted, pageUrl]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => launcherRef.current?.focus());
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    requestAnimationFrame(() => messageInputRef.current?.focus());
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  const computeTechnicalDetailValue = (key: string): string => {
+    switch (key) {
+      case "browser":
+        return typeof navigator !== "undefined" ? navigator.userAgent : "";
+      case "viewport":
+        return typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "";
+      case "url":
+        return pageUrl || "";
+      case "referrer":
+        return typeof document !== "undefined" ? document.referrer : "";
+      case "timestamp":
+        return new Date().toISOString();
+      default:
+        return "";
+    }
+  };
+
+  const toggleAllTechnicalDetails = (select: boolean) => {
+    setTechnicalSelections(
+      Object.fromEntries(TECHNICAL_DETAIL_FIELDS.map((field) => [field.key, select])),
+    );
+  };
+
   const handleSubmit = async () => {
-    if (!message.trim() || !projectId) return;
+    const trimmedMessage = message.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedMessage) {
+      setError("Please add a message before sending.");
+      return;
+    }
+
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError("Enter a valid email address or leave the field blank.");
+      return;
+    }
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setError("You appear to be offline. Please reconnect and try again.");
+      return;
+    }
+
+    if (!projectId) return;
     setSubmitting(true);
     setError("");
+    const submissionStartedAt = performance.now();
     try {
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
       const apiBase = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
-      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {        method: "POST",
+      const selectedTechnicalDetails = showTechnicalPanel
+        ? Object.fromEntries(
+            TECHNICAL_DETAIL_FIELDS.filter((field) => technicalSelections[field.key]).map((field) => [
+              field.label,
+              computeTechnicalDetailValue(field.key),
+            ]),
+          )
+        : undefined;
+
+      const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: message.trim(),
-          email: email.trim() || undefined,
+          message: trimmedMessage,
+          email: trimmedEmail || undefined,
           // Sanitize before sending — server validation is the authoritative
           // check, but stripping non-http(s) protocols client-side adds
           // defence-in-depth against protocol-injection via the url param.
           pageUrl: sanitizePageUrl(pageUrl),
           userAgent: navigator.userAgent,
+          category: category || undefined,
+          rating: rating > 0 ? rating : undefined,
+          technicalDetails: selectedTechnicalDetails && Object.keys(selectedTechnicalDetails).length > 0
+            ? selectedTechnicalDetails
+            : undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
+        reportMetric("submission_failure");
+        if (res.status === 403) setError("This widget is not authorized for this website.");
+        else if (res.status === 409) setError("This feedback was already submitted. You can try again with a new message.");
+        else if (res.status === 429) setError(data.error ?? "Too many requests. Please wait a moment and try again.");
+        else setError(data.error ?? "Something went wrong. Please try again.");
         return;
       }
       setSubmitted(true);
+      if (typeof data.trackingToken === "string") setTrackingToken(data.trackingToken);
+      reportMetric("submission_success", performance.now() - submissionStartedAt);
       setMessage("");
       setEmail("");
+      setCategory("");
+      setRating(0);
+      setShowTechnicalPanel(false);
+      setTechnicalSelections({});
     } catch {
+      reportMetric("submission_failure");
       setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const normalizedPosition = position === "bottom-left" ? "bottom-left" : "bottom-right";
   const primaryColor = widgetColor;
-  const isRight = position !== "bottom-left";
+  const isRight = normalizedPosition !== "bottom-left";
+  const canSubmit = message.trim().length > 0 && !submitting && (!fields.email || !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) && (!consentText || consentGiven);
+  const palette = theme === "light"
+    ? { panel: "#ffffff", field: "#f5f5f5", border: "#d4d4d4", text: "#171717", muted: "#525252" }
+    : { panel: "#1a1a1a", field: "#111111", border: "#2d2d2d", text: "#e5e5e5", muted: "#a3a3a3" };
+  const isSharpCorners = cornerStyle === "sharp";
+  const panelRadius = isSharpCorners ? "4px" : "12px";
+  const fieldRadius = isSharpCorners ? "3px" : "7px";
+  const LauncherIcon = LAUNCHER_ICONS[launcherIcon] ?? MessageSquare;
+  const trackingUrl = trackingToken && typeof window !== "undefined"
+    ? `${window.location.origin}/track/${trackingToken}`
+    : "";
 
   return (
     <div
       ref={containerRef}
+      dir={isRtl ? "rtl" : "ltr"}
+      lang={resolvedParams?.lang ?? "en"}
       style={{
         fontFamily: "'DM Sans', system-ui, sans-serif",
         display: "flex",
@@ -162,14 +402,17 @@ export default function WidgetPage({
       {/* Feedback panel */}
       {open && (
         <div
+          id="feedlyte-feedback-form"
+          role="dialog"
+          aria-label="Feedback form"
           style={{
-            background: "#1a1a1a",
-            border: "1px solid #2d2d2d",
-            borderRadius: "12px",
+            background: palette.panel,
+            border: `1px solid ${palette.border}`,
+            borderRadius: panelRadius,
             padding: "16px",
             marginBottom: "10px",
-            width: "340px",
-            maxWidth: "calc(100vw - 48px)",
+            width: `${width}px`,
+            maxWidth: "calc(100vw - 32px)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
           }}
         >
@@ -177,8 +420,9 @@ export default function WidgetPage({
             <div style={{ textAlign: "center", padding: "8px 0" }}>
               <div style={{ fontSize: "28px", marginBottom: "8px" }}>✓</div>
               <p
+                aria-live="polite"
                 style={{
-                  color: "#e5e5e5",
+                  color: palette.text,
                   fontSize: "14px",
                   fontWeight: 600,
                   margin: "0 0 4px",
@@ -186,13 +430,27 @@ export default function WidgetPage({
               >
                 Thanks for your feedback!
               </p>
-              <p style={{ color: "#737373", fontSize: "12px", margin: 0 }}>
+              <p style={{ color: palette.muted, fontSize: "14px", margin: 0 }}>
                 We appreciate you taking the time.
               </p>
+              {trackingUrl && (
+                <p style={{ color: palette.muted, fontSize: "12px", margin: "10px 0 0" }}>
+                  Want to check back later?{" "}
+                  <a
+                    href={trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: primaryColor, fontWeight: 600 }}
+                  >
+                    Track this feedback
+                  </a>
+                </p>
+              )}
               <button
                 onClick={() => {
                   setSubmitted(false);
                   setOpen(false);
+                  setTrackingToken("");
                 }}
                 style={{
                   marginTop: "14px",
@@ -220,8 +478,8 @@ export default function WidgetPage({
               >
                 <p
                   style={{
-                    color: "#e5e5e5",
-                    fontSize: "13px",
+                    color: palette.text,
+                    fontSize: "18px",
                     fontWeight: 600,
                     margin: 0,
                   }}
@@ -229,11 +487,14 @@ export default function WidgetPage({
                   Share your feedback
                 </p>
                 <button
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    setOpen(false);
+                    requestAnimationFrame(() => launcherRef.current?.focus());
+                  }}
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#737373",
+                    color: palette.muted,
                     fontSize: "18px",
                     cursor: "pointer",
                     lineHeight: 1,
@@ -244,19 +505,62 @@ export default function WidgetPage({
                   ×
                 </button>
               </div>
+              {categoryEnabled && (
+                <div style={{ marginBottom: "10px" }}>
+                  <p style={{ margin: "0 0 6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
+                    What&apos;s this about? <span style={{ color: palette.muted, fontWeight: 400 }}>(optional)</span>
+                  </p>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {CATEGORY_OPTIONS.map(({ value, label, Icon }) => {
+                      const selected = category === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setCategory(selected ? "" : value)}
+                          aria-pressed={selected}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            background: selected ? `${primaryColor}20` : "transparent",
+                            border: `1px solid ${selected ? primaryColor : palette.border}`,
+                            borderRadius: fieldRadius,
+                            color: selected ? primaryColor : palette.muted,
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            padding: "5px 9px",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <Icon size={12} strokeWidth={2.25} />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <label htmlFor="feedlyte-message" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "14px", fontWeight: 600 }}>
+                Feedback message
+              </label>
               <textarea
+                ref={messageInputRef}
+                id="feedlyte-message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="What's on your mind?"
                 maxLength={2000}
                 rows={3}
+                aria-label="Feedback message"
                 style={{
                   width: "100%",
                   background: "#111",
                   border: "1px solid #2d2d2d",
                   borderRadius: "7px",
                   color: "#e5e5e5",
-                  fontSize: "13px",
+                  fontSize: "14px",
                   padding: "8px 10px",
                   resize: "vertical",
                   outline: "none",
@@ -267,32 +571,146 @@ export default function WidgetPage({
                 onFocus={(e) => (e.target.style.borderColor = primaryColor)}
                 onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
               />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email (optional)"
-                style={{
-                  width: "100%",
-                  background: "#111",
-                  border: "1px solid #2d2d2d",
-                  borderRadius: "7px",
-                  color: "#e5e5e5",
-                  fontSize: "13px",
-                  padding: "7px 10px",
-                  outline: "none",
-                  boxSizing: "border-box",
-                  marginBottom: "10px",
-                  fontFamily: "inherit",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = primaryColor)}
-                onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
-              />
+              {ratingEnabled && (
+                <div style={{ marginBottom: "10px" }}>
+                  <p style={{ margin: "0 0 6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
+                    How would you rate your experience? <span style={{ color: palette.muted, fontWeight: 400 }}>(optional)</span>
+                  </p>
+                  <div role="radiogroup" aria-label="Rating" style={{ display: "flex", gap: "4px" }}>
+                    {[1, 2, 3, 4, 5].map((value) => {
+                      const filled = value <= (hoveredRating || rating);
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={rating === value}
+                          aria-label={`${value} star${value > 1 ? "s" : ""}`}
+                          onClick={() => setRating(rating === value ? 0 : value)}
+                          onMouseEnter={() => setHoveredRating(value)}
+                          onMouseLeave={() => setHoveredRating(0)}
+                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
+                        >
+                          <Star
+                            size={20}
+                            strokeWidth={1.75}
+                            color={filled ? primaryColor : palette.muted}
+                            fill={filled ? primaryColor : "none"}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {fields.email && <>
+                <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
+                  Email
+                </label>
+                <input
+                  id="feedlyte-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email (optional)"
+                  aria-label="Email"
+                  style={{ width: "100%", background: palette.field, border: `1px solid ${palette.border}`, borderRadius: "7px", color: palette.text, fontSize: "14px", padding: "7px 10px", outline: "none", boxSizing: "border-box", marginBottom: "10px", fontFamily: "inherit" }}
+                  onFocus={(e) => (e.target.style.borderColor = primaryColor)}
+                  onBlur={(e) => (e.target.style.borderColor = palette.border)}
+                />
+              </>}
+              {technicalDetailsEnabled && (
+                <div style={{ marginBottom: "10px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTechnicalPanel((prev) => !prev)}
+                    aria-expanded={showTechnicalPanel}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      background: "transparent",
+                      border: "none",
+                      color: palette.muted,
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      padding: 0,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {showTechnicalPanel ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                    Include technical details (optional)
+                  </button>
+                  {showTechnicalPanel && (
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        padding: "8px 10px",
+                        border: `1px solid ${palette.border}`,
+                        borderRadius: fieldRadius,
+                        background: palette.field,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleAllTechnicalDetails(
+                            !TECHNICAL_DETAIL_FIELDS.every((field) => technicalSelections[field.key]),
+                          )
+                        }
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: primaryColor,
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: 0,
+                          marginBottom: "6px",
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        {TECHNICAL_DETAIL_FIELDS.every((field) => technicalSelections[field.key])
+                          ? "Deselect all"
+                          : "Select all"}
+                      </button>
+                      {TECHNICAL_DETAIL_FIELDS.map((field) => (
+                        <label
+                          key={field.key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "7px",
+                            color: palette.text,
+                            fontSize: "12px",
+                            padding: "3px 0",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={Boolean(technicalSelections[field.key])}
+                            onChange={(e) =>
+                              setTechnicalSelections((prev) => ({ ...prev, [field.key]: e.target.checked }))
+                            }
+                          />
+                          {field.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {consentText && <label style={{ display: "flex", gap: "8px", alignItems: "flex-start", color: palette.muted, fontSize: "11px", marginBottom: "10px" }}>
+                <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} aria-label="Consent" />
+                <span>{consentText}</span>
+              </label>}
               {error && (
                 <p
+                  aria-live="polite"
                   style={{
                     color: "#ef4444",
-                    fontSize: "12px",
+                    fontSize: "14px",
                     margin: "0 0 8px",
                   }}
                 >
@@ -300,27 +718,39 @@ export default function WidgetPage({
                 </p>
               )}
               <button
+                type="button"
                 onClick={handleSubmit}
-                disabled={!message.trim() || submitting}
+                disabled={!canSubmit}
+                aria-label={error ? "Try again" : "Send feedback"}
                 style={{
                   width: "100%",
-                  background:
-                    !message.trim() || submitting ? "#d3d0d0" : primaryColor,
+                  background: !canSubmit ? "#d3d0d0" : primaryColor,
                   border: "none",
                   borderRadius: "7px",
-                  color:
-                    !message.trim() || submitting ? "#737373" : "#1a1a1a",
-                  fontSize: "13px",
+                  color: !canSubmit ? "#737373" : "#1a1a1a",
+                  fontSize: "16px",
                   fontWeight: 600,
                   padding: "8px 16px",
-                  cursor:
-                    !message.trim() || submitting ? "not-allowed" : "pointer",
+                  cursor: !canSubmit ? "not-allowed" : "pointer",
                   fontFamily: "inherit",
-                  transition: "background 0.15s",
+                  transition: prefersReducedMotion ? "none" : "background 0.15s",
                 }}
               >
-                {submitting ? "Sending..." : "Send Feedback"}
+                {submitting ? "Sending..." : error ? "Try again" : "Send Feedback"}
               </button>
+              {showBranding && (
+                <p style={{ textAlign: "center", margin: "10px 0 0", fontSize: "10px", color: palette.muted }}>
+                  Powered by{" "}
+                  <a
+                    href="https://feedlyte.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: palette.muted, fontWeight: 600 }}
+                  >
+                    Feedlyte
+                  </a>
+                </p>
+              )}
             </>
           )}
         </div>
@@ -328,11 +758,30 @@ export default function WidgetPage({
 
       {/* Toggle button */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={launcherRef}
+        type="button"
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          if (next) {
+            const openedAt = performance.now();
+            requestAnimationFrame(() => reportMetric("open", performance.now() - openedAt));
+          }
+          if (next) {
+            requestAnimationFrame(() => messageInputRef.current?.focus());
+          } else {
+            requestAnimationFrame(() => launcherRef.current?.focus());
+          }
+        }}
+        aria-label="Toggle feedback form"
+        aria-controls="feedlyte-feedback-form"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        data-state={open ? "open" : "closed"}
         style={{
           background: primaryColor,
           border: "none",
-          borderRadius: "22px",
+          borderRadius: isSharpCorners ? "4px" : (launcherStyle === "tab" ? "7px 7px 0 0" : "22px"),
           color: "#ffffff",
           fontSize: "13px",
           fontWeight: 600,
@@ -344,10 +793,17 @@ export default function WidgetPage({
           boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
           fontFamily: "inherit",
           whiteSpace: "nowrap",
+          transition: prefersReducedMotion ? "none" : "transform 0.15s ease",
+          outline: "none",
         }}
-        aria-label="Toggle feedback form"
+        onFocus={(e) => {
+          e.currentTarget.style.boxShadow = "0 0 0 2px rgba(255,255,255,0.75), 0 4px 16px rgba(245,158,11,0.35)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,0.35)";
+        }}
       >
-        <span style={{ fontSize: "15px" }}>💬</span>
+        <LauncherIcon size={15} strokeWidth={2.25} />
         {widgetLabel}
       </button>
     </div>

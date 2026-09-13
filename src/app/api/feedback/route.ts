@@ -3,38 +3,149 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { submitFeedbackSchema, projectQuerySchema } from "@/lib/validations";
 import { checkWidgetRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
-import { handleError } from "@/lib/api-helpers";
+import { handleError, withApiVersionHeaders } from "@/lib/api-helpers";
 import { fireWebhooks } from "@/lib/webhooks";
-import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
+import { enqueueOutboxEvent } from "@/lib/outbox";
+import { createUnsubscribeToken } from "@/lib/email";
+import { generateTrackingToken } from "@/lib/tracking-token";
+
+const MAX_FEEDBACK_BODY_BYTES = 16_384;
+const HONEYPOT_FIELDS = new Set([
+  "website",
+  "homepage",
+  "url",
+  "company",
+  "fax",
+  "nickname",
+  "botfield",
+  "hpfield",
+]);
+const IDEMPOTENCY_TTL_MS = 60 * 60 * 1000;
+const IDEMPOTENCY_CACHE = new Map<string, number>();
 
 const FALLBACK_ORIGINS = [
   "https://feedlyte.vercel.app",
   "http://localhost:3000",
 ];
+const MAX_SEARCH_LENGTH = 200;
+
+function getListQueryOptions(req: Request) {
+  const url = new URL(req.url);
+  const limitParam = url.searchParams.get("limit");
+  const cursorParam = url.searchParams.get("cursor");
+  const requestedLimit = limitParam ? Number.parseInt(limitParam, 10) : 100;
+  const take = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(requestedLimit, 1), 100)
+    : 100;
+  const q = (url.searchParams.get("q") ?? "").trim().slice(0, MAX_SEARCH_LENGTH);
+  const status = url.searchParams.get("status") ?? "";
+  const category = url.searchParams.get("category") ?? "";
+
+  return {
+    status,
+    category,
+    q,
+    take,
+    cursor: cursorParam?.trim() || null,
+  };
+}
+
+function getTrustedClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",").map((value) => value.trim()).find(Boolean);
+    if (first && first !== "unknown") return first;
+  }
+
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp && realIp !== "unknown") return realIp.trim();
+
+  return "unknown";
+}
+
+function hasHoneypotFields(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  return Object.keys(value as Record<string, unknown>).some((key) =>
+    HONEYPOT_FIELDS.has(key.toLowerCase()),
+  );
+}
+
+function getDuplicateKey(projectId: string, idempotencyKey: string): string {
+  return `${projectId}:${idempotencyKey}`;
+}
+
+function parseTechnicalDetails(value: string | null): Record<string, string> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function getOriginFromUrl(urlString: string | null | undefined): string | null {
+  if (!urlString) return null;
+  try {
+    const parsed = new URL(urlString);
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, "").toLowerCase();
+}
 
 function isOriginAllowed(
   origin: string,
   projectOrigin: string | null,
+  pageUrl?: string | null,
 ): boolean {
-  if (projectOrigin) {
-    const normalize = (o: string) => o.replace(/\/$/, "").toLowerCase();
-    return normalize(origin) === normalize(projectOrigin);
+  if (!projectOrigin) {
+    return true;
   }
-  return FALLBACK_ORIGINS.includes(origin);
+
+  const normalizedProjectOrigin = normalizeOrigin(projectOrigin);
+
+  // 1. Direct CORS request with matching Origin header
+  if (origin && normalizeOrigin(origin) === normalizedProjectOrigin) {
+    return true;
+  }
+
+  // 2. Request originating from Feedlyte's embedded widget iframe
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ? normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL) : "";
+  const isFromFeedlyteApp =
+    !origin ||
+    FALLBACK_ORIGINS.map(normalizeOrigin).includes(normalizeOrigin(origin)) ||
+    (appUrl && normalizeOrigin(origin) === appUrl);
+
+  if (isFromFeedlyteApp) {
+    const hostPageOrigin = getOriginFromUrl(pageUrl);
+    if (hostPageOrigin) {
+      return normalizeOrigin(hostPageOrigin) === normalizedProjectOrigin;
+    }
+    // If pageUrl is not provided, allow the widget iframe
+    return true;
+  }
+
+  return false;
 }
 
 function getCorsHeaders(
   req: Request,
   projectOrigin: string | null,
+  pageUrl?: string | null,
 ): Record<string, string> {
   const origin = req.headers.get("origin") ?? "";
-  const allowed = isOriginAllowed(origin, projectOrigin);
+  const allowed = isOriginAllowed(origin, projectOrigin, pageUrl);
   return {
     "Access-Control-Allow-Origin": allowed
-      ? origin
+      ? (origin || "*")
       : (projectOrigin ?? FALLBACK_ORIGINS[0]),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Idempotency-Key",
     Vary: "Origin",
   };
 }
@@ -51,7 +162,7 @@ export async function OPTIONS(req: Request) {
   }
   return new NextResponse(null, {
     status: 204,
-    headers: getCorsHeaders(req, projectOrigin),
+    headers: withApiVersionHeaders(getCorsHeaders(req, projectOrigin)),
   });
 }
 
@@ -61,14 +172,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(req.url);
-  const status = url.searchParams.get("status") ?? "";
-  const q = url.searchParams.get("q") ?? "";
+  const query = getListQueryOptions(req);
+  const { status, category, q, take, cursor } = query;
+  const normalizedStatus = status === "reviewed" ? "in_review" : status;
 
   const feedback = await prisma.feedback.findMany({
     where: {
       project: { userId: session.user.id },
-      ...(status ? { status } : {}),
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(category ? { category } : {}),
       ...(q
         ? {
             OR: [
@@ -79,8 +191,16 @@ export async function GET(req: Request) {
           }
         : {}),
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
+
+  const headers = new Headers();
+  headers.set("X-Feedlyte-API-Version", "v1");
+  if (feedback.length === take && feedback.at(-1)) {
+    headers.set("x-next-cursor", feedback.at(-1)!.id);
+  }
 
   return NextResponse.json(
     feedback.map((f) => ({
@@ -91,8 +211,12 @@ export async function GET(req: Request) {
       pageUrl: f.pageUrl ?? "",
       userAgent: f.userAgent ?? "",
       status: f.status,
+      category: f.category ?? null,
+      rating: f.rating ?? null,
+      technicalDetails: parseTechnicalDetails(f.technicalDetails),
       createdAt: f.createdAt.toISOString(),
     })),
+    { headers: withApiVersionHeaders(headers) },
   );
 }
 
@@ -107,7 +231,7 @@ export async function POST(req: Request) {
       const corsHeaders = getCorsHeaders(req, null);
       return NextResponse.json(
         { error: queryParsed.error.issues[0].message },
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
@@ -122,42 +246,96 @@ export async function POST(req: Request) {
       const corsHeaders = getCorsHeaders(req, null);
       return NextResponse.json(
         { error: "Project not found." },
-        { status: 404, headers: corsHeaders },
+        { status: 404, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
-    const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
-    const origin = req.headers.get("origin") ?? "";
-
-    if (!isOriginAllowed(origin, project.allowedOrigin)) {
-      return NextResponse.json(
-        { error: "Origin not allowed." },
-        { status: 403, headers: corsHeaders },
-      );
-    }
-
-    const rateLimit = await checkWidgetRateLimit(projectId);
+    const clientIp = getTrustedClientIp(req);
+    const rateLimit = await checkWidgetRateLimit(projectId, clientIp);
     if (!rateLimit.success) {
+      const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         {
           status: 429,
-          headers: { ...corsHeaders, ...rateLimitHeaders(rateLimit) },
+          headers: withApiVersionHeaders({ ...corsHeaders, ...rateLimitHeaders(rateLimit) }),
         },
       );
     }
 
-    const body = await req.json();
+    const rawBodyText = await req.clone().text();
+    if (rawBodyText.length > MAX_FEEDBACK_BODY_BYTES) {
+      const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
+      return NextResponse.json(
+        { error: "Request body is too large." },
+        { status: 413, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = JSON.parse(rawBodyText || "{}");
+    } catch {
+      const corsHeaders = getCorsHeaders(req, project.allowedOrigin);
+      return NextResponse.json(
+        { error: "Invalid JSON in request body." },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    const requestedPageUrl =
+      body && typeof body === "object" && "pageUrl" in body && typeof (body as Record<string, unknown>).pageUrl === "string"
+        ? ((body as Record<string, unknown>).pageUrl as string)
+        : null;
+
+    const corsHeaders = getCorsHeaders(req, project.allowedOrigin, requestedPageUrl);
+    const origin = req.headers.get("origin") ?? "";
+
+    if (!isOriginAllowed(origin, project.allowedOrigin, requestedPageUrl)) {
+      return NextResponse.json(
+        { error: "Origin not allowed." },
+        { status: 403, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    if (hasHoneypotFields(body)) {
+      return NextResponse.json(
+        { error: "Request rejected." },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
+      );
+    }
+
+    const idempotencyKey = req.headers.get("x-idempotency-key")?.trim();
+    if (idempotencyKey) {
+      const dedupeKey = getDuplicateKey(projectId, idempotencyKey);
+      const now = Date.now();
+      for (const [key, timestamp] of IDEMPOTENCY_CACHE.entries()) {
+        if (now - timestamp > IDEMPOTENCY_TTL_MS) {
+          IDEMPOTENCY_CACHE.delete(key);
+        }
+      }
+      const previous = IDEMPOTENCY_CACHE.get(dedupeKey);
+      if (previous && now - previous < IDEMPOTENCY_TTL_MS) {
+        return NextResponse.json(
+          { error: "Duplicate request detected." },
+          { status: 409, headers: withApiVersionHeaders(corsHeaders) },
+        );
+      }
+      IDEMPOTENCY_CACHE.set(dedupeKey, now);
+    }
+
     const parsed = submitFeedbackSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0].message },
-        { status: 400, headers: corsHeaders },
+        { status: 400, headers: withApiVersionHeaders(corsHeaders) },
       );
     }
 
-    const { message, email, pageUrl, userAgent } = parsed.data;
+    const { message, email, pageUrl, userAgent, category, rating, technicalDetails } = parsed.data;
+
+    const tracking = generateTrackingToken();
 
     const feedback = await prisma.feedback.create({
       data: {
@@ -167,6 +345,11 @@ export async function POST(req: Request) {
         pageUrl: pageUrl || null,
         userAgent: userAgent || null,
         status: "unreviewed",
+        category: category || null,
+        rating: rating ?? null,
+        technicalDetails: technicalDetails ? JSON.stringify(technicalDetails) : null,
+        trackingTokenHash: tracking.hash,
+        trackingTokenExpiresAt: tracking.expiresAt,
       },
     });
 
@@ -208,56 +391,50 @@ export async function POST(req: Request) {
       }
 
       if (shouldSend) {
-        // Atomic conditional update: only set lastNotificationSent if cooldown passed
-        // This replaces the read-then-write with a single atomic operation
-        const updateResult = await prisma.project.updateMany({
-          where: {
-            id: projectId,
-            ...(cooldown !== "none" && lastSent
-              ? {
-                  lastNotificationSent: {
-                    lte: new Date(now.getTime() - cooldownMs),
-                  },
-                }
-              : {}),
-          },
+        await prisma.project.update({
+          where: { id: projectId },
           data: { lastNotificationSent: now },
         });
 
-        // updateResult.count > 0 means we "claimed" the send window
-        if (updateResult.count > 0) {
-          // Generate unsubscribe token if not exists
-          let unsubscribeToken = projectWithPrefs.unsubscribeToken;
-          if (!unsubscribeToken) {
-            unsubscribeToken = await createUnsubscribeToken(projectId);
-            await prisma.project.update({
-              where: { id: projectId },
-              data: { unsubscribeToken },
-            });
-          }
+        // Generate unsubscribe token if not exists
+        let unsubscribeToken = projectWithPrefs.unsubscribeToken;
+        if (!unsubscribeToken) {
+          unsubscribeToken = await createUnsubscribeToken(projectId);
+          await prisma.project.update({
+            where: { id: projectId },
+            data: { unsubscribeToken },
+          });
+        }
           
           const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
           const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
           
-          // Fire async - errors are caught and logged, don't affect feedback response
-          sendFeedbackNotificationEmail(
-            projectWithPrefs.user.email,
-            projectWithPrefs.name,
-            {
-              message: feedback.message,
-              email: feedback.email,
-              pageUrl: feedback.pageUrl,
-              userAgent: feedback.userAgent,
-              createdAt: feedback.createdAt.toISOString(),
-            },
+          await enqueueOutboxEvent("email.notification", {
+            to: projectWithPrefs.user.email,
+            projectName: projectWithPrefs.name,
+            message: feedback.message,
+            email: feedback.email,
+            pageUrl: feedback.pageUrl,
+            userAgent: feedback.userAgent,
+            createdAt: feedback.createdAt.toISOString(),
             dashboardUrl,
-            unsubscribeUrl
-          ).catch((err) => console.error("[feedback] Failed to send notification email:", err));
+            unsubscribeUrl,
+          });
         }
       }
-    }
 
 
+
+    // Queue the durable event first so feedback creation is never lost if downstream work fails.
+    await enqueueOutboxEvent("feedback.created", {
+      id: feedback.id,
+      projectId: feedback.projectId,
+      message: feedback.message,
+      email: feedback.email,
+      pageUrl: feedback.pageUrl,
+      status: feedback.status,
+      createdAt: feedback.createdAt.toISOString(),
+    });
 
     // Fire webhooks async — does not block the response
     fireWebhooks({
@@ -271,8 +448,13 @@ export async function POST(req: Request) {
     }).catch(() => {});
 
     return NextResponse.json(
-      { id: feedback.id, message: "Feedback received. Thank you!" },
-      { status: 201, headers: corsHeaders },
+      {
+        id: feedback.id,
+        message: "Feedback received. Thank you!",
+        // Returned once, here only — never re-exposed after this response.
+        trackingToken: tracking.token,
+      },
+      { status: 201, headers: withApiVersionHeaders(corsHeaders) },
     );
   } catch (e) {
     return handleError(e, "feedback/POST");

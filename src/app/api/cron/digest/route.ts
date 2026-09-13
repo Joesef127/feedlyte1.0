@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { sendDailyDigestEmail, createUnsubscribeToken } from "@/lib/email";
+import { createUnsubscribeToken } from "@/lib/email";
+import { enqueueOutboxEvent } from "@/lib/outbox";
 
 function is8AMInTimezone(timezone: string): boolean {
   try {
@@ -108,40 +109,57 @@ export async function GET(req: Request) {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${unsubscribeToken}`;
         const dashboardUrl = `${baseUrl}/dashboard/projects/${project.id}`;
-        await sendDailyDigestEmail(
-          project.user.email,
-          project.name,
-          feedback.map(f => ({
-            message: f.message,
-            email: f.email,
-            pageUrl: f.pageUrl,
-            status: f.status,
-            createdAt: f.createdAt.toISOString(),
-          })),
-          dashboardUrl,
-          unsubscribeUrl
-        );
-
-        // Mark as sent for today (atomic update with conditional)
-        await prisma.project.update({
-          where: { id: project.id },
+        const claim = await prisma.project.updateMany({
+          where: {
+            id: project.id,
+            ...(lastSent
+              ? { lastDigestSentAt: lastSent }
+              : { lastDigestSentAt: null }),
+          },
           data: { lastDigestSentAt: now },
         });
 
-        return { sent: true };
+        if (claim.count === 0) {
+          return { skipped: true, reason: "claimed_by_another_run" };
+        }
+
+        try {
+          await enqueueOutboxEvent("email.digest", {
+            to: project.user.email,
+            projectName: project.name,
+            feedbackItems: feedback.map((f) => ({
+              message: f.message,
+              email: f.email,
+              pageUrl: f.pageUrl,
+              userAgent: f.userAgent,
+              status: f.status,
+              createdAt: f.createdAt.toISOString(),
+            })),
+            dashboardUrl,
+            unsubscribeUrl,
+          });
+
+          return { queued: true };
+        } catch (error) {
+          await prisma.project.updateMany({
+            where: { id: project.id, lastDigestSentAt: now },
+            data: { lastDigestSentAt: lastSent },
+          });
+          throw error;
+        }
       })
     );
 
-    const sent = results.filter(r => r.status === "fulfilled" && r.value?.sent).length;
+    const queued = results.filter(r => r.status === "fulfilled" && r.value?.queued).length;
     const skipped = results.filter(r => r.status === "fulfilled" && r.value?.skipped).length;
     const failed = results.filter(r => r.status === "rejected").length;
 
     return NextResponse.json({ 
-      message: `Digest sent for ${sent} project(s), ${skipped} skipped`,
+      message: `Digest queued for ${queued} project(s), ${skipped} skipped`,
       failed,
       checked: projects.length,
       eligible: eligibleProjects.length,
-      sent,
+      queued,
       skipped,
     });
   } catch (error) {

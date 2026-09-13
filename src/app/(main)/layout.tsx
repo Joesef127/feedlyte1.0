@@ -37,6 +37,7 @@ export default function MainLayout({
         }}
       />
         <Providers>{children}</Providers>
+
       </body>
     </html>
   );

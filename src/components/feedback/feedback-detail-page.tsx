@@ -13,7 +13,31 @@ import {
   Tag,
   ExternalLink,
   Clock,
+  Bug,
+  Lightbulb,
+  Heart,
+  HelpCircle,
+  Star,
+  Sliders,
 } from "lucide-react";
+
+const CATEGORY_ICONS: Record<string, typeof Bug> = {
+  bug: Bug,
+  idea: Lightbulb,
+  praise: Heart,
+  question: HelpCircle,
+};
+
+const ALL_STATUSES: { id: Status; label: string }[] = [
+  { id: "unreviewed", label: "Unreviewed" },
+  { id: "in_review", label: "In Review" },
+  { id: "accepted", label: "Accepted" },
+  { id: "in_progress", label: "In Progress" },
+  { id: "resolved", label: "Resolved" },
+  { id: "not_feasible", label: "Not Feasible" },
+  { id: "closed", label: "Closed" },
+  { id: "spam", label: "Spam" },
+];
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -174,6 +198,37 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             </Button>
           </div>
 
+          {/* Category & Rating badges (if provided) */}
+          {(feedback.category || (typeof feedback.rating === "number" && feedback.rating > 0)) && (
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              {feedback.category && CATEGORY_ICONS[feedback.category] && (() => {
+                const CategoryIcon = CATEGORY_ICONS[feedback.category];
+                return (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted/60 text-foreground border border-border capitalize">
+                    <CategoryIcon size={14} className="text-primary" />
+                    {feedback.category}
+                  </span>
+                );
+              })()}
+
+              {typeof feedback.rating === "number" && feedback.rating > 0 && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Star
+                        key={i}
+                        size={13}
+                        className={i < feedback.rating! ? "text-amber-500" : "text-muted-foreground/30"}
+                        fill={i < feedback.rating! ? "currentColor" : "none"}
+                      />
+                    ))}
+                  </div>
+                  <span className="ml-1 text-xs font-medium text-foreground/80">({feedback.rating}/5)</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bg-background border border-border rounded-xl px-3 sm:px-5 py-4">
             <p className="text-sm sm:text-base text-foreground leading-relaxed m-0 whitespace-pre-wrap">
               {feedback.message}
@@ -183,36 +238,45 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
         {/* Status management */}
         <Card>
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3">
-            Status
-          </h3>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Update Status
+            </h3>
+            <span className="text-xs text-muted-foreground/60">
+              Current: <span className="font-semibold text-foreground capitalize">{feedback.status.replace("_", " ")}</span>
+            </span>
+          </div>
           <div className="flex gap-2 flex-wrap">
-            {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  updateStatus.mutate(
-                    { id: feedback.id, status: s },
-                    {
-                      onSuccess: () => {
-                        toast.success(`Marked as ${s}`);
-                      },
-                      onError: (err) => {
-                        toast.error(err instanceof Error ? err.message : "Failed to update status");
-                      },
-                    }
-                  );
-                }}                disabled={feedback.status === s || updateStatus.isPending}
-                className={[
-                  "px-4 py-2 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all capitalize",
-                  feedback.status === s
-                    ? "border-primary bg-primary/10 text-primary cursor-default"
-                    : "border-border bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground disabled:opacity-50",
-                ].join(" ")}
-              >
-                {s}
-              </button>
-            ))}
+            {ALL_STATUSES.map((s) => {
+              const isActive = feedback.status === s.id || (s.id === "in_review" && feedback.status === "reviewed");
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    updateStatus.mutate(
+                      { id: feedback.id, status: s.id },
+                      {
+                        onSuccess: () => {
+                          toast.success(`Marked as ${s.label}`);
+                        },
+                        onError: (err) => {
+                          toast.error(err instanceof Error ? err.message : "Failed to update status");
+                        },
+                      }
+                    );
+                  }}
+                  disabled={isActive || updateStatus.isPending}
+                  className={[
+                    "px-3.5 py-1.5 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all",
+                    isActive
+                      ? "border-primary bg-primary/10 text-primary cursor-default"
+                      : "border-border bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground disabled:opacity-50",
+                  ].join(" ")}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
         </Card>
 
@@ -336,6 +400,38 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             )}
           </div>
         </Card>
+
+        {/* Technical details — only shown when the submitter opted in */}
+        {feedback.technicalDetails && Object.keys(feedback.technicalDetails).length > 0 && (
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sliders size={16} className="text-primary" />
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  Technical Details
+                </h3>
+              </div>
+              <span className="text-xs text-muted-foreground/60 font-medium">
+                Captured with visitor consent
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(feedback.technicalDetails).map(([label, value]) => (
+                <div
+                  key={label}
+                  className="flex flex-col gap-1 p-3 bg-background rounded-lg border border-border"
+                >
+                  <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold">
+                    {label}
+                  </p>
+                  <p className="text-xs sm:text-sm text-foreground font-mono break-all leading-relaxed select-all">
+                    {value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Similar feedback */}
         {feedback.similar.length > 0 && (

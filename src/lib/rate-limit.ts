@@ -7,6 +7,19 @@ export interface RateLimitResult {
   reset: number;
 }
 
+function getMsBeforeNext(error: unknown): number {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "msBeforeNext" in error &&
+    typeof error.msBeforeNext === "number"
+  ) {
+    return error.msBeforeNext;
+  }
+
+  return 0;
+}
+
 const authLimiter = new RateLimiterMemory({
   points: 5,
   duration: 60 * 15, // 15 min
@@ -16,6 +29,14 @@ const widgetLimiter = new RateLimiterMemory({
   points: 10,
   duration: 60, // 1 min
 });
+
+const trackingLimiter = new RateLimiterMemory({
+  points: 20,
+  duration: 60, // 1 min
+});
+
+const makeWidgetLimiterKey = (projectId: string, clientIp?: string) =>
+  [projectId, clientIp].filter(Boolean).join(":");
 
 export async function checkAuthRateLimit(
   ip: string,
@@ -31,21 +52,23 @@ export async function checkAuthRateLimit(
       remaining: result.remainingPoints,
       reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
     };
-  } catch (result: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       limit: 5,
       remaining: 0,
-      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+      reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
     };
   }
 }
 
 export async function checkWidgetRateLimit(
   projectId: string,
+  clientIp = "default",
 ): Promise<RateLimitResult> {
   try {
-    const result = await widgetLimiter.consume(projectId);
+    const key = makeWidgetLimiterKey(projectId, clientIp);
+    const result = await widgetLimiter.consume(key);
 
     return {
       success: true,
@@ -53,12 +76,33 @@ export async function checkWidgetRateLimit(
       remaining: result.remainingPoints,
       reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
     };
-  } catch (result: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       limit: 10,
       remaining: 0,
+      reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
+    };
+  }
+}
+
+export async function checkTrackingRateLimit(
+  clientIp = "default",
+): Promise<RateLimitResult> {
+  try {
+    const result = await trackingLimiter.consume(clientIp);
+    return {
+      success: true,
+      limit: 20,
+      remaining: result.remainingPoints,
       reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      limit: 20,
+      remaining: 0,
+      reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
     };
   }
 }

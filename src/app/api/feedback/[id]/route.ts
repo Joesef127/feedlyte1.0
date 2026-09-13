@@ -59,6 +59,16 @@ export async function GET(
         })
       : [];
 
+    let technicalDetails: Record<string, string> | null = null;
+    if (feedback.technicalDetails) {
+      try {
+        const parsed = JSON.parse(feedback.technicalDetails);
+        technicalDetails = parsed && typeof parsed === "object" ? parsed : null;
+      } catch {
+        technicalDetails = null;
+      }
+    }
+
     return NextResponse.json({
       id:        feedback.id,
       projectId: feedback.projectId,
@@ -67,6 +77,9 @@ export async function GET(
       pageUrl:   feedback.pageUrl  ?? "",
       userAgent: feedback.userAgent ?? "",
       status:    feedback.status,
+      category:  feedback.category ?? null,
+      rating:    feedback.rating ?? null,
+      technicalDetails,
       createdAt: feedback.createdAt.toISOString(),
       project: {
         id:    feedback.project.id,

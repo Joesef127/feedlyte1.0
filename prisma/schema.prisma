@@ -15,12 +15,103 @@ model User {
   image         String?
   passwordHash  String?
   createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  projects Project[]
+  accounts        Account[]
+  sessions        Session[]
+  memberships     Membership[]
+  projects        Project[]
+  invitations     Invitation[]
+  auditEvents     AuditEvent[]
+  ownedWorkspaces Workspace[]  @relation("WorkspaceOwner")
 
   @@map("users")
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  description String?
+
+  owner       User         @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     Membership[]
+  projects    Project[]
+  invitations Invitation[]
+  auditEvents AuditEvent[]
+
+  @@map("workspaces")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  ANALYST
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  PENDING
+  REMOVED
+}
+
+model Membership {
+  id        String          @id @default(cuid())
+  workspaceId String
+  userId    String
+  role      MembershipRole  @default(VIEWER)
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @default(now()) @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, role])
+  @@map("memberships")
+}
+
+model Invitation {
+  id         String   @id @default(cuid())
+  workspaceId String
+  email      String
+  invitedBy  String
+  role       MembershipRole @default(VIEWER)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter   User      @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, email])
+  @@map("invitations")
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  workspaceId  String?
+  userId      String?
+  entityType  String
+  entityId    String
+  action      String
+  details     String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_events")
 }
 
 model Account {
@@ -67,6 +158,7 @@ model Project {
   id                      String   @id @default(cuid())
   name                    String
   userId                  String
+  workspaceId             String?
   color                   String   @default("#F59E0B")
   position                String   @default("bottom-right")
   label                   String   @default("Feedback")
@@ -78,27 +170,45 @@ model Project {
   lastNotificationSent    DateTime?                        // NEW: for cooldown tracking
   unsubscribeToken        String?  @unique                 // NEW: for unsubscribe links
   lastDigestSentAt        DateTime?                        // NEW: for daily digest dedup
+  categoryEnabled         Boolean  @default(false)          // widget: optional feedback type selector
+  ratingEnabled           Boolean  @default(false)          // widget: optional 1-5 star rating
+  technicalDetailsEnabled Boolean  @default(false)          // widget: optional technical details opt-in section
+  launcherIcon            String   @default("message-square") // widget: Lucide icon name for the launcher button
+  cornerStyle             String   @default("rounded")     // widget: "rounded" | "sharp"
+  showBranding            Boolean  @default(true)           // widget: "Powered by Feedlyte" footer
   createdAt               DateTime @default(now())
+  updatedAt               DateTime @default(now()) @updatedAt
 
-  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  feedback Feedback[]
-  webhooks Webhook[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  feedback  Feedback[]
+  webhooks  Webhook[]
 
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, updatedAt])
   @@map("projects")
 }
 
 model Feedback {
-  id        String   @id @default(cuid())
-  projectId String
-  message   String   @db.Text
-  email     String?
-  pageUrl   String?
-  userAgent String?
-  status    String   @default("unreviewed")
-  createdAt DateTime @default(now())
+  id                     String    @id @default(cuid())
+  projectId              String
+  message                String    @db.Text
+  email                  String?
+  pageUrl                String?
+  userAgent              String?
+  status                 String    @default("unreviewed")
+  category               String?                          // "bug" | "idea" | "praise" | "question" — optional
+  rating                 Int?                             // optional 1-5 star rating
+  technicalDetails       String?   @db.Text               // optional JSON blob of client-selected technical fields
+  trackingTokenHash      String?   @unique                // hashed opaque token for the one-time "track this feedback" link
+  trackingTokenExpiresAt DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @default(now()) @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([projectId, status, createdAt])
+  @@index([projectId, pageUrl])
   @@map("feedback")
 }
 
@@ -131,4 +241,21 @@ model WebhookDelivery {
 
   @@index([createdAt])
   @@map("webhook_deliveries")
+}
+
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  eventType     String
+  payload       String    @db.Text
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(5)
+  nextAttemptAt DateTime  @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([eventType, createdAt])
+  @@map("outbox_events")
 }

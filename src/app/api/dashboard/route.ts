@@ -3,6 +3,16 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { handleError } from "@/lib/api-helpers";
 
+function parseTechnicalDetails(value: string | null): Record<string, string> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -70,18 +80,31 @@ export async function GET() {
       statsMap[s.status] = s._count.status;
     }
 
-    const totalFeedback  = Object.values(statsMap).reduce((a, b) => a + b, 0);
-    const unreviewed     = statsMap["unreviewed"] ?? 0;
-    const reviewed       = statsMap["reviewed"]   ?? 0;
-    const resolved       = statsMap["resolved"]   ?? 0;
+    const unreviewed   = statsMap["unreviewed"] ?? 0;
+    const inReview     = (statsMap["in_review"] ?? 0) + (statsMap["reviewed"] ?? 0);
+    const accepted     = statsMap["accepted"] ?? 0;
+    const inProgress   = statsMap["in_progress"] ?? 0;
+    const resolved     = statsMap["resolved"] ?? 0;
+    const notFeasible  = statsMap["not_feasible"] ?? 0;
+    const closed       = statsMap["closed"] ?? 0;
+    const spam         = statsMap["spam"] ?? 0;
+
+    // Total feedback excludes spam
+    const totalFeedback = unreviewed + inReview + accepted + inProgress + resolved + notFeasible + closed;
 
     return NextResponse.json({
       stats: {
         totalProjects:  projects.length,
         totalFeedback,
         unreviewed,
-        reviewed,
+        reviewed: inReview, // backward-compat alias
+        in_review: inReview,
+        accepted,
+        in_progress: inProgress,
         resolved,
+        not_feasible: notFeasible,
+        closed,
+        spam,
       },
       recentProjects: projects.slice(0, 5).map((p) => ({
         id:            p.id,
@@ -95,6 +118,9 @@ export async function GET() {
         id:        f.id,
         message:   f.message,
         status:    f.status,
+        category:  f.category ?? null,
+        rating:    f.rating ?? null,
+        technicalDetails: parseTechnicalDetails(f.technicalDetails),
         createdAt: f.createdAt.toISOString(),
         project: {
           id:    f.project.id,

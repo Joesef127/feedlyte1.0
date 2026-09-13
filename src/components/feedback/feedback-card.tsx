@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Eye, CheckCheck, Check, Trash2, Square, CheckSquare } from "lucide-react";
+import { MoreHorizontal, Eye, Check, Trash2, Square, CheckSquare, Bug, Lightbulb, Heart, HelpCircle, Star, Sliders } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Feedback, Status } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { toast } from "sonner";
 
 interface FeedbackCardProps {
   fb:             Feedback;
@@ -16,6 +17,24 @@ interface FeedbackCardProps {
   onSelect?:      (id: string) => void;
   clearSelection?: () => void;
 }
+
+const CATEGORY_ICONS: Record<string, typeof Bug> = {
+  bug: Bug,
+  idea: Lightbulb,
+  praise: Heart,
+  question: HelpCircle,
+};
+
+const ALL_STATUS_ACTIONS: { status: Status; label: string }[] = [
+  { status: "unreviewed", label: "Unreviewed" },
+  { status: "in_review", label: "In Review" },
+  { status: "accepted", label: "Accepted" },
+  { status: "in_progress", label: "In Progress" },
+  { status: "resolved", label: "Resolved" },
+  { status: "not_feasible", label: "Not Feasible" },
+  { status: "closed", label: "Closed" },
+  { status: "spam", label: "Spam" },
+];
 
 function timeAgo(iso: string): string {
   const diff  = Date.now() - new Date(iso).getTime();
@@ -61,7 +80,7 @@ export function FeedbackCard({
 }, [clearSelection]);
 
   const handleOpen = () => {
-    if (fb.status === "unreviewed") onUpdateStatus(fb.id, "reviewed");
+    if (fb.status === "unreviewed") onUpdateStatus(fb.id, "in_review");
     router.push(`/dashboard/feedback/${fb.id}`);
   };
 
@@ -96,6 +115,21 @@ export function FeedbackCard({
           </div>
 
           <StatusBadge status={fb.status} />
+          {fb.category && CATEGORY_ICONS[fb.category] && (() => {
+            const CategoryIcon = CATEGORY_ICONS[fb.category];
+            return (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 text-muted-foreground border border-border/50 capitalize shrink-0">
+                <CategoryIcon size={12} className="text-foreground/70" />
+                {fb.category}
+              </span>
+            );
+          })()}
+          {typeof fb.rating === "number" && fb.rating > 0 && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+              <Star size={11} fill="currentColor" />
+              {fb.rating}
+            </span>
+          )}
           <div className="flex items-center gap-2 min-w-0">
             {projectColor && (
               <span
@@ -121,7 +155,7 @@ export function FeedbackCard({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1">
+            <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-80 overflow-y-auto">
               <button
                 onClick={() => { setMenuOpen(false); handleOpen(); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
@@ -129,36 +163,54 @@ export function FeedbackCard({
                 <Eye size={13} />
                 View details
               </button>
-              {fb.status !== "reviewed" && (
-                <button
-                  onClick={() => { setMenuOpen(false); onUpdateStatus(fb.id, "reviewed"); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
-                >
-                  <Check size={13} />
-                  Mark as reviewed
-                </button>
-              )}
-              {fb.status !== "resolved" && (
-                <button
-                  onClick={() => { setMenuOpen(false); onUpdateStatus(fb.id, "resolved"); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
-                >
-                  <CheckCheck size={13} />
-                  Mark as resolved
-                </button>
-              )}
-              {fb.status !== "unreviewed" && (
-                <button
-                  onClick={() => { setMenuOpen(false); onUpdateStatus(fb.id, "unreviewed"); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
-                >
-                  <Eye size={13} />
-                  Mark as unreviewed
-                </button>
-              )}
+
+              <div className="h-px bg-border mx-2 my-1" />
+              <div className="px-3 py-1 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                Change Status
+              </div>
+
+              {ALL_STATUS_ACTIONS.map(({ status, label }) => {
+                const isCurrent =
+                  fb.status === status ||
+                  (status === "in_review" && fb.status === "reviewed");
+                return (
+                  <button
+                    key={status}
+                    disabled={isCurrent}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      try {
+                        await onUpdateStatus(fb.id, status);
+                        toast.success(`Marked as ${label.toLowerCase()}`);
+                      } catch (error) {
+                        toast.error("Failed to update status");
+                        console.error(error);
+                      }
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span>{label}</span>
+                    {isCurrent && (
+                      <Check size={12} className="text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+
               <div className="h-px bg-border mx-2 my-1" />
               <button
-                onClick={() => { setMenuOpen(false); onDelete(fb.id); }}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  try {
+                    await onDelete(fb.id);
+                    toast.success("Feedback Deleted");
+                  } catch (error) {
+                    toast.error("Failed to delete feedback");
+                    console.error(error);
+                  }
+                }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors cursor-pointer text-left"
               >
                 <Trash2 size={13} />
@@ -176,18 +228,29 @@ export function FeedbackCard({
         {fb.message}
       </p>
 
-      {/* Footer: page URL + time */}
+      {/* Footer: page URL + time + tech details */}
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
         {fb.pageUrl ? (
-          <span className="text-xs text-muted-foreground/50 font-mono truncate max-w-[70%]">
+          <span className="text-xs text-muted-foreground/50 font-mono truncate max-w-[60%]">
             {fb.pageUrl}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground/30">No URL</span>
         )}
-        <span className="text-xs text-muted-foreground/40 shrink-0">
-          {timeAgo(fb.createdAt)}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {fb.technicalDetails && Object.keys(fb.technicalDetails).length > 0 && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground/70 bg-muted/40 border border-border/50 px-1.5 py-0.5 rounded"
+              title={`${Object.keys(fb.technicalDetails).length} technical detail(s) captured`}
+            >
+              <Sliders size={11} className="text-muted-foreground" />
+              Tech
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground/40">
+            {timeAgo(fb.createdAt)}
+          </span>
+        </div>
       </div>
     </div>
   );

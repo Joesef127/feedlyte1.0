@@ -1,21 +1,15 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { createPasswordResetToken } from "@/lib/tokens";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { forgotPasswordSchema } from "@/lib/validations";
-import { handleError } from "@/lib/api-helpers";
+import { handleError, getClientIp } from "@/lib/api-helpers";
 import { checkAuthRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
     // Rate limit by IP
-    const headersList = await headers();
-    const ip =
-      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      headersList.get("x-real-ip") ??
-      "anonymous";
-
+    const ip = getClientIp(req);
     const rateLimit = await checkAuthRateLimit(ip);
     if (!rateLimit.success) {
       return NextResponse.json(

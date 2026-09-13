@@ -32,8 +32,14 @@ vi.mock("@/lib/webhooks", () => ({
   fireWebhooks: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/lib/outbox", () => ({
+  enqueueOutboxEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("@/lib/api-helpers", () => ({
-  handleError: vi.fn((_e, _ctx) =>
+  withApiVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
+  withWidgetVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
+  handleError: vi.fn(() =>
     NextResponse.json({ error: "Internal Server Error" }, { status: 500 }),
   ),
 }));
@@ -42,11 +48,13 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { checkWidgetRateLimit } from "@/lib/rate-limit";
 import { fireWebhooks } from "@/lib/webhooks";
+import { enqueueOutboxEvent } from "@/lib/outbox";
 import { GET, POST, OPTIONS } from "@/app/api/feedback/route";
 
 const mockAuth              = auth as ReturnType<typeof vi.fn>;
 const mockCheckRateLimit    = checkWidgetRateLimit as ReturnType<typeof vi.fn>;
 const mockFireWebhooks      = fireWebhooks as ReturnType<typeof vi.fn>;
+const mockEnqueueOutbox     = enqueueOutboxEvent as ReturnType<typeof vi.fn>;
 const mockPrisma = prisma as unknown as {
   project:  { findUnique: ReturnType<typeof vi.fn> };
   feedback: { findMany: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
@@ -201,6 +209,23 @@ describe("GET /api/feedback", () => {
     const callArgs = mockPrisma.feedback.findMany.mock.calls[0][0];
     expect(callArgs.where.OR).toBeDefined();
   });
+
+  it("applies a safe default page size and caps oversized requests", async () => {
+    mockAuth.mockResolvedValue({ user: { id: "user_1" } });
+    mockPrisma.feedback.findMany.mockResolvedValue([]);
+
+    await GET(makeGetRequest({ limit: "200" }));
+    expect(mockPrisma.feedback.findMany.mock.calls[0][0]).toMatchObject({
+      take: 100,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+
+    await GET(makeGetRequest({ cursor: "fb_2", limit: "15" }));
+    expect(mockPrisma.feedback.findMany.mock.calls[1][0]).toMatchObject({
+      cursor: { id: "fb_2" },
+      take: 15,
+    });
+  });
 });
 
 // ── POST ──────────────────────────────────────────────────────────────────────
@@ -301,6 +326,14 @@ describe("POST /api/feedback", () => {
 
     await POST(makePostRequest(baseFeedbackBody));
 
+    expect(mockEnqueueOutbox).toHaveBeenCalledWith(
+      "feedback.created",
+      expect.objectContaining({
+        id: "fb_1",
+        projectId: "proj_1",
+        status: "unreviewed",
+      }),
+    );
     expect(mockFireWebhooks).toHaveBeenCalledOnce();
     const payload = mockFireWebhooks.mock.calls[0][0];
     expect(payload.id).toBe("fb_1");
@@ -384,6 +417,31 @@ describe("POST /api/feedback", () => {
     expect(res.status).toBe(201);
   });
 
+  it("allows embedded widget iframe when pageUrl matches allowedOrigin", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: "https://myapp.com",
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const res = await POST(
+      makePostRequest({ ...baseFeedbackBody, pageUrl: "https://myapp.com/contact" }, "http://localhost:3000"),
+    );
+    expect(res.status).toBe(201);
+  });
+
+  it("rejects embedded widget iframe when pageUrl is on an unauthorized domain", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: "https://myapp.com",
+    });
+
+    const res = await POST(
+      makePostRequest({ ...baseFeedbackBody, pageUrl: "https://attacker.com/page" }, "http://localhost:3000"),
+    );
+    expect(res.status).toBe(403);
+  });
+
   it("stores null for blank optional email field", async () => {
     mockPrisma.project.findUnique.mockResolvedValue({
       id:            "proj_1",
@@ -410,6 +468,122 @@ describe("POST /api/feedback", () => {
     expect(mockPrisma.feedback.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ pageUrl: null }),
     });
+  });
+
+  it("rejects honeypot fields before creating feedback", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+
+    const res = await POST(makePostRequest({
+      ...baseFeedbackBody,
+      website: "https://spam.example",
+    }));
+
+    expect(res.status).toBe(400);
+    expect(mockPrisma.feedback.create).not.toHaveBeenCalled();
+  });
+
+  it("keys rate limits by project and trusted client IP", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const req = new Request("http://localhost/api/feedback?project=proj_1", {
+      method:  "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://feedlyte.vercel.app",
+        "x-forwarded-for": "203.0.113.9, 10.0.0.2",
+      },
+      body: JSON.stringify(baseFeedbackBody),
+    });
+
+    await POST(req);
+
+    expect(mockCheckRateLimit).toHaveBeenCalledWith("proj_1", "203.0.113.9");
+  });
+
+  it("stores optional category, rating, and technical details when provided", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    await POST(makePostRequest({
+      ...baseFeedbackBody,
+      category: "bug",
+      rating: 4,
+      technicalDetails: { "Browser & OS": "Mozilla/5.0" },
+    }));
+
+    expect(mockPrisma.feedback.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        category: "bug",
+        rating: 4,
+        technicalDetails: JSON.stringify({ "Browser & OS": "Mozilla/5.0" }),
+      }),
+    });
+  });
+
+  it("stores null for category, rating and technical details when not provided", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    await POST(makePostRequest(baseFeedbackBody));
+
+    expect(mockPrisma.feedback.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        category: null,
+        rating: null,
+        technicalDetails: null,
+      }),
+    });
+  });
+
+  it("returns a one-time tracking token in the submission response", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const res = await POST(makePostRequest(baseFeedbackBody));
+    const json = await res.json();
+
+    expect(typeof json.trackingToken).toBe("string");
+    expect(json.trackingToken.length).toBeGreaterThan(20);
+  });
+
+  it("rejects duplicate submissions when the same idempotency key is reused", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const requestFactory = () => new Request("http://localhost/api/feedback?project=proj_1", {
+      method:  "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "https://feedlyte.vercel.app",
+        "x-idempotency-key": "dup-1",
+      },
+      body: JSON.stringify(baseFeedbackBody),
+    });
+
+    const first = await POST(requestFactory());
+    const second = await POST(requestFactory());
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(409);
   });
 });
 

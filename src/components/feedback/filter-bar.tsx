@@ -1,11 +1,23 @@
 "use client";
 
-import { Search, LayoutGrid, List, Download, Funnel, X, FileText, FileType, FileSpreadsheet } from "lucide-react";
+import {
+  Search,
+  LayoutGrid,
+  List,
+  Funnel,
+  X,
+  FileText,
+  FileType,
+  FileSpreadsheet,
+  Bug,
+  Lightbulb,
+  Heart,
+  HelpCircle,
+} from "lucide-react";
 import {
   FilterDropdown,
   type FilterOption,
 } from "@/components/ui/filter-dropdown";
-import type { Status } from "@/types";
 import { useState } from "react";
 
 export type LayoutMode = "list" | "card";
@@ -13,6 +25,7 @@ export type LayoutMode = "list" | "card";
 export interface FeedbackFilters {
   search: string;
   status: string;
+  category: string;
   timeRange: string;
   projectId: string;
 }
@@ -31,8 +44,20 @@ interface FilterBarProps {
 
 const STATUS_OPTIONS: FilterOption[] = [
   { id: "unreviewed", label: "Unreviewed" },
-  { id: "reviewed", label: "Reviewed" },
+  { id: "in_review", label: "In Review" },
+  { id: "accepted", label: "Accepted" },
+  { id: "in_progress", label: "In Progress" },
   { id: "resolved", label: "Resolved" },
+  { id: "not_feasible", label: "Not Feasible" },
+  { id: "closed", label: "Closed" },
+  { id: "spam", label: "Spam" },
+];
+
+const CATEGORY_OPTIONS: FilterOption[] = [
+  { id: "bug", label: "Bug", icon: Bug },
+  { id: "idea", label: "Idea", icon: Lightbulb },
+  { id: "praise", label: "Praise", icon: Heart },
+  { id: "question", label: "Question", icon: HelpCircle },
 ];
 
 const TIME_OPTIONS: FilterOption[] = [
@@ -64,7 +89,7 @@ export function FilterBar({
     onFiltersChange({ ...filters, [key]: value });
 
   const hasFilters =
-    filters.search || filters.status || filters.timeRange || filters.projectId;
+    filters.search || filters.status || filters.category || filters.timeRange || filters.projectId;
 
   const [showFilters, setShowFilters] = useState<boolean>(false);
 
@@ -139,6 +164,14 @@ export function FilterBar({
           />
 
           <FilterDropdown
+            label="Category"
+            options={CATEGORY_OPTIONS}
+            value={filters.category}
+            onChange={set("category")}
+            allLabel="All categories"
+          />
+
+          <FilterDropdown
             label="Time"
             options={TIME_OPTIONS}
             value={filters.timeRange}
@@ -173,6 +206,7 @@ export function FilterBar({
                 onFiltersChange({
                   search: "",
                   status: "",
+                  category: "",
                   timeRange: "",
                   projectId: "",
                 })
@@ -197,6 +231,14 @@ export function FilterBar({
           />
 
           <FilterDropdown
+            label="Category"
+            options={CATEGORY_OPTIONS}
+            value={filters.category}
+            onChange={set("category")}
+            allLabel="All categories"
+          />
+
+          <FilterDropdown
             label="Time"
             options={TIME_OPTIONS}
             value={filters.timeRange}
@@ -231,6 +273,7 @@ export function FilterBar({
                 onFiltersChange({
                   search: "",
                   status: "",
+                  category: "",
                   timeRange: "",
                   projectId: "",
                 })
@@ -256,10 +299,16 @@ export function applyFeedbackFilters<
     pageUrl: string;
     createdAt: string;
     projectId: string;
+    category?: string | null;
   },
 >(items: T[], filters: FeedbackFilters): T[] {
   return items.filter((f) => {
-    if (filters.status && f.status !== filters.status) return false;
+    if (filters.status) {
+      const itemStatus = f.status === "reviewed" ? "in_review" : f.status;
+      const filterStatus = filters.status === "reviewed" ? "in_review" : filters.status;
+      if (itemStatus !== filterStatus) return false;
+    }
+    if (filters.category && f.category !== filters.category) return false;
     if (filters.projectId && f.projectId !== filters.projectId) return false;
 
     if (filters.search) {

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations";
-import { handleError } from "@/lib/api-helpers";
+import { handleError, getClientIp } from "@/lib/api-helpers";
 import { createEmailVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/email";
 import { checkAuthRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
@@ -11,12 +10,7 @@ import { checkAuthRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 export async function POST(req: Request) {
   try {
     // Rate limit by IP
-    const headersList = await headers();
-    const ip =
-      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      headersList.get("x-real-ip") ??
-      "anonymous";
-
+    const ip = getClientIp(req);
     const rateLimit = await checkAuthRateLimit(ip);
     if (!rateLimit.success) {
       return NextResponse.json(
@@ -53,7 +47,7 @@ export async function POST(req: Request) {
       select: { id: true, name: true, email: true },
     });
 
-    // Create verification token for auto-redirect
+    // Create verification token for email delivery only; never return it to the client.
     let verificationToken = "";
     try {
       verificationToken = await createEmailVerificationToken(email);
@@ -63,7 +57,7 @@ export async function POST(req: Request) {
       console.error("[register] Failed to send verification email", emailErr);
     }
 
-    return NextResponse.json({ ...user, token: verificationToken }, { status: 201 });
+    return NextResponse.json(user, { status: 201 });
   } catch (e) {
     return handleError(e, "register");
   }

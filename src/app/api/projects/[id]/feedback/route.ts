@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
+function parseTechnicalDetails(value: string | null): Record<string, string> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -20,14 +30,24 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const url    = new URL(req.url);
+  const url = new URL(req.url);
+  const limitParam = url.searchParams.get("limit");
+  const cursorParam = url.searchParams.get("cursor");
+  const q = (url.searchParams.get("q") ?? "").trim().slice(0, 200);
   const status = url.searchParams.get("status") ?? "";
-  const q      = url.searchParams.get("q")      ?? "";
+  const category = url.searchParams.get("category") ?? "";
+  const requestedLimit = limitParam ? Number.parseInt(limitParam, 10) : 100;
+  const take = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(requestedLimit, 1), 100)
+    : 100;
+
+  const normalizedStatus = status === "reviewed" ? "in_review" : status;
 
   const feedback = await prisma.feedback.findMany({
     where: {
       projectId: id,
-      ...(status ? { status } : {}),
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(category ? { category } : {}),
       ...(q ? {
         OR: [
           { message: { contains: q, mode: "insensitive" } },
@@ -36,8 +56,15 @@ export async function GET(
         ],
       } : {}),
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take,
+    ...(cursorParam ? { cursor: { id: cursorParam }, skip: 1 } : {}),
   });
+
+  const headers = new Headers();
+  if (feedback.length === take && feedback.at(-1)) {
+    headers.set("x-next-cursor", feedback.at(-1)!.id);
+  }
 
   return NextResponse.json(
     feedback.map((f) => ({
@@ -48,7 +75,11 @@ export async function GET(
       pageUrl:   f.pageUrl   ?? "",
       userAgent: f.userAgent ?? "",
       status:    f.status,
+      category:  f.category  ?? null,
+      rating:    f.rating    ?? null,
+      technicalDetails: parseTechnicalDetails(f.technicalDetails),
       createdAt: f.createdAt.toISOString(),
-    }))
+    })),
+    { headers },
   );
 }
