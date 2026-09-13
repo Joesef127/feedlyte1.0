@@ -39,9 +39,11 @@ function getListQueryOptions(req: Request) {
     : 100;
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, MAX_SEARCH_LENGTH);
   const status = url.searchParams.get("status") ?? "";
+  const category = url.searchParams.get("category") ?? "";
 
   return {
     status,
+    category,
     q,
     take,
     cursor: cursorParam?.trim() || null,
@@ -171,12 +173,14 @@ export async function GET(req: Request) {
   }
 
   const query = getListQueryOptions(req);
-  const { status, q, take, cursor } = query;
+  const { status, category, q, take, cursor } = query;
+  const normalizedStatus = status === "reviewed" ? "in_review" : status;
 
   const feedback = await prisma.feedback.findMany({
     where: {
       project: { userId: session.user.id },
-      ...(status ? { status } : {}),
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(category ? { category } : {}),
       ...(q
         ? {
             OR: [

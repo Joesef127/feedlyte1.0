@@ -18,11 +18,12 @@ export interface FeedbackItem extends Feedback {
 
 export async function fetchFeedback(
   projectId: string,
-  filters?: { status?: string; q?: string }
+  filters?: { status?: string; q?: string; category?: string }
 ): Promise<Feedback[]> {
   const params = new URLSearchParams();
-  if (filters?.status) params.set("status", filters.status);
-  if (filters?.q)      params.set("q",      filters.q);
+  if (filters?.status)   params.set("status",   filters.status);
+  if (filters?.q)        params.set("q",        filters.q);
+  if (filters?.category) params.set("category", filters.category);
   const qs = params.size ? `?${params.toString()}` : "";
 
   const res = await fetch(`/api/projects/${projectId}/feedback${qs}`);
@@ -42,10 +43,12 @@ export async function fetchFeedbackItem(id: string): Promise<FeedbackItem> {
 export async function fetchAllFeedback(filters?: {
   status?: string;
   q?: string;
+  category?: string;
 }): Promise<Feedback[]> {
   const params = new URLSearchParams();
-  if (filters?.status) params.set("status", filters.status);
-  if (filters?.q)      params.set("q",      filters.q);
+  if (filters?.status)   params.set("status",   filters.status);
+  if (filters?.q)        params.set("q",        filters.q);
+  if (filters?.category) params.set("category", filters.category);
   const qs = params.size ? `?${params.toString()}` : "";
 
   const res = await fetch(`/api/feedback${qs}`);

@@ -242,3 +242,130 @@ describe("timeAgo", () => {
     expect(timeAgo(new Date(now - 59 * 60_000).toISOString())).toBe("59m ago");
   });
 });
+
+import { applyFeedbackFilters } from "@/components/feedback/filter-bar";
+
+describe("applyFeedbackFilters", () => {
+  const sampleItems = [
+    {
+      id: "1",
+      status: "unreviewed",
+      category: "bug",
+      message: "Broken button",
+      email: "alice@example.com",
+      pageUrl: "https://example.com/checkout",
+      createdAt: new Date().toISOString(),
+      projectId: "proj_1",
+    },
+    {
+      id: "2",
+      status: "in_review",
+      category: "idea",
+      message: "Add dark mode toggle",
+      email: "bob@example.com",
+      pageUrl: "https://example.com/settings",
+      createdAt: new Date().toISOString(),
+      projectId: "proj_1",
+    },
+    {
+      id: "3",
+      status: "reviewed", // legacy alias
+      category: "praise",
+      message: "Loved the new onboarding flow",
+      email: "carol@example.com",
+      pageUrl: "https://example.com/welcome",
+      createdAt: new Date().toISOString(),
+      projectId: "proj_2",
+    },
+    {
+      id: "4",
+      status: "accepted",
+      category: "question",
+      message: "How do I export CSV?",
+      email: "dave@example.com",
+      pageUrl: "https://example.com/faq",
+      createdAt: new Date().toISOString(),
+      projectId: "proj_1",
+    },
+    {
+      id: "5",
+      status: "not_feasible",
+      category: "idea",
+      message: "Support Internet Explorer 6",
+      email: "retro@example.com",
+      pageUrl: "https://example.com/",
+      createdAt: new Date().toISOString(),
+      projectId: "proj_1",
+    },
+  ];
+
+  const emptyFilters = {
+    search: "",
+    status: "",
+    category: "",
+    projectId: "",
+    timeRange: "",
+  };
+
+  it("returns all items when filters are empty", () => {
+    expect(applyFeedbackFilters(sampleItems, emptyFilters)).toHaveLength(5);
+  });
+
+  it("filters correctly by category", () => {
+    const bugOnly = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      category: "bug",
+    });
+    expect(bugOnly).toHaveLength(1);
+    expect(bugOnly[0].id).toBe("1");
+
+    const ideaOnly = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      category: "idea",
+    });
+    expect(ideaOnly).toHaveLength(2);
+    expect(ideaOnly.map((i) => i.id)).toEqual(["2", "5"]);
+  });
+
+  it("filters correctly by status including not_feasible and accepted", () => {
+    const notFeasible = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      status: "not_feasible",
+    });
+    expect(notFeasible).toHaveLength(1);
+    expect(notFeasible[0].id).toBe("5");
+
+    const accepted = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      status: "accepted",
+    });
+    expect(accepted).toHaveLength(1);
+    expect(accepted[0].id).toBe("4");
+  });
+
+  it("treats reviewed and in_review symmetrically as aliases", () => {
+    // filter with "in_review" matches both "in_review" and legacy "reviewed"
+    const inReviewMatches = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      status: "in_review",
+    });
+    expect(inReviewMatches.map((i) => i.id)).toEqual(["2", "3"]);
+
+    // filter with "reviewed" matches both "in_review" and legacy "reviewed"
+    const reviewedMatches = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      status: "reviewed",
+    });
+    expect(reviewedMatches.map((i) => i.id)).toEqual(["2", "3"]);
+  });
+
+  it("filters concurrently by category and status", () => {
+    const filtered = applyFeedbackFilters(sampleItems, {
+      ...emptyFilters,
+      category: "idea",
+      status: "not_feasible",
+    });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe("5");
+  });
+});

@@ -7,7 +7,7 @@ const feedbackKey = (projectId?: string) =>
 
 export function useFeedback(
   projectId: string,
-  filters?: { status?: string; q?: string }
+  filters?: { status?: string; q?: string; category?: string }
 ) {
   return useQuery({
     queryKey: [...feedbackKey(projectId), filters],
@@ -52,7 +52,7 @@ export function useDeleteFeedback(projectId?: string) {
   });
 }
 
-export function useAllFeedback(filters?: { status?: string; q?: string }) {
+export function useAllFeedback(filters?: { status?: string; q?: string; category?: string }) {
   return useQuery({
     queryKey: ["feedback", "all", filters],
     queryFn:  () => feedbackAPI.fetchAllFeedback(filters),

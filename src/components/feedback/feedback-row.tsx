@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import {
   MoreHorizontal,
   Eye,
-  CheckCheck,
   Check,
   Trash2,
   Square,
@@ -38,6 +37,17 @@ const CATEGORY_ICONS: Record<string, typeof Bug> = {
   praise: Heart,
   question: HelpCircle,
 };
+
+const ALL_STATUS_ACTIONS: { status: Status; label: string }[] = [
+  { status: "unreviewed", label: "Unreviewed" },
+  { status: "in_review", label: "In Review" },
+  { status: "accepted", label: "Accepted" },
+  { status: "in_progress", label: "In Progress" },
+  { status: "resolved", label: "Resolved" },
+  { status: "not_feasible", label: "Not Feasible" },
+  { status: "closed", label: "Closed" },
+  { status: "spam", label: "Spam" },
+];
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -83,7 +93,7 @@ export function FeedbackRow({
   }, [clearSelection]);
 
   const handleOpen = () => {
-    if (fb.status === "unreviewed") onUpdateStatus(fb.id, "reviewed");
+    if (fb.status === "unreviewed") onUpdateStatus(fb.id, "in_review");
     router.push(`/dashboard/feedback/${fb.id}`);
   };
 
@@ -193,7 +203,7 @@ export function FeedbackRow({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1">
+            <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-80 overflow-y-auto">
               <button
                 onClick={() => {
                   setMenuOpen(false);
@@ -204,67 +214,45 @@ export function FeedbackRow({
                 <Eye size={13} />
                 View details
               </button>
-              
-              {fb.status !== "reviewed" && (
-                <button
-                  onClick={async () => {
-                    setMenuOpen(false);
-                    try {
-                      await onUpdateStatus(fb.id, "reviewed");
-                      toast.success("Marked as reviewed");
-                    } catch (error) {
-                      toast.error("Failed to update status");
-                      console.error(error);
-                    }
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
-                >
-                  <Check size={13} />
-                  Mark as reviewed
-                </button>
-              )}
 
-              {fb.status !== "resolved" && (
-                <button
-                  onClick={async () => {
-                    setMenuOpen(false);
-                    try {
-                      await onUpdateStatus(fb.id, "resolved");
-                      toast.success("Marked as resolved");
-                    } catch (error) {
-                      toast.error("Failed to update status");
-                      console.error(error);
-                    }
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
-                >
-                  <CheckCheck size={13} />
-                  Mark as resolved
-                </button>
-              )}
+              <div className="h-px bg-border mx-2 my-1" />
+              <div className="px-3 py-1 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                Change Status
+              </div>
 
-              {fb.status !== "unreviewed" && (
-                <button
-                  onClick={async () => {
-                    setMenuOpen(false);
-                    try {
-                      await onUpdateStatus(fb.id, "unreviewed");
-                      toast.success("Marked as unreviewed");
-                    } catch (error) {
-                      toast.error("Failed to update status");
-                      console.error(error);
-                    }
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left"
-                >
-                  <Eye size={13} />
-                  Mark as unreviewed
-                </button>
-              )}
+              {ALL_STATUS_ACTIONS.map(({ status, label }) => {
+                const isCurrent =
+                  fb.status === status ||
+                  (status === "in_review" && fb.status === "reviewed");
+                return (
+                  <button
+                    key={status}
+                    disabled={isCurrent}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      try {
+                        await onUpdateStatus(fb.id, status);
+                        toast.success(`Marked as ${label.toLowerCase()}`);
+                      } catch (error) {
+                        toast.error("Failed to update status");
+                        console.error(error);
+                      }
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span>{label}</span>
+                    {isCurrent && (
+                      <Check size={12} className="text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
 
               <div className="h-px bg-border mx-2 my-1" />
               <button
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.stopPropagation();
                   setMenuOpen(false);
                   try {
                     await onDelete(fb.id);

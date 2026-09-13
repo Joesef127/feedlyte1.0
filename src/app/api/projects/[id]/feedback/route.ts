@@ -35,15 +35,19 @@ export async function GET(
   const cursorParam = url.searchParams.get("cursor");
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 200);
   const status = url.searchParams.get("status") ?? "";
+  const category = url.searchParams.get("category") ?? "";
   const requestedLimit = limitParam ? Number.parseInt(limitParam, 10) : 100;
   const take = Number.isFinite(requestedLimit)
     ? Math.min(Math.max(requestedLimit, 1), 100)
     : 100;
 
+  const normalizedStatus = status === "reviewed" ? "in_review" : status;
+
   const feedback = await prisma.feedback.findMany({
     where: {
       projectId: id,
-      ...(status ? { status } : {}),
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(category ? { category } : {}),
       ...(q ? {
         OR: [
           { message: { contains: q, mode: "insensitive" } },

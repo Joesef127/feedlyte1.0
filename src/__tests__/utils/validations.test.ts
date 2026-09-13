@@ -22,9 +22,30 @@ describe("shared validation contracts", () => {
       }).success,
     ).toBe(true);
 
-    expect(updateStatusSchema.safeParse({ status: "resolved" }).success).toBe(
-      true,
-    );
+    const statuses = [
+      "unreviewed",
+      "in_review",
+      "accepted",
+      "in_progress",
+      "resolved",
+      "not_feasible",
+      "closed",
+      "spam",
+    ];
+    for (const status of statuses) {
+      const result = updateStatusSchema.safeParse({ status });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.status).toBe(status);
+      }
+    }
+
+    // Legacy "reviewed" transforms to "in_review"
+    const legacyResult = updateStatusSchema.safeParse({ status: "reviewed" });
+    expect(legacyResult.success).toBe(true);
+    if (legacyResult.success) {
+      expect(legacyResult.data.status).toBe("in_review");
+    }
   });
 
   it("rejects values outside the centralized contracts", () => {

@@ -1,19 +1,29 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { CheckCircle2, Clock, Eye, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Eye, XCircle, PlayCircle } from "lucide-react";
+import type { Status } from "@/types";
 
 interface TrackingStatus {
-  status: "unreviewed" | "reviewed" | "resolved";
+  status: Status;
   category: string | null;
   submittedAt: string;
   updatedAt: string;
 }
 
-const STATUS_META: Record<TrackingStatus["status"], { label: string; Icon: typeof Clock; color: string }> = {
+const STATUS_META: Record<
+  string,
+  { label: string; Icon: typeof Clock; color: string }
+> = {
   unreviewed: { label: "Submitted — awaiting review", Icon: Clock, color: "#F59E0B" },
-  reviewed: { label: "Reviewed by the team", Icon: Eye, color: "#3B82F6" },
-  resolved: { label: "Resolved", Icon: CheckCircle2, color: "#10B981" },
+  in_review: { label: "Under review by the team", Icon: Eye, color: "#3B82F6" },
+  reviewed: { label: "Under review by the team", Icon: Eye, color: "#3B82F6" },
+  accepted: { label: "Accepted — scheduled on roadmap", Icon: CheckCircle2, color: "#06B6D4" },
+  in_progress: { label: "In progress — actively working on this", Icon: PlayCircle, color: "#8B5CF6" },
+  resolved: { label: "Resolved — completed & shipped", Icon: CheckCircle2, color: "#10B981" },
+  not_feasible: { label: "Investigated — determined not feasible", Icon: XCircle, color: "#64748B" },
+  closed: { label: "Closed — thank you for your input", Icon: XCircle, color: "#64748B" },
+  spam: { label: "Closed", Icon: XCircle, color: "#64748B" },
 };
 
 export default function TrackFeedbackPage({

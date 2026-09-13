@@ -42,6 +42,7 @@ const PAGE_SIZE = 10;
 const DEFAULT_FILTERS: FeedbackFilters = {
   search: "",
   status: "",
+  category: "",
   timeRange: "",
   projectId: "",
 };
@@ -150,7 +151,7 @@ export function FeedbackTable({
         );
       } else {
         toast.success(
-          `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status}"`,
+          `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status.replace("_", " ")}"`,
         );
       }
     } finally {
@@ -400,8 +401,9 @@ export function FeedbackTable({
               projectCount={projectCount}
               projectNames={projectNames}
               onBulkUnreviewed={() => bulkUpdateStatus("unreviewed")}
-              onBulkReviewed={() => bulkUpdateStatus("reviewed")}
+              onBulkReviewed={() => bulkUpdateStatus("in_review")}
               onBulkResolved={() => bulkUpdateStatus("resolved")}
+              onBulkStatusChange={(status) => bulkUpdateStatus(status)}
               onBulkDelete={bulkDelete}
               onClear={clearSelection}
               isPending={bulkPending}

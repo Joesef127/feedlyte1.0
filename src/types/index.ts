@@ -1,4 +1,13 @@
-export const FEEDBACK_STATUSES = ["unreviewed", "reviewed", "resolved"] as const;
+export const FEEDBACK_STATUSES = [
+  "unreviewed",
+  "in_review",
+  "accepted",
+  "in_progress",
+  "resolved",
+  "not_feasible",
+  "closed",
+  "spam",
+] as const;
 export const WIDGET_POSITIONS = ["bottom-right", "bottom-left"] as const;
 export const DIGEST_FREQUENCIES = ["none", "daily"] as const;
 export const NOTIFICATION_COOLDOWNS = ["none", "5min", "15min", "30min", "1hour"] as const;
@@ -6,7 +15,7 @@ export const FEEDBACK_CATEGORIES = ["bug", "idea", "praise", "question"] as cons
 export const WIDGET_LAUNCHER_ICONS = ["message-square", "bug", "lightbulb", "heart", "help-circle"] as const;
 export const WIDGET_CORNER_STYLES = ["rounded", "sharp"] as const;
 
-export type Status         = (typeof FEEDBACK_STATUSES)[number];
+export type Status         = (typeof FEEDBACK_STATUSES)[number] | "reviewed";
 export type Page           = "dashboard" | "projects" | "feedback" | "settings" | "profile";
 export type ProjectDetailTab = "feedback" | "analytics" | "integrations" | "embed" | "settings";
 export type WidgetPosition = (typeof WIDGET_POSITIONS)[number];

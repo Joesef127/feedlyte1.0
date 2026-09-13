@@ -162,7 +162,9 @@ export const submitFeedbackSchema = z.object({
 export type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;
 
 export const updateStatusSchema = z.object({
-  status: z.enum(FEEDBACK_STATUSES),
+  status: z.enum([...FEEDBACK_STATUSES, "reviewed"] as const).transform((val) =>
+    val === "reviewed" ? ("in_review" as const) : val
+  ),
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;

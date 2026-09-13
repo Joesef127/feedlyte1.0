@@ -102,20 +102,33 @@ export function FeedbackDetail({ fb, onUpdateStatus, onDelete }: FeedbackDetailP
           Update Status
         </p>
         <div className="flex gap-1.5 flex-wrap">
-          {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => onUpdateStatus(fb.id, s)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] border bg-transparent text-sm font-medium cursor-pointer capitalize transition-all"
-              style={{
-                borderColor: fb.status === s ? "#F59E0B" : "#2A2A2A",
-                color: fb.status === s ? "#F59E0B" : "#525252",
-                background: fb.status === s ? "#F59E0B10" : "transparent",
-              }}
-            >
-              <StatusBadge status={s} />
-            </button>
-          ))}
+          {(
+            [
+              "unreviewed",
+              "in_review",
+              "accepted",
+              "in_progress",
+              "resolved",
+              "not_feasible",
+              "closed",
+              "spam",
+            ] as Status[]
+          ).map((s) => {
+            const isActive = fb.status === s || (s === "in_review" && fb.status === "reviewed");
+            return (
+              <button
+                key={s}
+                onClick={() => onUpdateStatus(fb.id, s)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium cursor-pointer capitalize transition-all ${
+                  isActive
+                    ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                    : "border-border bg-card/60 text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <StatusBadge status={s} />
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -27,6 +27,17 @@ const CATEGORY_ICONS: Record<string, typeof Bug> = {
   praise: Heart,
   question: HelpCircle,
 };
+
+const ALL_STATUSES: { id: Status; label: string }[] = [
+  { id: "unreviewed", label: "Unreviewed" },
+  { id: "in_review", label: "In Review" },
+  { id: "accepted", label: "Accepted" },
+  { id: "in_progress", label: "In Progress" },
+  { id: "resolved", label: "Resolved" },
+  { id: "not_feasible", label: "Not Feasible" },
+  { id: "closed", label: "Closed" },
+  { id: "spam", label: "Spam" },
+];
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -227,36 +238,45 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
         {/* Status management */}
         <Card>
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3">
-            Status
-          </h3>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Update Status
+            </h3>
+            <span className="text-xs text-muted-foreground/60">
+              Current: <span className="font-semibold text-foreground capitalize">{feedback.status.replace("_", " ")}</span>
+            </span>
+          </div>
           <div className="flex gap-2 flex-wrap">
-            {(["unreviewed", "reviewed", "resolved"] as Status[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  updateStatus.mutate(
-                    { id: feedback.id, status: s },
-                    {
-                      onSuccess: () => {
-                        toast.success(`Marked as ${s}`);
-                      },
-                      onError: (err) => {
-                        toast.error(err instanceof Error ? err.message : "Failed to update status");
-                      },
-                    }
-                  );
-                }}                disabled={feedback.status === s || updateStatus.isPending}
-                className={[
-                  "px-4 py-2 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all capitalize",
-                  feedback.status === s
-                    ? "border-primary bg-primary/10 text-primary cursor-default"
-                    : "border-border bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground disabled:opacity-50",
-                ].join(" ")}
-              >
-                {s}
-              </button>
-            ))}
+            {ALL_STATUSES.map((s) => {
+              const isActive = feedback.status === s.id || (s.id === "in_review" && feedback.status === "reviewed");
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    updateStatus.mutate(
+                      { id: feedback.id, status: s.id },
+                      {
+                        onSuccess: () => {
+                          toast.success(`Marked as ${s.label}`);
+                        },
+                        onError: (err) => {
+                          toast.error(err instanceof Error ? err.message : "Failed to update status");
+                        },
+                      }
+                    );
+                  }}
+                  disabled={isActive || updateStatus.isPending}
+                  className={[
+                    "px-3.5 py-1.5 rounded-lg border text-xs sm:text-sm font-semibold cursor-pointer transition-all",
+                    isActive
+                      ? "border-primary bg-primary/10 text-primary cursor-default"
+                      : "border-border bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground disabled:opacity-50",
+                  ].join(" ")}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
         </Card>
 
