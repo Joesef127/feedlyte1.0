@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { createUnsubscribeToken } from "@/lib/email";
-import { enqueueOutboxEvent } from "@/lib/outbox";
+import { enqueueOutboxEvent, processDueOutboxEvents } from "@/lib/outbox";
 
 function is8AMInTimezone(timezone: string): boolean {
   try {
@@ -37,11 +37,17 @@ function getLocalDateKey(timezone: string, date: Date = new Date()): string {
 }
 
 export async function GET(req: Request) {
-  // Verify cron secret
+  // Verify cron secret (supports Bearer token header or query parameter: ?key= or ?secret=)
   const authHeader = req.headers.get("authorization");
+  const { searchParams } = new URL(req.url);
+  const querySecret = searchParams.get("key") || searchParams.get("secret");
   const cronSecret = process.env.CRON_SECRET;
   
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  const isAuthorized =
+    Boolean(cronSecret) &&
+    (authHeader === `Bearer ${cronSecret}` || querySecret === cronSecret);
+
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -150,17 +156,21 @@ export async function GET(req: Request) {
       })
     );
 
+    // Flush outbox queue so digest emails are dispatched immediately
+    const processedOutbox = await processDueOutboxEvents(50);
+
     const queued = results.filter(r => r.status === "fulfilled" && r.value?.queued).length;
     const skipped = results.filter(r => r.status === "fulfilled" && r.value?.skipped).length;
     const failed = results.filter(r => r.status === "rejected").length;
 
     return NextResponse.json({ 
-      message: `Digest queued for ${queued} project(s), ${skipped} skipped`,
+      message: `Digest queued for ${queued} project(s), ${skipped} skipped, ${processedOutbox} email(s) processed`,
       failed,
       checked: projects.length,
       eligible: eligibleProjects.length,
       queued,
       skipped,
+      processedOutbox,
     });
   } catch (error) {
     console.error("[cron/digest] Error:", error);
