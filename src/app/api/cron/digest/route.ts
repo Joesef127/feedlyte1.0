@@ -157,7 +157,12 @@ export async function GET(req: Request) {
     );
 
     // Flush outbox queue so digest emails are dispatched immediately
-    const processedOutbox = await processDueOutboxEvents(50);
+    let processedOutbox = 0;
+    try {
+      processedOutbox = await processDueOutboxEvents(50);
+    } catch (outboxError) {
+      console.error("[cron/digest] Outbox processing error:", outboxError);
+    }
 
     const queued = results.filter(r => r.status === "fulfilled" && r.value?.queued).length;
     const skipped = results.filter(r => r.status === "fulfilled" && r.value?.skipped).length;
@@ -173,7 +178,8 @@ export async function GET(req: Request) {
       processedOutbox,
     });
   } catch (error) {
+    const details = error instanceof Error ? error.message : String(error);
     console.error("[cron/digest] Error:", error);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal error", details }, { status: 500 });
   }
 }
