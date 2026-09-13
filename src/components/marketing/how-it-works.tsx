@@ -1,132 +1,177 @@
 "use client";
 
-const steps = [
-  {
-    number: "01",
-    title: "Create a project",
-    description:
-      "Sign up and create a project in under a minute. Name it, set the domain, and Feedlyte generates a unique embed code tied to that project.",
-    visual: "project" as const,
-  },
-  {
-    number: "02",
-    title: "Paste one script tag",
-    description:
-      "Copy the generated script tag and drop it into your site's HTML. That is the entire integration. No npm install, no bundler config, no API keys in your frontend.",
-    visual: "code" as const,
-  },
-  {
-    number: "03",
-    title: "Review feedback in your dashboard",
-    description:
-      "Every submission lands in your Feedlyte dashboard in real time. Filter by status, search by keyword, and mark items as reviewed or resolved.",
-    visual: "dashboard" as const,
-  },
-];
-
-function CodeVisual() {
-  return (
-    <div className="mt-5 bg-background border border-border/70 rounded-xl p-5 font-mono text-[13px]">
-      <pre className="whitespace-pre-wrap break-words m-0">
-        <span className="code-keyword">{"<script"}</span>
-        {"\n  "}
-        <span className="code-attr">src</span>
-        {"="}
-        <span className="code-string">{'"https://feedlyte.com/widget.js"'}</span>
-        {"\n  "}
-        <span className="code-attr">data-project-id</span>
-        {"="}
-        <span className="code-string">{'"proj_k9x2m"'}</span>
-        {"\n  "}
-        <span className="code-attr">defer</span>
-        {"\n"}
-        <span className="code-keyword">{"</script>"}</span>
-      </pre>
-    </div>
-  );
-}
-
-function ProjectVisual() {
-  const projects = [
-    { name: "Marketing Site", count: 12, color: "bg-primary" },
-    { name: "Mobile App", count: 5, color: "bg-info" },
-    { name: "Docs Portal", count: 8, color: "bg-success" },
-  ];
-
-  return (
-    <div className="mt-5 bg-background border border-border/70 rounded-xl p-5 flex flex-col gap-2.5">
-      {projects.map((p) => (
-        <div key={p.name} className="flex items-center justify-between px-3.5 py-2.5 bg-card border border-border rounded-lg">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-2 h-2 rounded-full ${p.color}`} />
-            <span className="text-sm font-medium text-foreground">{p.name}</span>
-          </div>
-          <span className="text-[11px] text-muted-foreground/50 bg-background border border-border px-2 py-0.5 rounded-full">
-            {p.count} entries
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DashboardVisual() {
-  const items = [
-    { msg: "Checkout fails on mobile Safari", status: "unreviewed", cls: "text-primary bg-primary/10" },
-    { msg: "Can you add CSV export?", status: "reviewed", cls: "text-info bg-info/10" },
-    { msg: "Love the new onboarding flow!", status: "resolved", cls: "text-success bg-success/10" },
-  ];
-
-  return (
-    <div className="mt-5 bg-background border border-border/70 rounded-xl p-5 flex flex-col gap-2">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center justify-between gap-3 px-3.5 py-2.5 bg-card border border-border rounded-lg">
-          <span className="text-sm text-muted-foreground flex-1 truncate">{item.msg}</span>
-          <span className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0 ${item.cls}`}>
-            {item.status}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+import { useState } from "react";
+import { Copy, Check, Code2, Sparkles } from "lucide-react";
+import { howItWorksSteps } from "./marketing-data";
 
 export function HowItWorks() {
-  return (
-    <section id="how-it-works" className="py-24">
-      <div className="mx-auto max-w-7xl px-6">
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<"html" | "nextjs" | "react">("html");
 
-        {/* Header */}
-        <div className="text-center mb-18">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-border text-muted-foreground bg-card mb-5">
-            How it works
+  const codeSnippets = {
+    html: `<!-- 1. Drop before closing </body> tag -->
+<script
+  src="https://feedlyte.vercel.app/widget.js"
+  data-project="proj_live_94k2m"
+  defer
+></script>`,
+    nextjs: `// In your app/layout.tsx
+import Script from "next/script";
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Script
+          src="https://feedlyte.vercel.app/widget.js"
+          data-project="proj_live_94k2m"
+          strategy="lazyOnload"
+        />
+      </body>
+    </html>
+  );
+}`,
+    react: `// In your App.tsx or index.html
+useEffect(() => {
+  const script = document.createElement("script");
+  script.src = "https://feedlyte.vercel.app/widget.js";
+  script.setAttribute("data-project", "proj_live_94k2m");
+  script.defer = true;
+  document.body.appendChild(script);
+  return () => document.body.removeChild(script);
+}, []);`,
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(codeSnippets[activeTab]);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <section id="how-it-works" className="py-24 sm:py-32 bg-background relative">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-16 sm:mb-20">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border border-border bg-card text-muted-foreground mb-4">
+            <Sparkles size={12} className="text-primary" /> The 3-Minute Journey
           </span>
-          <h2 className="font-display text-[clamp(2rem,4vw,3.2rem)] tracking-tight mb-4 text-foreground">
-            Up and running in minutes
+          <h2 className="font-display text-[clamp(2.2rem,4.5vw,3.5rem)] tracking-tight text-foreground mb-4">
+            From sign-up to live feedback in minutes.
           </h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-[480px] mx-auto">
-            Three steps from signup to live feedback on your product.
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+            No complex SDKs. No npm dependencies. No backend routing to configure.
           </p>
         </div>
 
-        {/* Steps grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden border border-border">
-          {steps.map((step) => (
-            <div key={step.number} className="bg-card p-9">
-              <div className="font-display text-[3.5rem] text-border/80 leading-none mb-5 tracking-tighter">
-                {step.number}
+        {/* 3 Step Cards Pipeline */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-16">
+          {howItWorksSteps.map((step) => (
+            <div
+              key={step.number}
+              className="p-7 sm:p-8 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col justify-between relative group hover:border-primary/40 transition-colors"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <span className="font-display text-4xl text-primary/40 font-normal group-hover:text-primary transition-colors">
+                    {step.number}
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {step.badge}
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-bold text-foreground mb-3 tracking-tight">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  {step.description}
+                </p>
               </div>
-              <h3 className="text-base font-bold text-foreground mb-2.5 tracking-tight">
-                {step.title}
-              </h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {step.description}
-              </p>
-              {step.visual === "code" && <CodeVisual />}
-              {step.visual === "project" && <ProjectVisual />}
-              {step.visual === "dashboard" && <DashboardVisual />}
+
+              <div className="pt-4 border-t border-border/60 text-xs text-muted-foreground/80 font-mono">
+                {step.detail}
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* Interactive Code Preview Box */}
+        <div className="max-w-3xl mx-auto rounded-2xl bg-card border border-border/80 shadow-card-elevated overflow-hidden">
+          {/* Code Window Header */}
+          <div className="h-12 border-b border-border px-4 sm:px-6 flex items-center justify-between bg-card/80">
+            <div className="flex items-center gap-2">
+              <Code2 size={16} className="text-primary" />
+              <span className="text-xs font-bold text-foreground font-mono">
+                Single-Line Embed
+              </span>
+            </div>
+
+            {/* Framework Switcher Tabs */}
+            <div className="flex items-center gap-1 bg-background border border-border/60 p-0.5 rounded-lg text-xs font-mono">
+              <button
+                type="button"
+                onClick={() => setActiveTab("html")}
+                className={`px-2.5 py-1 rounded transition-colors ${
+                  activeTab === "html"
+                    ? "bg-secondary text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                HTML
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("nextjs")}
+                className={`px-2.5 py-1 rounded transition-colors ${
+                  activeTab === "nextjs"
+                    ? "bg-secondary text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Next.js
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("react")}
+                className={`px-2.5 py-1 rounded transition-colors ${
+                  activeTab === "react"
+                    ? "bg-secondary text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                React
+              </button>
+            </div>
+
+            {/* Copy Button */}
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md border border-border/70 hover:bg-accent text-foreground transition-colors"
+              aria-label="Copy embed script code"
+            >
+              {copied ? (
+                <>
+                  <Check size={13} className="text-success" />
+                  <span className="text-success">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} className="text-muted-foreground" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Code Body */}
+          <div className="p-5 sm:p-6 bg-background/60 font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed">
+            <pre className="text-foreground">
+              <code>{codeSnippets[activeTab]}</code>
+            </pre>
+          </div>
         </div>
       </div>
     </section>

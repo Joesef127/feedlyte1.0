@@ -1,54 +1,142 @@
-/* ── Marketing extras — only what Tailwind cannot handle ── */
+/* ── Marketing Visual Styles & Utilities ── */
 
-/* Grain texture overlay */
+/* Grain texture overlay — subtle physical tactile feel */
 .grain::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.025;
+  opacity: 0.022;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
   background-size: 200px 200px;
 }
 
-/* Display serif — Instrument Serif for hero headings */
+/* Display serif — Instrument Serif for hero headlines */
 .font-display {
   font-family: var(--font-instrument-serif), Georgia, serif;
   font-weight: 400;
 }
 
+/* Dot grid background with radial mask for depth without visual clutter */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+:root[data-theme="light"] .bg-dot-grid {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.mask-radial-hero {
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, #000 60%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, #000 60%, transparent 100%);
+}
+
+.mask-radial-section {
+  mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 40%, transparent 75%);
+}
+
 /* Entrance animations */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.anim-fade-up   { animation: fade-up 0.6s ease both; }
-.anim-fade-up-1 { animation: fade-up 0.6s 0.1s ease both; }
-.anim-fade-up-2 { animation: fade-up 0.6s 0.2s ease both; }
-.anim-fade-up-3 { animation: fade-up 0.6s 0.3s ease both; }
-.anim-fade-up-4 { animation: fade-up 0.6s 0.4s ease both; }
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
-/* Shadows that aren't standard Tailwind values */
-.shadow-amber-glow { box-shadow: 0 0 24px rgba(245, 158, 11, 0.35); }
-.shadow-card-deep  { box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04); }
-.shadow-float      { box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
 
-/* Amber glow radial — used in hero and CTA */
+.anim-fade-up   { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-fade-up-1 { animation: fade-up 0.5s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-fade-up-2 { animation: fade-up 0.5s 0.16s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-fade-up-3 { animation: fade-up 0.5s 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-fade-up-4 { animation: fade-up 0.5s 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Custom Shadows */
+.shadow-amber-glow {
+  box-shadow: 0 0 30px -5px rgba(245, 158, 11, 0.32), 0 0 10px rgba(245, 158, 11, 0.2);
+}
+.shadow-amber-sm {
+  box-shadow: 0 0 18px -3px rgba(245, 158, 11, 0.25);
+}
+.shadow-card-elevated {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="light"] .shadow-card-elevated {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Ambient Radial Gradients */
 .bg-amber-radial {
-  background: radial-gradient(ellipse, rgba(245,158,11,0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 45%, transparent 70%);
 }
 .bg-amber-radial-sm {
-  background: radial-gradient(ellipse, rgba(245,158,11,0.07) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.09) 0%, transparent 65%);
 }
 
 /* Syntax highlight colors inside code blocks */
 .code-keyword { color: #f59e0b; }
-.code-string  { color: #a3e635; }
-.code-attr    { color: #93c5fd; }
+.code-string  { color: #34d399; }
+.code-attr    { color: #60a5fa; }
+.code-comment { color: #64748b; font-style: italic; }
 
-/* Bottom fade on dashboard preview */
-.fade-bottom {
-  background: linear-gradient(to bottom, transparent, var(--background));
+/* Smooth Accordion Grid Transition */
+.accordion-grid-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.accordion-grid-content.expanded {
+  grid-template-rows: 1fr;
+}
+.accordion-grid-content > div {
+  overflow: hidden;
+}
+
+/* Subtle border illumination on hover */
+.border-glow-hover {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.border-glow-hover:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.08);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-fade-up-1,
+  .anim-fade-up-2,
+  .anim-fade-up-3,
+  .anim-fade-up-4 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

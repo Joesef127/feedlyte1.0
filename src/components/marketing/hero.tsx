@@ -1,206 +1,76 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
 import Link from "next/link";
-
-const feedbackRows = [
-  {
-    msg: "Checkout fails on mobile Safari. Cart empties after payment.",
-    tag: "unreviewed",
-    tagColor: "text-primary bg-primary/10",
-  },
-  {
-    msg: "Love the new dashboard! Much faster than before.",
-    tag: "reviewed",
-    tagColor: "text-info bg-info/10",
-  },
-  {
-    msg: "Can you add CSV export for the reports section?",
-    tag: "unreviewed",
-    tagColor: "text-primary bg-primary/10",
-  },
-  {
-    msg: "The filter dropdown doesn't close when clicking outside.",
-    tag: "resolved",
-    tagColor: "text-success bg-success/10",
-  },
-];
-
-const stats = [
-  { label: "Total", value: "24" },
-  { label: "Unreviewed", value: "8" },
-  { label: "Resolved", value: "12" },
-];
+import { ArrowRight, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { ProductStageSimulator } from "./product-stage-simulator";
 
 export function Hero() {
   return (
-    <section className="relative pt-40 pb-24 overflow-hidden bg-background">
-      {/* Amber glow */}
-      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-150 h-100 rounded-full bg-amber-radial pointer-events-none z-0" />
+    <section className="relative pt-28 sm:pt-36 pb-20 md:pb-28 overflow-hidden bg-background">
+      {/* Background Dot Grid with Radial Mask */}
+      <div className="absolute inset-0 bg-dot-grid mask-radial-hero pointer-events-none z-0 opacity-70" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6">
-        {/* Beta badge */}
-        <div className="flex justify-center mb-8 anim-fade-up">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold uppercase tracking-widest border border-primary/30 text-primary bg-primary/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-            Now in public beta
-          </span>
+      {/* Ambient Warm Amber Glow */}
+      <div className="absolute top-[8%] left-1/2 -translate-x-1/2 w-[340px] sm:w-[600px] h-[320px] rounded-full bg-amber-radial pointer-events-none z-0 blur-2xl" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Top Product Release Badge */}
+        <div className="flex justify-center mb-6 sm:mb-8 anim-fade-up">
+          {/* <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border border-primary/30 text-primary bg-primary/10 shadow-sm backdrop-blur-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block animate-pulse" />
+            <span>Feedlyte 2.0 • Sandboxed Feedback Engine</span>
+          </span> */}
         </div>
 
-        {/* Headline */}
-        <div className="max-w-190 mx-auto text-center">
-          <h1 className="font-display anim-fade-up-1 text-[clamp(3rem,6vw,5.2rem)] leading-[1.05] tracking-[-0.03em] mb-7 text-foreground sm:max-w-3/4 lg:max-w-3/4 xl:max-w-full mx-auto">
+        {/* Main Headline */}
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="font-display anim-fade-up-1 text-[clamp(2.5rem,6.5vw,5rem)] leading-[1.04] tracking-[-0.03em] mb-6 text-foreground">
             Collect feedback{" "}
-            <span className="text-primary italic">anywhere</span>
-            <br /> with one line of code
+            <span className="text-primary italic font-normal">anywhere</span>
+            <br className="hidden sm:inline" /> with one line of code.
           </h1>
 
-          <p className="anim-fade-up-2 text-base md:text-lg leading-relaxed text-muted-foreground max-w-[560px] mx-auto mb-10">
-            Drop a single script tag into any website. Feedlyte injects a
-            self-contained widget that collects user feedback into your
-            dashboard. No SDK. No npm. No configuration.
+          {/* Subtitle */}
+          <p className="anim-fade-up-2 text-base sm:text-lg md:text-xl leading-relaxed text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 font-sans">
+            Drop a single script tag into any website or web app. Feedlyte injects an
+            isolated, sandboxed feedback widget that streams structured bugs, ideas,
+            and praise straight into your dashboard.
           </p>
 
-          {/* CTAs */}
-          <div className="anim-fade-up-3 flex items-center justify-center gap-3 flex-wrap mb-14">
+          {/* Action CTAs */}
+          <div className="anim-fade-up-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap mb-6">
             <Link
               href="/auth"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-amber-glow hover:-translate-y-px transition-all"
+              className="inline-flex items-center gap-2 px-6 sm:px-8 py-3.5 rounded-xl text-sm sm:text-[15px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-amber-glow hover:-translate-y-px transition-all"
             >
-              Start for free
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <span>Start for free</span>
+              <ArrowRight size={16} strokeWidth={2.5} />
             </Link>
             <a
               href="#how-it-works"
-              className="inline-flex items-center px-7 py-3.5 rounded-xl text-[15px] font-semibold border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 px-6 sm:px-8 py-3.5 rounded-xl text-sm sm:text-[15px] font-semibold border border-border text-foreground hover:bg-accent hover:border-border/80 transition-colors"
             >
-              See how it works
+              <span>See how it works</span>
             </a>
           </div>
 
-          <p className="anim-fade-up-4 text-sm text-muted-foreground/50 tracking-wide">
-            Free to start. No credit card required.
-          </p>
+          {/* Value Micro-Copy */}
+          <div className="anim-fade-up-4 flex items-center justify-center gap-4 sm:gap-6 text-xs text-muted-foreground/70 tracking-wide flex-wrap">
+            <span className="inline-flex items-center gap-1">
+              <Zap size={13} className="text-primary" /> Free forever tier
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <ShieldCheck size={13} className="text-primary" /> Zero CSS or script bleed
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Sparkles size={13} className="text-primary" /> Live in 3 minutes
+            </span>
+          </div>
         </div>
 
-        {/* Dashboard preview */}
-        <div className="anim-fade-up-4 relative max-w-225 mx-auto mt-18">
-          {/* Bottom fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 fade-bottom z-20 pointer-events-none rounded-b-2xl" />
-
-          {/* Mock browser window */}
-          <div className="bg-card border border-border/70 rounded-2xl overflow-hidden shadow-card-foreground">
-            {/* Window chrome */}
-            <div className="h-11 border-b border-border flex items-center px-4 gap-2 bg-card">
-              {["bg-destructive", "bg-primary", "bg-success"].map((c, i) => (
-                <div
-                  key={i}
-                  className={`w-2.5 h-2.5 rounded-full ${c} opacity-70`}
-                />
-              ))}
-              <div className="flex-1 h-6 bg-background rounded ml-2 flex items-center pl-2.5">
-                <span className="text-[11px] text-muted-foreground/40 font-mono">
-                  app.feedlyte.com/dashboard
-                </span>
-              </div>
-            </div>
-
-            {/* Dashboard body */}
-            <div className="flex h-95">
-              {/* Sidebar mock */}
-              <div className="hidden w-50 border-r border-border p-3 sm:flex flex-col gap-1 shrink-0">
-                <div className="flex items-center gap-2 px-2.5 py-2 mb-3">
-                  <div className="w-[22px] h-[22px] bg-primary rounded-[5px] flex items-center justify-center">
-                    <MessageSquare
-                      size={15}
-                      className="text-primary-foreground"
-                      strokeWidth={2.2}
-                    />
-                  </div>
-                  <span className="text-[13px] font-bold text-foreground">
-                    Feedlyte
-                  </span>
-                </div>
-                {["Projects", "All Feedback", "Settings"].map((item, i) => (
-                  <div
-                    key={item}
-                    className={`px-2.5 py-1.5 rounded-[7px] text-sm font-medium ${i === 0 ? "text-foreground bg-white/6" : "text-muted-foreground"}`}
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-
-              {/* Main content mock */}
-              <div className="flex-1 p-6 overflow-hidden">
-                <div className="mb-5">
-                  <div className="text-base font-bold text-foreground mb-1">
-                    All Feedback
-                  </div>
-                  <div className="text-sm text-muted-foreground/50">
-                    24 entries across 3 projects
-                  </div>
-                </div>
-
-                {/* Stat cards */}
-                <div className="grid grid-cols-3 gap-2.5 mb-5">
-                  {stats.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="bg-background border border-border rounded-lg p-3"
-                    >
-                      <div className="text-[10px] text-muted-foreground/40 uppercase tracking-widest mb-1">
-                        {stat.label}
-                      </div>
-                      <div className="text-[22px] font-bold text-foreground">
-                        {stat.value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Feedback rows */}
-                <div className="flex flex-col gap-2">
-                  {feedbackRows.map((item, i) => (
-                    <div
-                      key={i}
-                      className="bg-background border border-border rounded-lg px-3.5 py-2.5 flex items-center justify-between gap-3"
-                    >
-                      <span className="text-sm text-muted-foreground flex-1 truncate">
-                        {item.msg}
-                      </span>
-                      <span
-                        className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0 ${item.tagColor}`}
-                      >
-                        {item.tag}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Floating widget card */}
-          <div className="absolute bottom-10 -right-5 bg-card border border-border/70 rounded-xl p-3.5 w-55 shadow-float z-30">
-            <div className="text-sm font-semibold text-foreground mb-2.5">
-              Share Feedback
-            </div>
-            <div className="h-13 bg-background rounded-md mb-2 border border-border" />
-            <div className="h-7 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-[11px] font-semibold text-primary-foreground">
-                Send Feedback
-              </span>
-            </div>
-          </div>
+        {/* Interactive Dual-Pane Product Stage Simulator */}
+        <div className="anim-fade-up-4">
+          <ProductStageSimulator />
         </div>
       </div>
     </section>
