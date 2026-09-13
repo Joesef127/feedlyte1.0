@@ -14,6 +14,12 @@ This file is intentionally short and intentionally tied to the master roadmap in
 - Dashboard analytics and project detail views
 - A working widget loader and isolated widget UI
 - Test suite baseline and environment-validation guardrails
+- Widget 2.0 complete rebuild (accessible states, customizable branding, Lucide icons, star ratings, feedback categories, collapsible technical details checklist, and one-time tracking token links with public verification)
+- Vercel production deployment and serverless cron architecture (decoupled hourly cron from `vercel.json` to support Vercel Hobby, added dual-auth Bearer/query-param support to `/api/cron/digest`, and connected cron-job.org)
+- Durable outbox event execution (`email.digest`, webhooks) with auto-flushing during cron runs
+- Neon production database schema alignment (`lastDigestSentAt`, widget customizations, and `outbox_events` table)
+- Webhook SSRF validation and delivery-time destination security
+- GitHub Actions CI/CD workflows and deployment smoke checks
 
 ## Partial
 

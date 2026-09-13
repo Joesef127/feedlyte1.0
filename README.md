@@ -1,179 +1,220 @@
 # Feedlyte
 
-Feedlyte is a Next.js feedback collection app for embedding a lightweight feedback widget into a website, collecting public user feedback, and reviewing it from a dashboard. The repository is currently a working MVP with a real auth flow, feedback APIs, notification logic, and webhook support, but it is not yet a production-hardening target.
+> **Turn user insights into product momentum.**  
+> A modern, lightweight, and customizable feedback widget paired with an intuitive management dashboard for web applications.
 
-## Current status
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=flat-square&logo=postgresql)](https://neon.tech/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=flat-square&logo=prisma)](https://www.prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](#license)
 
-This repository is best described as a functional single-user beta/MVP. It includes the main product flow, but the project still has known gaps around durable rate limiting, tenancy, public ingestion hardening, docs accuracy, and CI/deployment process.
+---
 
-The source of truth for roadmap execution is [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). [TODO.md](TODO.md) is intentionally reduced to an active backlog summary and should not be treated as the full product history.
+## ✨ Overview
 
-## Stack
+**Feedlyte** is an all-in-one feedback collection and triage platform designed for modern product teams, indie hackers, and developers. Easily embed an elegant feedback widget onto any website with a single line of JavaScript, capture structured user feedback, and manage customer ideas, bugs, and praise from a centralized dashboard.
 
-- Next.js 16 with App Router
-- TypeScript strict mode
-- Prisma 7 + PostgreSQL/Neon
-- NextAuth credentials auth
-- React Query, Zod, Radix/shadcn-style UI
-- Vitest for unit/integration tests
+Whether you're running a SaaS application, an e-commerce storefront, or a documentation site, Feedlyte delivers actionable user insights without disrupting your user experience.
 
-## Route and API inventory
+---
 
-### Public and marketing surfaces
+## 🚀 Key Features
 
-- `GET /` marketing page
-- `GET /auth/*` sign-in, sign-up, email verification, forgot/reset password flows
-- `GET /widget` isolated widget page
-- `GET /dashboard` authenticated dashboard shell
-- `GET /dashboard/projects/[id]` project detail and widget config area
+### 🎨 Customizable, Ultra-Lightweight Widget
+- **Single-line embed:** Drop a lightweight `<script>` tag onto any site or web app.
+- **Isolated sandbox:** Runs safely in a styled iframe to prevent CSS bleeding and interaction conflicts with host pages.
+- **Full brand customization:** Configure accent colors, launcher icons, pill or button styles, corner radiuses, and toggle "Powered by Feedlyte" branding.
+- **Accessible & responsive:** Complete keyboard navigation, screen-reader friendly live regions, mobile viewport adaptation, and dark mode support.
 
-### Auth and identity
+### 📝 Structured Feedback Collection
+- **Multi-category triage:** Let users tag submissions as **Bug**, **Idea**, **Praise**, or **Question**.
+- **Satisfaction rating:** Optional 1–5 star ratings to capture customer sentiment at a glance.
+- **Collapsible technical details:** Allow users to optionally share browser, OS, viewport resolution, and current page URL to make bug reproduction effortless.
+- **Public tracking links:** Generates a secure, one-time link for users to check the resolution status of their feedback without needing an account.
 
-- `POST /api/auth/register`
-- `POST /api/auth/signin` (NextAuth route)
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password`
-- `POST /api/auth/resend-verification`
-- `GET /api/users/me` (self-service user read path)
-- `PATCH /api/users`
-- `PUT /api/users`
+### 📊 Centralized Dashboard & Operations
+- **Inbox view:** Filter, search, and review feedback submissions across all your projects.
+- **Real-time webhooks:** Trigger external notifications (Slack, Discord, internal webhooks) with secure HMAC payload signing.
+- **Automated email digests:** Stay informed with daily or weekly summary digests delivered straight to your inbox.
+- **Durable delivery outbox:** Database-backed outbox architecture ensures no feedback notifications or webhooks are lost during downstream outages.
 
-### Projects and widgets
+### 🛡️ Enterprise-Ready Security & Privacy
+- **Origin-level access control:** Restrict widget submissions exclusively to your verified domain origins.
+- **Smart anti-abuse:** Built-in honeypot detection, request body limits, and client-aware rate limiting.
+- **Privacy-first:** Sanitized user data, encrypted transmission, and strict separation of visitor metadata.
 
-- `GET /api/projects`
-- `POST /api/projects`
-- `GET /api/projects/[id]`
-- `DELETE /api/projects/[id]`
-- `GET /api/projects/[id]/analytics`
-- `GET /api/projects/[id]/webhooks`
-- `POST /api/projects/[id]/webhooks`
-- `DELETE /api/projects/[id]/webhooks/[webhookId]`
-- `POST /api/widget-config`
+---
 
-### Public feedback ingestion
+## 🛠️ Quick Start Guide
 
-- `OPTIONS /api/feedback`
-- `POST /api/feedback?project=<projectId>`
-- `GET /api/feedback` (authenticated dashboard read)
-- `GET /api/feedback/[id]`
-- `PATCH /api/feedback/[id]`
-- `DELETE /api/feedback/[id]`
+### Step 1: Create a Project
+Log in to your Feedlyte dashboard and click **New Project**. Enter your project name and the allowed domain URL where your widget will be hosted (e.g., `https://example.com`).
 
-### Operational endpoints
+### Step 2: Configure Widget Settings
+From the **Widget Features** tab in your project dashboard, enable the capabilities that fit your workflow:
+- Categorization (Bug, Idea, Praise, Question)
+- 1–5 Star Rating
+- Technical Context Checklist (Browser, OS, Viewport, URL)
+- Brand Colors, Corner Radiuses, and Launcher Icon Style
 
-- `GET /api/cron/digest` protected by `CRON_SECRET`
-- `GET /api/unsubscribe`
-- `POST /api/webhooks/[id]/retry` and related delivery/status flows
+### Step 3: Embed the Widget on Your Site
+Copy your generated embed snippet and paste it right before the closing `</body>` tag on your website:
 
-## Local setup
+```html
+<!-- Feedlyte Feedback Widget -->
+<script 
+  src="https://your-feedlyte-domain.com/widget.js" 
+  data-project="YOUR_PROJECT_ID"
+  defer>
+</script>
+```
+
+#### Framework Examples
+
+<details>
+<summary><strong>Next.js (App Router)</strong></summary>
+
+```tsx
+import Script from "next/script";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Script
+          src="https://your-feedlyte-domain.com/widget.js"
+          data-project="YOUR_PROJECT_ID"
+          strategy="lazyOnload"
+        />
+      </body>
+    </html>
+  );
+}
+```
+</details>
+
+<details>
+<summary><strong>React (SPA)</strong></summary>
+
+```tsx
+import { useEffect } from "react";
+
+export function FeedbackWidget() {
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://your-feedlyte-domain.com/widget.js";
+    script.setAttribute("data-project", "YOUR_PROJECT_ID");
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return null;
+}
+```
+</details>
+
+---
+
+## ⚙️ Widget Embed Options
+
+You can fine-tune the widget directly from HTML attributes on the script tag:
+
+| Attribute | Type | Default | Description |
+|---|---|---|---|
+| `data-project` | `string` | **Required** | Your unique Feedlyte Project ID. |
+| `data-position` | `string` | `bottom-right` | Placement on screen: `bottom-right` or `bottom-left`. |
+| `data-color` | `string` | Project accent | Hex color code override for the widget launcher button. |
+| `data-label` | `string` | `Feedback` | Text label displayed next to the launcher icon. |
+
+---
+
+## 💻 Self-Hosting & Local Development
+
+If you are deploying your own Feedlyte instance or contributing to the platform, follow the setup instructions below.
 
 ### Prerequisites
+- **Node.js**: v20+ LTS
+- **Package Manager**: `npm`
+- **Database**: PostgreSQL database (Neon serverless recommended)
 
-- Node.js 20 LTS recommended
-- PostgreSQL-compatible database (Neon is the default target)
-- A configured `.env` file for local execution
-
-### Install
+### 1. Clone & Install
 
 ```bash
+git clone https://github.com/your-username/feedlyte.git
+cd feedlyte
 npm install
 ```
 
-### Environment variables
+### 2. Configure Environment
 
-Required in production deployment:
+Copy the example environment template and configure your connection credentials:
 
-```env
-DATABASE_URL="postgresql://..."
-AUTH_SECRET="generate-a-strong-random-value"
+```bash
+cp .env.example .env
 ```
 
-Recommended local/test values:
+Key environment configuration:
+- `DATABASE_URL`: Connection string for PostgreSQL database.
+- `AUTH_SECRET`: Secret key used for session encryption and signing.
+- `NEXTAUTH_URL`: Canonical root URL of your Feedlyte instance (e.g., `http://localhost:3000`).
+- `RESEND_API_KEY`: API key for email delivery and notification digests (optional in dev).
+- `CRON_SECRET`: Secret key for authorizing automated digest cron triggers.
 
-```env
-NEXTAUTH_URL="http://localhost:3000"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-RESEND_API_KEY="test-or-live-key"
-RESEND_FROM_EMAIL="noreply@example.com"
-CRON_SECRET="local-cron-secret"
-```
-
-The repo includes a local validation script:
-
+Validate your environment configuration at any time:
 ```bash
 node scripts/validate-env.mjs
 ```
 
-This script checks the environment shape without requiring production secrets in local development.
-
-### Database workflow
+### 3. Initialize Database & Run
 
 ```bash
-npx prisma generate
+# Push database schema
 npx prisma db push
+
+# Start the local development server
+npm run dev
 ```
 
-For migrations:
+Open [http://localhost:3000](http://localhost:3000) in your browser to access Feedlyte.
+
+---
+
+## 🧪 Testing & Verification
+
+Feedlyte includes a test suite covering unit logic, API contracts, security rules, and end-to-end browser accessibility.
 
 ```bash
-npx prisma migrate dev
-```
+# Run unit and integration tests (Vitest)
+npm test
 
-For rollback or recovery, follow the repository’s migration workflow and keep backups of the Neon branch or database before destructive changes. The project uses Prisma with Neon serverless HTTP mode, so transactions are intentionally limited and migration planning should account for that constraint.
+# Run TypeScript compilation check
+npm run typecheck
 
-## Security and operational notes
+# Run linter
+npm run lint
 
-- The project includes email verification and password reset flows, but the registration response must not expose verification tokens.
-- Public feedback ingestion is CORS-aware and origin-checked, but it is not a replacement for durable abuse controls.
-- The current rate limiter is not deployment-safe for distributed serverless environments and should be replaced by a durable limit layer before broader production exposure.
-- Webhook destinations, secrets, and outbound calls should be treated as sensitive and validated before broad release.
-- Feedback data, user-agent strings, page URLs, webhook payloads, and notification emails may contain personal data and require retention and deletion policies.
-
-## Widget usage
-
-After creating a project in the dashboard, copy the embed snippet from the project detail page and place it before the closing `</body>` tag on a host page:
-
-```html
-<script src="https://your-app.example/widget.js" data-project="YOUR_PROJECT_ID"></script>
-```
-
-Supported attributes include:
-
-- `data-project` — required project id
-- `data-position` — `bottom-right` or `bottom-left`
-
-## Test and quality baseline
-
-Run the workspace checks locally:
-
-```bash
-node .\node_modules\vitest\vitest.mjs run
-node .\node_modules\typescript\bin\tsc --noEmit
-node scripts/validate-env.mjs
-```
-
-This project currently has a working local baseline with the safe test environment seed and environment validation script. CI and deployment checks are still part of the planned work and are not yet declared complete.
-
-## Deployment constraints
-
-- Vercel is the default production target.
-- Prisma client generation should happen before Next.js build in the deployment environment.
-- Production credentials must not be committed to source control or included in CI config.
-- Migration and deployment operations require explicit review and rollback planning.
-
-## Relationship to the implementation plan
-
-This repository is executing the plan defined in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). The plan is the authoritative source for prioritized phases, security gates, and exit criteria. Changes here should be aligned to that roadmap rather than to stale task lists or older assumptions.
-
-Avoid using `include` on write operations (`create`, `update`, `delete`). If you need related data after a write, perform a **separate read query**:
-
-```ts
-// ❌ Causes "Transactions are not supported in HTTP mode"
-const project = await prisma.project.create({ data: {...}, include: { feedback: true } });
-
-// ✅ Correct approach
-const project = await prisma.project.create({ data: {...} });
-const withFeedback = await prisma.project.findUnique({ where: { id: project.id }, include: { feedback: true } });
+# Run end-to-end widget browser tests (Playwright)
+npx playwright test
 ```
 
 ---
+
+## 🔒 Security & Reliability
+
+- **SSRF Defenses:** Webhook delivery checks DNS destinations to block loopback, private, link-local, and cloud metadata targets.
+- **Fail-Safe Deliveries:** Feedback submissions are persisted directly to the database before outbound email and webhook tasks are queued via an atomic outbox pattern.
+- **Cryptographic Signatures:** Outbound webhooks include standard HMAC SHA-256 signatures for recipient verification.
+- **Secure Anonymous Tracking:** Anonymous submitters receive a cryptographically generated token hash for one-time status lookup without exposing internal project or user IDs.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
