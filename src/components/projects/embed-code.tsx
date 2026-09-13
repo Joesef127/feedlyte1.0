@@ -9,7 +9,7 @@ interface EmbedCodeProps {
   project: Project;
 }
 
-const WIDGET_SCRIPT_VERSION = "1";
+const WIDGET_SCRIPT_VERSION = "2";
 
 function escapeAttribute(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

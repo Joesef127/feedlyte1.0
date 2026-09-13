@@ -9,6 +9,12 @@ import {
   Trash2,
   Square,
   CheckSquare,
+  Bug,
+  Lightbulb,
+  Heart,
+  HelpCircle,
+  Star,
+  Sliders,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Feedback, Status } from "@/types";
@@ -25,6 +31,13 @@ interface FeedbackRowProps {
   onSelect?: (id: string) => void;
   clearSelection?: () => void;
 }
+
+const CATEGORY_ICONS: Record<string, typeof Bug> = {
+  bug: Bug,
+  idea: Lightbulb,
+  praise: Heart,
+  question: HelpCircle,
+};
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -109,7 +122,24 @@ export function FeedbackRow({
             {fb.message}
           </p>
 
-          <StatusBadge status={fb.status} />
+          <div className="flex items-center gap-2 shrink-0">
+            {fb.category && CATEGORY_ICONS[fb.category] && (() => {
+              const CategoryIcon = CATEGORY_ICONS[fb.category];
+              return (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 text-muted-foreground border border-border/50 capitalize">
+                  <CategoryIcon size={12} className="text-foreground/70" />
+                  {fb.category}
+                </span>
+              );
+            })()}
+            {typeof fb.rating === "number" && fb.rating > 0 && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                <Star size={11} fill="currentColor" />
+                {fb.rating}
+              </span>
+            )}
+            <StatusBadge status={fb.status} />
+          </div>
         </div>
 
         <div className="flex gap-3 items-center flex-wrap">
@@ -132,6 +162,15 @@ export function FeedbackRow({
           {fb.email && (
             <span className="text-xs xl:text-sm text-muted-foreground">
               {fb.email}
+            </span>
+          )}
+          {fb.technicalDetails && Object.keys(fb.technicalDetails).length > 0 && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground/70 bg-muted/40 border border-border/50 px-1.5 py-0.5 rounded"
+              title={`${Object.keys(fb.technicalDetails).length} technical detail(s) captured`}
+            >
+              <Sliders size={11} className="text-muted-foreground" />
+              Tech details
             </span>
           )}
           <span className="text-xs xl:text-sm text-muted-foreground/40">

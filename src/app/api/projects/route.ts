@@ -31,6 +31,16 @@ export async function GET() {
         createdAt:     p.createdAt.toISOString(),
         feedbackCount: p._count.feedback,
         newCount:      p.feedback.length,
+        notifyOnSubmission:      p.notifyOnSubmission,
+        digestFrequency:         p.digestFrequency,
+        timezone:                p.timezone,
+        notificationCooldown:    p.notificationCooldown,
+        categoryEnabled:         p.categoryEnabled,
+        ratingEnabled:           p.ratingEnabled,
+        technicalDetailsEnabled: p.technicalDetailsEnabled,
+        launcherIcon:            p.launcherIcon,
+        cornerStyle:             p.cornerStyle,
+        showBranding:            p.showBranding,
       }))
     );
   } catch (e) {
@@ -70,6 +80,16 @@ export async function POST(req: Request) {
         createdAt:     project.createdAt.toISOString(),
         feedbackCount: 0,
         newCount:      0,
+        notifyOnSubmission:      project.notifyOnSubmission,
+        digestFrequency:         project.digestFrequency,
+        timezone:                project.timezone,
+        notificationCooldown:    project.notificationCooldown,
+        categoryEnabled:         project.categoryEnabled,
+        ratingEnabled:           project.ratingEnabled,
+        technicalDetailsEnabled: project.technicalDetailsEnabled,
+        launcherIcon:            project.launcherIcon,
+        cornerStyle:             project.cornerStyle,
+        showBranding:            project.showBranding,
       },
       { status: 201 }
     );

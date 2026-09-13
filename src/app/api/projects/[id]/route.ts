@@ -34,6 +34,16 @@ export async function GET(
       createdAt:     project.createdAt.toISOString(),
       feedbackCount: project._count.feedback,
       newCount:      0,
+      notifyOnSubmission:      project.notifyOnSubmission,
+      digestFrequency:         project.digestFrequency,
+      timezone:                project.timezone,
+      notificationCooldown:    project.notificationCooldown,
+      categoryEnabled:         project.categoryEnabled,
+      ratingEnabled:           project.ratingEnabled,
+      technicalDetailsEnabled: project.technicalDetailsEnabled,
+      launcherIcon:            project.launcherIcon,
+      cornerStyle:             project.cornerStyle,
+      showBranding:            project.showBranding,
     });
   } catch (e) {
     return handleError(e, "projects/[id]/GET");
@@ -106,6 +116,16 @@ export async function PATCH(
       position:      updated.position,
       label:         updated.label,
       allowedOrigin: updated.allowedOrigin ?? null,
+      notifyOnSubmission:      updated.notifyOnSubmission,
+      digestFrequency:         updated.digestFrequency,
+      timezone:                updated.timezone,
+      notificationCooldown:    updated.notificationCooldown,
+      categoryEnabled:         updated.categoryEnabled,
+      ratingEnabled:           updated.ratingEnabled,
+      technicalDetailsEnabled: updated.technicalDetailsEnabled,
+      launcherIcon:            updated.launcherIcon,
+      cornerStyle:             updated.cornerStyle,
+      showBranding:            updated.showBranding,
     });
   } catch (e) {
     return handleError(e, "projects/[id]/PATCH");

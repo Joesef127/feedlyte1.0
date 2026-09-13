@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import type { Project, ProjectDetailTab, WidgetPosition } from "@/types";
+import type { Project, ProjectDetailTab, WidgetCornerStyle, WidgetLauncherIcon, WidgetPosition } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ProjectStats } from "./project-stats";
@@ -55,6 +55,16 @@ export function ProjectDetailPage({
     position: WidgetPosition;
     label: string;
     allowedOrigin: string;
+    notifyOnSubmission?: boolean;
+    digestFrequency?: "none" | "daily";
+    timezone?: string;
+    notificationCooldown?: "none" | "5min" | "15min" | "30min" | "1hour";
+    categoryEnabled?: boolean;
+    ratingEnabled?: boolean;
+    technicalDetailsEnabled?: boolean;
+    launcherIcon?: WidgetLauncherIcon;
+    cornerStyle?: WidgetCornerStyle;
+    showBranding?: boolean;
   }) => {
     try {
       const updated = await updateProject.mutateAsync({

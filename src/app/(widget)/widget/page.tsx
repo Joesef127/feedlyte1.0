@@ -1,6 +1,39 @@
 "use client";
 
 import { useState, useEffect, useRef, use } from "react";
+import {
+  MessageSquare,
+  Bug,
+  Lightbulb,
+  Heart,
+  HelpCircle,
+  Star,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+
+const LAUNCHER_ICONS: Record<string, typeof MessageSquare> = {
+  "message-square": MessageSquare,
+  bug: Bug,
+  lightbulb: Lightbulb,
+  heart: Heart,
+  "help-circle": HelpCircle,
+};
+
+const CATEGORY_OPTIONS: { value: string; label: string; Icon: typeof MessageSquare }[] = [
+  { value: "bug", label: "Bug", Icon: Bug },
+  { value: "idea", label: "Idea", Icon: Lightbulb },
+  { value: "praise", label: "Praise", Icon: Heart },
+  { value: "question", label: "Question", Icon: HelpCircle },
+];
+
+const TECHNICAL_DETAIL_FIELDS: { key: string; label: string }[] = [
+  { key: "browser", label: "Browser & OS" },
+  { key: "viewport", label: "Viewport size" },
+  { key: "url", label: "Current URL" },
+  { key: "referrer", label: "Referrer" },
+  { key: "timestamp", label: "Timestamp" },
+];
 
 interface WidgetSearchParams {
   project?: string;
@@ -93,6 +126,22 @@ export default function WidgetPage({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
+  // Optional, project-configurable widget capabilities (all default to "off"
+  // so a project keeps today's minimal widget unless the owner opts in).
+  const [categoryEnabled, setCategoryEnabled] = useState(false);
+  const [ratingEnabled, setRatingEnabled] = useState(false);
+  const [technicalDetailsEnabled, setTechnicalDetailsEnabled] = useState(false);
+  const [launcherIcon, setLauncherIcon] = useState("message-square");
+  const [cornerStyle, setCornerStyle] = useState("rounded");
+  const [showBranding, setShowBranding] = useState(true);
+
+  const [category, setCategory] = useState<string>("");
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [showTechnicalPanel, setShowTechnicalPanel] = useState(false);
+  const [technicalSelections, setTechnicalSelections] = useState<Record<string, boolean>>({});
+  const [trackingToken, setTrackingToken] = useState("");
+
   const containerRef = useRef<HTMLDivElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
@@ -152,8 +201,9 @@ export default function WidgetPage({
     return () => media.removeListener(updateReducedMotion);
   }, []);
 
-  // Fetch project config (color, label) from the public widget-config endpoint.
-  // This ensures the widget always reflects what’s saved in the dashboard.
+  // Fetch project config (color, label, optional feature toggles) from the
+  // public widget-config endpoint. This ensures the widget always reflects
+  // what's saved in the dashboard.
   useEffect(() => {
     const id = projectId || resolvedParams?.project;
     if (!id) return;
@@ -164,6 +214,12 @@ export default function WidgetPage({
         if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
         if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
         if (data.position) setPosition(data.position);
+        setCategoryEnabled(Boolean(data.categoryEnabled));
+        setRatingEnabled(Boolean(data.ratingEnabled));
+        setTechnicalDetailsEnabled(Boolean(data.technicalDetailsEnabled));
+        if (data.launcherIcon && LAUNCHER_ICONS[data.launcherIcon]) setLauncherIcon(data.launcherIcon);
+        if (data.cornerStyle === "sharp" || data.cornerStyle === "rounded") setCornerStyle(data.cornerStyle);
+        setShowBranding(data.showBranding !== false);
       })
       .catch(() => { });
   }, [projectId, resolvedParams?.project]);
@@ -210,6 +266,29 @@ export default function WidgetPage({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  const computeTechnicalDetailValue = (key: string): string => {
+    switch (key) {
+      case "browser":
+        return typeof navigator !== "undefined" ? navigator.userAgent : "";
+      case "viewport":
+        return typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "";
+      case "url":
+        return pageUrl || "";
+      case "referrer":
+        return typeof document !== "undefined" ? document.referrer : "";
+      case "timestamp":
+        return new Date().toISOString();
+      default:
+        return "";
+    }
+  };
+
+  const toggleAllTechnicalDetails = (select: boolean) => {
+    setTechnicalSelections(
+      Object.fromEntries(TECHNICAL_DETAIL_FIELDS.map((field) => [field.key, select])),
+    );
+  };
+
   const handleSubmit = async () => {
     const trimmedMessage = message.trim();
     const trimmedEmail = email.trim();
@@ -237,6 +316,15 @@ export default function WidgetPage({
       // Use absolute URL — the widget runs in an iframe on a third-party domain,
       // so a relative path would resolve to the host page's origin, not ours.
       const apiBase = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
+      const selectedTechnicalDetails = showTechnicalPanel
+        ? Object.fromEntries(
+            TECHNICAL_DETAIL_FIELDS.filter((field) => technicalSelections[field.key]).map((field) => [
+              field.label,
+              computeTechnicalDetailValue(field.key),
+            ]),
+          )
+        : undefined;
+
       const res = await fetch(`${apiBase}/api/feedback?project=${encodeURIComponent(projectId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -248,6 +336,11 @@ export default function WidgetPage({
           // defence-in-depth against protocol-injection via the url param.
           pageUrl: sanitizePageUrl(pageUrl),
           userAgent: navigator.userAgent,
+          category: category || undefined,
+          rating: rating > 0 ? rating : undefined,
+          technicalDetails: selectedTechnicalDetails && Object.keys(selectedTechnicalDetails).length > 0
+            ? selectedTechnicalDetails
+            : undefined,
         }),
       });
       const data = await res.json();
@@ -260,9 +353,14 @@ export default function WidgetPage({
         return;
       }
       setSubmitted(true);
+      if (typeof data.trackingToken === "string") setTrackingToken(data.trackingToken);
       reportMetric("submission_success", performance.now() - submissionStartedAt);
       setMessage("");
       setEmail("");
+      setCategory("");
+      setRating(0);
+      setShowTechnicalPanel(false);
+      setTechnicalSelections({});
     } catch {
       reportMetric("submission_failure");
       setError("Network error. Please try again.");
@@ -278,6 +376,13 @@ export default function WidgetPage({
   const palette = theme === "light"
     ? { panel: "#ffffff", field: "#f5f5f5", border: "#d4d4d4", text: "#171717", muted: "#525252" }
     : { panel: "#1a1a1a", field: "#111111", border: "#2d2d2d", text: "#e5e5e5", muted: "#a3a3a3" };
+  const isSharpCorners = cornerStyle === "sharp";
+  const panelRadius = isSharpCorners ? "4px" : "12px";
+  const fieldRadius = isSharpCorners ? "3px" : "7px";
+  const LauncherIcon = LAUNCHER_ICONS[launcherIcon] ?? MessageSquare;
+  const trackingUrl = trackingToken && typeof window !== "undefined"
+    ? `${window.location.origin}/track/${trackingToken}`
+    : "";
 
   return (
     <div
@@ -303,7 +408,7 @@ export default function WidgetPage({
           style={{
             background: palette.panel,
             border: `1px solid ${palette.border}`,
-            borderRadius: "12px",
+            borderRadius: panelRadius,
             padding: "16px",
             marginBottom: "10px",
             width: `${width}px`,
@@ -328,10 +433,24 @@ export default function WidgetPage({
               <p style={{ color: palette.muted, fontSize: "14px", margin: 0 }}>
                 We appreciate you taking the time.
               </p>
+              {trackingUrl && (
+                <p style={{ color: palette.muted, fontSize: "12px", margin: "10px 0 0" }}>
+                  Want to check back later?{" "}
+                  <a
+                    href={trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: primaryColor, fontWeight: 600 }}
+                  >
+                    Track this feedback
+                  </a>
+                </p>
+              )}
               <button
                 onClick={() => {
                   setSubmitted(false);
                   setOpen(false);
+                  setTrackingToken("");
                 }}
                 style={{
                   marginTop: "14px",
@@ -386,6 +505,43 @@ export default function WidgetPage({
                   ×
                 </button>
               </div>
+              {categoryEnabled && (
+                <div style={{ marginBottom: "10px" }}>
+                  <p style={{ margin: "0 0 6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
+                    What&apos;s this about? <span style={{ color: palette.muted, fontWeight: 400 }}>(optional)</span>
+                  </p>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {CATEGORY_OPTIONS.map(({ value, label, Icon }) => {
+                      const selected = category === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setCategory(selected ? "" : value)}
+                          aria-pressed={selected}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            background: selected ? `${primaryColor}20` : "transparent",
+                            border: `1px solid ${selected ? primaryColor : palette.border}`,
+                            borderRadius: fieldRadius,
+                            color: selected ? primaryColor : palette.muted,
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            padding: "5px 9px",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <Icon size={12} strokeWidth={2.25} />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <label htmlFor="feedlyte-message" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "14px", fontWeight: 600 }}>
                 Feedback message
               </label>
@@ -415,6 +571,38 @@ export default function WidgetPage({
                 onFocus={(e) => (e.target.style.borderColor = primaryColor)}
                 onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
               />
+              {ratingEnabled && (
+                <div style={{ marginBottom: "10px" }}>
+                  <p style={{ margin: "0 0 6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
+                    How would you rate your experience? <span style={{ color: palette.muted, fontWeight: 400 }}>(optional)</span>
+                  </p>
+                  <div role="radiogroup" aria-label="Rating" style={{ display: "flex", gap: "4px" }}>
+                    {[1, 2, 3, 4, 5].map((value) => {
+                      const filled = value <= (hoveredRating || rating);
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={rating === value}
+                          aria-label={`${value} star${value > 1 ? "s" : ""}`}
+                          onClick={() => setRating(rating === value ? 0 : value)}
+                          onMouseEnter={() => setHoveredRating(value)}
+                          onMouseLeave={() => setHoveredRating(0)}
+                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
+                        >
+                          <Star
+                            size={20}
+                            strokeWidth={1.75}
+                            color={filled ? primaryColor : palette.muted}
+                            fill={filled ? primaryColor : "none"}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {fields.email && <>
                 <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
                   Email
@@ -431,6 +619,88 @@ export default function WidgetPage({
                   onBlur={(e) => (e.target.style.borderColor = palette.border)}
                 />
               </>}
+              {technicalDetailsEnabled && (
+                <div style={{ marginBottom: "10px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTechnicalPanel((prev) => !prev)}
+                    aria-expanded={showTechnicalPanel}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      background: "transparent",
+                      border: "none",
+                      color: palette.muted,
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      padding: 0,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {showTechnicalPanel ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                    Include technical details (optional)
+                  </button>
+                  {showTechnicalPanel && (
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        padding: "8px 10px",
+                        border: `1px solid ${palette.border}`,
+                        borderRadius: fieldRadius,
+                        background: palette.field,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleAllTechnicalDetails(
+                            !TECHNICAL_DETAIL_FIELDS.every((field) => technicalSelections[field.key]),
+                          )
+                        }
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: primaryColor,
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: 0,
+                          marginBottom: "6px",
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        {TECHNICAL_DETAIL_FIELDS.every((field) => technicalSelections[field.key])
+                          ? "Deselect all"
+                          : "Select all"}
+                      </button>
+                      {TECHNICAL_DETAIL_FIELDS.map((field) => (
+                        <label
+                          key={field.key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "7px",
+                            color: palette.text,
+                            fontSize: "12px",
+                            padding: "3px 0",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={Boolean(technicalSelections[field.key])}
+                            onChange={(e) =>
+                              setTechnicalSelections((prev) => ({ ...prev, [field.key]: e.target.checked }))
+                            }
+                          />
+                          {field.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {consentText && <label style={{ display: "flex", gap: "8px", alignItems: "flex-start", color: palette.muted, fontSize: "11px", marginBottom: "10px" }}>
                 <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} aria-label="Consent" />
                 <span>{consentText}</span>
@@ -468,6 +738,19 @@ export default function WidgetPage({
               >
                 {submitting ? "Sending..." : error ? "Try again" : "Send Feedback"}
               </button>
+              {showBranding && (
+                <p style={{ textAlign: "center", margin: "10px 0 0", fontSize: "10px", color: palette.muted }}>
+                  Powered by{" "}
+                  <a
+                    href="https://feedlyte.vercel.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: palette.muted, fontWeight: 600 }}
+                  >
+                    Feedlyte
+                  </a>
+                </p>
+              )}
             </>
           )}
         </div>
@@ -498,7 +781,7 @@ export default function WidgetPage({
         style={{
           background: primaryColor,
           border: "none",
-          borderRadius: launcherStyle === "tab" ? "7px 7px 0 0" : "22px",
+          borderRadius: isSharpCorners ? "4px" : (launcherStyle === "tab" ? "7px 7px 0 0" : "22px"),
           color: "#ffffff",
           fontSize: "13px",
           fontWeight: 600,
@@ -520,7 +803,7 @@ export default function WidgetPage({
           e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,0.35)";
         }}
       >
-        <span style={{ fontSize: "15px" }}>💬</span>
+        <LauncherIcon size={15} strokeWidth={2.25} />
         {widgetLabel}
       </button>
     </div>

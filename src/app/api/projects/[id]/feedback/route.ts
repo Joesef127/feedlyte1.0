@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
+function parseTechnicalDetails(value: string | null): Record<string, string> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -61,6 +71,9 @@ export async function GET(
       pageUrl:   f.pageUrl   ?? "",
       userAgent: f.userAgent ?? "",
       status:    f.status,
+      category:  f.category  ?? null,
+      rating:    f.rating    ?? null,
+      technicalDetails: parseTechnicalDetails(f.technicalDetails),
       createdAt: f.createdAt.toISOString(),
     })),
     { headers },

@@ -39,7 +39,7 @@ vi.mock("@/lib/outbox", () => ({
 vi.mock("@/lib/api-helpers", () => ({
   withApiVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
   withWidgetVersionHeaders: vi.fn((headers = {}) => new Headers(headers)),
-  handleError: vi.fn((_e, _ctx) =>
+  handleError: vi.fn(() =>
     NextResponse.json({ error: "Internal Server Error" }, { status: 500 }),
   ),
 }));
@@ -505,6 +505,61 @@ describe("POST /api/feedback", () => {
     await POST(req);
 
     expect(mockCheckRateLimit).toHaveBeenCalledWith("proj_1", "203.0.113.9");
+  });
+
+  it("stores optional category, rating, and technical details when provided", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    await POST(makePostRequest({
+      ...baseFeedbackBody,
+      category: "bug",
+      rating: 4,
+      technicalDetails: { "Browser & OS": "Mozilla/5.0" },
+    }));
+
+    expect(mockPrisma.feedback.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        category: "bug",
+        rating: 4,
+        technicalDetails: JSON.stringify({ "Browser & OS": "Mozilla/5.0" }),
+      }),
+    });
+  });
+
+  it("stores null for category, rating and technical details when not provided", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    await POST(makePostRequest(baseFeedbackBody));
+
+    expect(mockPrisma.feedback.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        category: null,
+        rating: null,
+        technicalDetails: null,
+      }),
+    });
+  });
+
+  it("returns a one-time tracking token in the submission response", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id:            "proj_1",
+      allowedOrigin: null,
+    });
+    mockPrisma.feedback.create.mockResolvedValue(createdFeedback);
+
+    const res = await POST(makePostRequest(baseFeedbackBody));
+    const json = await res.json();
+
+    expect(typeof json.trackingToken).toBe("string");
+    expect(json.trackingToken.length).toBeGreaterThan(20);
   });
 
   it("rejects duplicate submissions when the same idempotency key is reused", async () => {

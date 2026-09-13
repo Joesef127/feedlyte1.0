@@ -1,8 +1,11 @@
 import { z } from "zod";
 import {
   DIGEST_FREQUENCIES,
+  FEEDBACK_CATEGORIES,
   FEEDBACK_STATUSES,
   NOTIFICATION_COOLDOWNS,
+  WIDGET_CORNER_STYLES,
+  WIDGET_LAUNCHER_ICONS,
   WIDGET_POSITIONS,
 } from "@/types";
 
@@ -111,6 +114,12 @@ export const updateProjectSchema = z.object({
       }
     }, "Invalid IANA timezone")
     .optional(),
+  categoryEnabled: z.boolean().optional(),
+  ratingEnabled: z.boolean().optional(),
+  technicalDetailsEnabled: z.boolean().optional(),
+  launcherIcon: z.enum(WIDGET_LAUNCHER_ICONS).optional(),
+  cornerStyle: z.enum(WIDGET_CORNER_STYLES).optional(),
+  showBranding: z.boolean().optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
@@ -123,6 +132,13 @@ export const projectQuerySchema = z.object({
 });
 
 export type ProjectQueryInput = z.infer<typeof projectQuerySchema>;
+
+// Technical details are entirely client-selected (opt-in checkboxes) — keep the
+// shape narrow and cap each value's length to avoid abuse via the public endpoint.
+const technicalDetailsSchema = z
+  .record(z.string().max(60), z.string().max(500))
+  .refine((value) => Object.keys(value).length <= 12, "Too many technical detail fields")
+  .optional();
 
 export const submitFeedbackSchema = z.object({
   message: z.string().min(1, "Message is required").max(2000),
@@ -138,6 +154,9 @@ export const submitFeedbackSchema = z.object({
     .optional()
     .or(z.literal("")),
   userAgent: z.string().max(300).optional(),
+  category: z.enum(FEEDBACK_CATEGORIES).optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  technicalDetails: technicalDetailsSchema,
 });
 
 export type SubmitFeedbackInput = z.infer<typeof submitFeedbackSchema>;

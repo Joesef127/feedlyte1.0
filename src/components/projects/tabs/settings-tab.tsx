@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Project, WidgetPosition } from "@/types";
+import type { Project, WidgetCornerStyle, WidgetLauncherIcon, WidgetPosition } from "@/types";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,12 @@ interface SettingsTabProps {
     digestFrequency: "none" | "daily";
     timezone: string;
     notificationCooldown: "none" | "5min" | "15min" | "30min" | "1hour";
+    categoryEnabled: boolean;
+    ratingEnabled: boolean;
+    technicalDetailsEnabled: boolean;
+    launcherIcon: WidgetLauncherIcon;
+    cornerStyle: WidgetCornerStyle;
+    showBranding: boolean;
   }) => void;
 }
 
@@ -49,6 +55,14 @@ export function SettingsTab({
   const [notificationCooldown, setNotificationCooldown] = useState<
     "none" | "5min" | "15min" | "30min" | "1hour"
   >(project.notificationCooldown ?? "15min");
+  const [categoryEnabled, setCategoryEnabled] = useState(project.categoryEnabled ?? false);
+  const [ratingEnabled, setRatingEnabled] = useState(project.ratingEnabled ?? false);
+  const [technicalDetailsEnabled, setTechnicalDetailsEnabled] = useState(
+    project.technicalDetailsEnabled ?? false,
+  );
+  const [launcherIcon, setLauncherIcon] = useState<WidgetLauncherIcon>(project.launcherIcon ?? "message-square");
+  const [cornerStyle, setCornerStyle] = useState<WidgetCornerStyle>(project.cornerStyle ?? "rounded");
+  const [showBranding, setShowBranding] = useState(project.showBranding ?? true);
 
   const handleSave = () => {
     // In handleSave:
@@ -61,6 +75,12 @@ export function SettingsTab({
       digestFrequency,
       timezone,
       notificationCooldown,
+      categoryEnabled,
+      ratingEnabled,
+      technicalDetailsEnabled,
+      launcherIcon,
+      cornerStyle,
+      showBranding,
     });
   };
 
@@ -133,6 +153,107 @@ export function SettingsTab({
               The domain your widget is embedded on. Only submissions from this
               origin will be accepted. Leave blank to use the default allowlist.
             </p>
+          </div>
+
+          {/* Optional widget features — all default to off, keeping the widget minimal unless enabled */}
+          <div className="border-t border-border pt-4">
+            <h4 className="text-sm font-bold text-foreground mb-4">
+              Widget Features
+            </h4>
+            <p className="text-sm text-muted-foreground/60 mb-3">
+              These are all optional — visitors can always skip them and just submit a message.
+            </p>
+
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                type="checkbox"
+                id="categoryEnabled"
+                checked={categoryEnabled}
+                onChange={(e) => setCategoryEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <label htmlFor="categoryEnabled" className="text-sm font-medium text-foreground">
+                Let visitors optionally tag feedback (Bug / Idea / Praise / Question)
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                type="checkbox"
+                id="ratingEnabled"
+                checked={ratingEnabled}
+                onChange={(e) => setRatingEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <label htmlFor="ratingEnabled" className="text-sm font-medium text-foreground">
+                Show an optional 1-5 star rating
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                type="checkbox"
+                id="technicalDetailsEnabled"
+                checked={technicalDetailsEnabled}
+                onChange={(e) => setTechnicalDetailsEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <label htmlFor="technicalDetailsEnabled" className="text-sm font-medium text-foreground">
+                Offer an opt-in &quot;Include technical details&quot; section
+              </label>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+                Launcher Icon
+              </p>
+              <select
+                value={launcherIcon}
+                onChange={(e) => setLauncherIcon(e.target.value as WidgetLauncherIcon)}
+                className="w-full max-w-xs bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              >
+                <option value="message-square">Message</option>
+                <option value="bug">Bug</option>
+                <option value="lightbulb">Idea</option>
+                <option value="heart">Heart</option>
+                <option value="help-circle">Question</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+                Corner Style
+              </p>
+              <div className="flex gap-2">
+                {(["rounded", "sharp"] as const).map((style) => (
+                  <button
+                    key={style}
+                    onClick={() => setCornerStyle(style)}
+                    style={{
+                      borderColor: cornerStyle === style ? color : "var(--border)",
+                      color: cornerStyle === style ? color : "var(--muted-foreground)",
+                      background: cornerStyle === style ? color + "15" : "transparent",
+                    }}
+                    className="px-3 py-2 rounded-[7px] border text-sm font-medium cursor-pointer capitalize transition-all"
+                  >
+                    {style}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="showBranding"
+                checked={showBranding}
+                onChange={(e) => setShowBranding(e.target.checked)}
+                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <label htmlFor="showBranding" className="text-sm font-medium text-foreground">
+                Show &ldquo;Powered by Feedlyte&rdquo; in the widget
+              </label>
+            </div>
           </div>
 
           {/* Notification Preferences */}

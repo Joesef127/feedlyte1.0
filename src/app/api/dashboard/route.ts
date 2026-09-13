@@ -3,6 +3,16 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { handleError } from "@/lib/api-helpers";
 
+function parseTechnicalDetails(value: string | null): Record<string, string> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -95,6 +105,9 @@ export async function GET() {
         id:        f.id,
         message:   f.message,
         status:    f.status,
+        category:  f.category ?? null,
+        rating:    f.rating ?? null,
+        technicalDetails: parseTechnicalDetails(f.technicalDetails),
         createdAt: f.createdAt.toISOString(),
         project: {
           id:    f.project.id,

@@ -65,7 +65,7 @@
     width: "min(" + width + "px, calc(100vw - " + (offset * 2) + "px))",
     height: "68px",
     maxWidth: "calc(100vw - " + (offset * 2) + "px)",
-    maxHeight: "min(420px, calc(100vh - " + (offset * 2 + 16) + "px))",
+    maxHeight: "min(720px, calc(100vh - " + (offset * 2 + 16) + "px))",
     display: "block",
     overflow: "hidden",
     transition: "height 0.25s ease",
@@ -84,7 +84,7 @@
     if (!e.data || typeof e.data !== "object") return;
     if (e.data.type !== "feedlyte:resize") return;
     if (typeof e.data.height !== "number" || !Number.isFinite(e.data.height)) return;
-    var safeHeight = Math.min(Math.max(e.data.height, 68), 420);
+    var safeHeight = Math.min(Math.max(e.data.height, 68), 720);
     iframe.style.height = safeHeight + "px";
   });
 

@@ -30,6 +30,11 @@ const widgetLimiter = new RateLimiterMemory({
   duration: 60, // 1 min
 });
 
+const trackingLimiter = new RateLimiterMemory({
+  points: 20,
+  duration: 60, // 1 min
+});
+
 const makeWidgetLimiterKey = (projectId: string, clientIp?: string) =>
   [projectId, clientIp].filter(Boolean).join(":");
 
@@ -75,6 +80,27 @@ export async function checkWidgetRateLimit(
     return {
       success: false,
       limit: 10,
+      remaining: 0,
+      reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
+    };
+  }
+}
+
+export async function checkTrackingRateLimit(
+  clientIp = "default",
+): Promise<RateLimitResult> {
+  try {
+    const result = await trackingLimiter.consume(clientIp);
+    return {
+      success: true,
+      limit: 20,
+      remaining: result.remainingPoints,
+      reset: Math.ceil(Date.now() / 1000 + result.msBeforeNext / 1000),
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      limit: 20,
       remaining: 0,
       reset: Math.ceil(Date.now() / 1000 + getMsBeforeNext(error) / 1000),
     };

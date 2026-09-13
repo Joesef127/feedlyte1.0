@@ -137,6 +137,68 @@ describe("widget accessibility contract", () => {
     });
   });
 
+  it("keeps optional category, rating, and technical details hidden by default", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("no config endpoint in test")));
+
+    await act(async () => {
+      render(
+        <WidgetPage
+          searchParams={Promise.resolve({
+            project: "proj_123",
+            position: "bottom-right",
+            url: "https://example.com",
+          })}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /toggle feedback form/i }));
+
+    expect(screen.queryByText(/what's this about/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/rate your experience/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/include technical details/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the optional category selector and rating when enabled by project config, without requiring them", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          categoryEnabled: true,
+          ratingEnabled: true,
+          technicalDetailsEnabled: true,
+        }),
+      }),
+    );
+
+    await act(async () => {
+      render(
+        <WidgetPage
+          searchParams={Promise.resolve({
+            project: "proj_123",
+            position: "bottom-right",
+            url: "https://example.com",
+          })}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /toggle feedback form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/what's this about/i)).toBeInTheDocument();
+      expect(screen.getByText(/rate your experience/i)).toBeInTheDocument();
+      expect(screen.getByText(/include technical details/i)).toBeInTheDocument();
+    });
+
+    // Submit should still be enabled with just a message — none of the optional fields are required.
+    await user.type(screen.getByRole("textbox", { name: /feedback message/i }), "Still works without extras");
+    expect(screen.getByRole("button", { name: /send feedback/i })).not.toBeDisabled();
+  });
+
   it("shows a retry path when the submission is rate limited", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({

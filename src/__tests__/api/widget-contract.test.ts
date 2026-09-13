@@ -52,6 +52,56 @@ describe("API contract compatibility", () => {
     });
   });
 
+  it("includes the optional widget feature flags in the config contract", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id: "proj_1",
+      color: "#F59E0B",
+      position: "bottom-right",
+      label: "Feedback",
+      allowedOrigin: null,
+      categoryEnabled: true,
+      ratingEnabled: true,
+      technicalDetailsEnabled: false,
+      launcherIcon: "bug",
+      cornerStyle: "sharp",
+      showBranding: false,
+    });
+
+    const response = await getWidgetConfig(new Request("http://localhost/api/widget-config?project=proj_1"));
+    const json = await response.json();
+
+    expect(json).toMatchObject({
+      categoryEnabled: true,
+      ratingEnabled: true,
+      technicalDetailsEnabled: false,
+      launcherIcon: "bug",
+      cornerStyle: "sharp",
+      showBranding: false,
+    });
+  });
+
+  it("defaults the optional widget feature flags to their safe, minimal values", async () => {
+    mockPrisma.project.findUnique.mockResolvedValue({
+      id: "proj_1",
+      color: "#F59E0B",
+      position: "bottom-right",
+      label: "Feedback",
+      allowedOrigin: null,
+    });
+
+    const response = await getWidgetConfig(new Request("http://localhost/api/widget-config?project=proj_1"));
+    const json = await response.json();
+
+    expect(json).toMatchObject({
+      categoryEnabled: false,
+      ratingEnabled: false,
+      technicalDetailsEnabled: false,
+      launcherIcon: "message-square",
+      cornerStyle: "rounded",
+      showBranding: true,
+    });
+  });
+
   it("sanitizes invalid public widget configuration", async () => {
     mockPrisma.project.findUnique.mockResolvedValue({
       color: "javascript:alert(1)",

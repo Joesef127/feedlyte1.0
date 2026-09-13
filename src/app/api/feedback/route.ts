@@ -6,9 +6,9 @@ import { checkWidgetRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { handleError, withApiVersionHeaders } from "@/lib/api-helpers";
 import { fireWebhooks } from "@/lib/webhooks";
 import { enqueueOutboxEvent } from "@/lib/outbox";
-import { createUnsubscribeToken, sendFeedbackNotificationEmail } from "@/lib/email";
+import { createUnsubscribeToken } from "@/lib/email";
+import { generateTrackingToken } from "@/lib/tracking-token";
 
-const MAX_FEEDBACK_PAGE_SIZE = 100;
 const MAX_FEEDBACK_BODY_BYTES = 16_384;
 const HONEYPOT_FIELDS = new Set([
   "website",
@@ -70,6 +70,16 @@ function hasHoneypotFields(value: unknown): boolean {
 
 function getDuplicateKey(projectId: string, idempotencyKey: string): string {
   return `${projectId}:${idempotencyKey}`;
+}
+
+function parseTechnicalDetails(value: string | null): Record<string, string> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function getOriginFromUrl(urlString: string | null | undefined): string | null {
@@ -197,6 +207,9 @@ export async function GET(req: Request) {
       pageUrl: f.pageUrl ?? "",
       userAgent: f.userAgent ?? "",
       status: f.status,
+      category: f.category ?? null,
+      rating: f.rating ?? null,
+      technicalDetails: parseTechnicalDetails(f.technicalDetails),
       createdAt: f.createdAt.toISOString(),
     })),
     { headers: withApiVersionHeaders(headers) },
@@ -267,8 +280,8 @@ export async function POST(req: Request) {
     }
 
     const requestedPageUrl =
-      body && typeof body === "object" && "pageUrl" in body && typeof (body as any).pageUrl === "string"
-        ? (body as any).pageUrl
+      body && typeof body === "object" && "pageUrl" in body && typeof (body as Record<string, unknown>).pageUrl === "string"
+        ? ((body as Record<string, unknown>).pageUrl as string)
         : null;
 
     const corsHeaders = getCorsHeaders(req, project.allowedOrigin, requestedPageUrl);
@@ -316,7 +329,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const { message, email, pageUrl, userAgent } = parsed.data;
+    const { message, email, pageUrl, userAgent, category, rating, technicalDetails } = parsed.data;
+
+    const tracking = generateTrackingToken();
 
     const feedback = await prisma.feedback.create({
       data: {
@@ -326,6 +341,11 @@ export async function POST(req: Request) {
         pageUrl: pageUrl || null,
         userAgent: userAgent || null,
         status: "unreviewed",
+        category: category || null,
+        rating: rating ?? null,
+        technicalDetails: technicalDetails ? JSON.stringify(technicalDetails) : null,
+        trackingTokenHash: tracking.hash,
+        trackingTokenExpiresAt: tracking.expiresAt,
       },
     });
 
@@ -367,33 +387,20 @@ export async function POST(req: Request) {
       }
 
       if (shouldSend) {
-        // Atomic conditional update: only set lastNotificationSent if cooldown passed
-        // This replaces the read-then-write with a single atomic operation
-        const updateResult = await prisma.project.updateMany({
-          where: {
-            id: projectId,
-            ...(cooldown !== "none" && lastSent
-              ? {
-                  lastNotificationSent: {
-                    lte: new Date(now.getTime() - cooldownMs),
-                  },
-                }
-              : {}),
-          },
+        await prisma.project.update({
+          where: { id: projectId },
           data: { lastNotificationSent: now },
         });
 
-        // updateResult.count > 0 means we "claimed" the send window
-        if (updateResult.count > 0) {
-          // Generate unsubscribe token if not exists
-          let unsubscribeToken = projectWithPrefs.unsubscribeToken;
-          if (!unsubscribeToken) {
-            unsubscribeToken = await createUnsubscribeToken(projectId);
-            await prisma.project.update({
-              where: { id: projectId },
-              data: { unsubscribeToken },
-            });
-          }
+        // Generate unsubscribe token if not exists
+        let unsubscribeToken = projectWithPrefs.unsubscribeToken;
+        if (!unsubscribeToken) {
+          unsubscribeToken = await createUnsubscribeToken(projectId);
+          await prisma.project.update({
+            where: { id: projectId },
+            data: { unsubscribeToken },
+          });
+        }
           
           const unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?token=${unsubscribeToken}`;
           const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/projects/${projectId}`;
@@ -411,7 +418,6 @@ export async function POST(req: Request) {
           });
         }
       }
-    }
 
 
 
@@ -438,7 +444,12 @@ export async function POST(req: Request) {
     }).catch(() => {});
 
     return NextResponse.json(
-      { id: feedback.id, message: "Feedback received. Thank you!" },
+      {
+        id: feedback.id,
+        message: "Feedback received. Thank you!",
+        // Returned once, here only — never re-exposed after this response.
+        trackingToken: tracking.token,
+      },
       { status: 201, headers: withApiVersionHeaders(corsHeaders) },
     );
   } catch (e) {

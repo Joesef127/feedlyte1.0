@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, Eye, CheckCheck, Check, Trash2, Square, CheckSquare } from "lucide-react";
+import { MoreHorizontal, Eye, CheckCheck, Check, Trash2, Square, CheckSquare, Bug, Lightbulb, Heart, HelpCircle, Star, Sliders } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Feedback, Status } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -16,6 +16,13 @@ interface FeedbackCardProps {
   onSelect?:      (id: string) => void;
   clearSelection?: () => void;
 }
+
+const CATEGORY_ICONS: Record<string, typeof Bug> = {
+  bug: Bug,
+  idea: Lightbulb,
+  praise: Heart,
+  question: HelpCircle,
+};
 
 function timeAgo(iso: string): string {
   const diff  = Date.now() - new Date(iso).getTime();
@@ -96,6 +103,21 @@ export function FeedbackCard({
           </div>
 
           <StatusBadge status={fb.status} />
+          {fb.category && CATEGORY_ICONS[fb.category] && (() => {
+            const CategoryIcon = CATEGORY_ICONS[fb.category];
+            return (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 text-muted-foreground border border-border/50 capitalize shrink-0">
+                <CategoryIcon size={12} className="text-foreground/70" />
+                {fb.category}
+              </span>
+            );
+          })()}
+          {typeof fb.rating === "number" && fb.rating > 0 && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+              <Star size={11} fill="currentColor" />
+              {fb.rating}
+            </span>
+          )}
           <div className="flex items-center gap-2 min-w-0">
             {projectColor && (
               <span
@@ -176,18 +198,29 @@ export function FeedbackCard({
         {fb.message}
       </p>
 
-      {/* Footer: page URL + time */}
+      {/* Footer: page URL + time + tech details */}
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
         {fb.pageUrl ? (
-          <span className="text-xs text-muted-foreground/50 font-mono truncate max-w-[70%]">
+          <span className="text-xs text-muted-foreground/50 font-mono truncate max-w-[60%]">
             {fb.pageUrl}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground/30">No URL</span>
         )}
-        <span className="text-xs text-muted-foreground/40 shrink-0">
-          {timeAgo(fb.createdAt)}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {fb.technicalDetails && Object.keys(fb.technicalDetails).length > 0 && (
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground/70 bg-muted/40 border border-border/50 px-1.5 py-0.5 rounded"
+              title={`${Object.keys(fb.technicalDetails).length} technical detail(s) captured`}
+            >
+              <Sliders size={11} className="text-muted-foreground" />
+              Tech
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground/40">
+            {timeAgo(fb.createdAt)}
+          </span>
+        </div>
       </div>
     </div>
   );
