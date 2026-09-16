@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   MessageSquare,
   ChevronLeft,
@@ -17,6 +18,7 @@ import {
   applyFeedbackFilters,
   type FeedbackFilters,
   type LayoutMode,
+  DEFAULT_FEEDBACK_FILTERS,
 } from "./filter-bar";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/lib/export";
 import { BulkActionBar } from "./bulk-action-bar";
 import type { FilterOption } from "@/components/ui/filter-dropdown";
+import { useBulkFeedbackAction } from "@/hooks/use-feedback";
 import { toast } from "sonner";
 
 interface FeedbackTableProps {
@@ -39,14 +42,6 @@ interface FeedbackTableProps {
 
 const PAGE_SIZE = 10;
 
-const DEFAULT_FILTERS: FeedbackFilters = {
-  search: "",
-  status: "",
-  category: "",
-  timeRange: "",
-  projectId: "",
-};
-
 export function FeedbackTable({
   feedback,
   isLoading,
@@ -55,17 +50,87 @@ export function FeedbackTable({
   projects,
   projectMap = {},
 }: FeedbackTableProps) {
-  const [filters, setFilters] = useState<FeedbackFilters>(DEFAULT_FILTERS);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const bulkAction = useBulkFeedbackAction();
+
+  // Read initial filter values from URL query parameters
+  const initialFilters: FeedbackFilters = useMemo(() => {
+    return {
+      search:     searchParams.get("q") || searchParams.get("search") || "",
+      status:     searchParams.get("status") || "",
+      category:   searchParams.get("category") || "",
+      timeRange:  searchParams.get("timeRange") || "",
+      projectId:  searchParams.get("project") || searchParams.get("projectId") || "",
+      tag:        searchParams.get("tag") || "",
+      assignedTo: searchParams.get("assignedTo") || "",
+      view:       searchParams.get("view") || "all",
+    };
+  }, [searchParams]);
+
+  const initialPage = Number.parseInt(searchParams.get("page") || "1", 10) || 1;
+
+  const [filters, setFilters] = useState<FeedbackFilters>(initialFilters);
   const [layout, setLayout] = useState<LayoutMode>("list");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkPending, setBulkPending] = useState(false);
+
+  // Sync state to URL
+  const updateUrl = useCallback(
+    (newFilters: FeedbackFilters, newPage: number) => {
+      const params = new URLSearchParams();
+      if (newFilters.search) params.set("q", newFilters.search);
+      if (newFilters.status) params.set("status", newFilters.status);
+      if (newFilters.category) params.set("category", newFilters.category);
+      if (newFilters.timeRange) params.set("timeRange", newFilters.timeRange);
+      if (newFilters.projectId) params.set("project", newFilters.projectId);
+      if (newFilters.tag) params.set("tag", newFilters.tag);
+      if (newFilters.assignedTo) params.set("assignedTo", newFilters.assignedTo);
+      if (newFilters.view && newFilters.view !== "all") params.set("view", newFilters.view);
+      if (newPage > 1) params.set("page", String(newPage));
+
+      const query = params.toString();
+      router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    },
+    [pathname, router],
+  );
 
   const handleFiltersChange = (f: FeedbackFilters) => {
     setFilters(f);
     setPage(1);
     setSelectedIds(new Set());
+    updateUrl(f, 1);
   };
+
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    setSelectedIds(new Set());
+    updateUrl(filters, p);
+  };
+
+  // Dynamically extract available tags and assignees from feedback dataset
+  const availableTags: FilterOption[] = useMemo(() => {
+    const tagSet = new Set<string>();
+    feedback.forEach((f) => {
+      f.tags?.forEach((t) => tagSet.add(t));
+    });
+    return Array.from(tagSet)
+      .sort()
+      .map((t) => ({ id: t, label: `#${t}` }));
+  }, [feedback]);
+
+  const availableAssignees: FilterOption[] = useMemo(() => {
+    const assigneeMap = new Map<string, string>();
+    assigneeMap.set("unassigned", "Unassigned");
+    feedback.forEach((f) => {
+      if (f.assignedTo) {
+        assigneeMap.set(f.assignedTo.id, f.assignedTo.name || f.assignedTo.email);
+      }
+    });
+    return Array.from(assigneeMap.entries()).map(([id, label]) => ({ id, label }));
+  }, [feedback]);
 
   const handleExportCSV = () => {
     try {
@@ -107,8 +172,16 @@ export function FeedbackTable({
   const showingFrom =
     filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
   const showingTo = Math.min(safePage * PAGE_SIZE, filtered.length);
-  const hasFilters =
-    filters.search || filters.status || filters.timeRange || filters.projectId;
+  const hasFilters = Boolean(
+    filters.search ||
+    filters.status ||
+    filters.category ||
+    filters.timeRange ||
+    filters.projectId ||
+    filters.tag ||
+    filters.assignedTo ||
+    (filters.view && filters.view !== "all")
+  );
 
   const selectAllPage = useCallback(() => {
     if (selectedIds.size === paginated.length) {
@@ -120,7 +193,6 @@ export function FeedbackTable({
 
   const clearSelection = () => setSelectedIds(new Set());
 
-  // Selection handlers
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -133,54 +205,60 @@ export function FeedbackTable({
     });
   };
 
-  // Bulk actions
+  // Atomic bulk operations
   const bulkUpdateStatus = async (status: Status) => {
+    if (selectedIds.size === 0) return;
     setBulkPending(true);
-    const failedIds: string[] = [];
     try {
-      for (const id of selectedIds) {
-        try {
-          await onUpdateStatus(id, status);
-        } catch {
-          failedIds.push(id);
-        }
-      }
-      if (failedIds.length > 0) {
-        toast.error(
-          `Failed to update ${failedIds.length} of ${selectedIds.size} item${failedIds.length !== 1 ? "s" : ""}`,
-        );
-      } else {
-        toast.success(
-          `Updated ${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} to "${status.replace("_", " ")}"`,
-        );
-      }
+      await bulkAction.mutateAsync({
+        action: "status",
+        feedbackIds: Array.from(selectedIds),
+        status,
+      });
+      toast.success(
+        `Updated ${selectedIds.size} feedback item${selectedIds.size !== 1 ? "s" : ""} to "${status.replace("_", " ")}"`,
+      );
+      clearSelection();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update feedback status");
     } finally {
       setBulkPending(false);
-      clearSelection();
     }
   };
 
   const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
     setBulkPending(true);
-    const failedIds: string[] = [];
     try {
-      for (const id of selectedIds) {
-        try {
-          await onDelete(id);
-        } catch {
-          failedIds.push(id);
-        }
-      }
-      if (failedIds.length > 0) {
-        toast.error(
-          `Failed to delete ${failedIds.length} of ${selectedIds.size} item${failedIds.length !== 1 ? "s" : ""}`,
-        );
-      } else {
-        toast.success(`Deleted ${selectedIds.size} feedback item(s)`);
-      }
+      await bulkAction.mutateAsync({
+        action: "delete",
+        feedbackIds: Array.from(selectedIds),
+      });
+      toast.success(`Deleted ${selectedIds.size} feedback item(s)`);
+      clearSelection();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete feedback items");
     } finally {
       setBulkPending(false);
+    }
+  };
+
+  const bulkTag = async (tags: string[], operation: "add" | "remove") => {
+    if (selectedIds.size === 0) return;
+    setBulkPending(true);
+    try {
+      await bulkAction.mutateAsync({
+        action: "tag",
+        feedbackIds: Array.from(selectedIds),
+        tags,
+        operation,
+      });
+      toast.success(`Updated tags for ${selectedIds.size} feedback item(s)`);
       clearSelection();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update tags");
+    } finally {
+      setBulkPending(false);
     }
   };
 
@@ -195,14 +273,13 @@ export function FeedbackTable({
   );
   const projectCount = projectNames.length;
 
-  // Clear selection on page/layout/filter change
   useEffect(() => {
     setSelectedIds(new Set());
   }, [page, layout, filters]);
 
   useEffect(() => {
     const handleEscape = () => {
-      clearSelection(); // or setShowModal(false), etc.
+      clearSelection();
     };
     window.addEventListener("feedlyte:escape", handleEscape);
     return () => window.removeEventListener("feedlyte:escape", handleEscape);
@@ -237,6 +314,8 @@ export function FeedbackTable({
         layout={layout}
         onLayoutChange={setLayout}
         projects={projects}
+        tags={availableTags}
+        assignees={availableAssignees}
         onExportCSV={feedback.length > 0 ? handleExportCSV : undefined}
         onExportJSON={feedback.length > 0 ? handleExportJSON : undefined}
         onExportPDF={feedback.length > 0 ? handleExportPDF : undefined}
@@ -244,21 +323,26 @@ export function FeedbackTable({
       />
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground text-sm">
-          Loading feedback...
+        <div className="flex flex-col gap-2 py-8">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-16 rounded-xl bg-card border border-border animate-pulse"
+            />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         hasFilters ? (
           <EmptyState
             icon={<SlidersHorizontal size={22} />}
-            title="No results"
-            description="No feedback matches your current filters. Try adjusting your search or filters."
+            title="No matching feedback"
+            description="No feedback entries match your active view or filters. Try clearing or relaxing your search."
             action={
               <button
-                onClick={() => handleFiltersChange(DEFAULT_FILTERS)}
+                onClick={() => handleFiltersChange(DEFAULT_FEEDBACK_FILTERS)}
                 className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors bg-transparent border-none cursor-pointer"
               >
-                Clear filters
+                Clear all filters
               </button>
             }
           />
@@ -275,7 +359,7 @@ export function FeedbackTable({
             <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-muted/30 rounded-lg border border-border">
               <button
                 onClick={selectAllPage}
-                className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors"
+                className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background hover:bg-accent transition-colors cursor-pointer"
                 aria-label={
                   selectedIds.size === paginated.length
                     ? "Deselect all"
@@ -332,16 +416,18 @@ export function FeedbackTable({
             </div>
           )}
 
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground/60">
-                Showing {showingFrom}–{showingTo} of {filtered.length}
+            <div className="flex items-center justify-between gap-4 pt-4 border-t border-border flex-wrap">
+              <p className="text-xs text-muted-foreground">
+                Showing {showingFrom}–{showingTo} of {filtered.length} item{filtered.length !== 1 ? "s" : ""}
               </p>
-              <div className="flex items-center gap-1.5">
+
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => handlePageChange(Math.max(1, safePage - 1))}
                   disabled={safePage === 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <ChevronLeft size={14} />
                 </button>
@@ -370,9 +456,9 @@ export function FeedbackTable({
                     ) : (
                       <button
                         key={p}
-                        onClick={() => setPage(p as number)}
+                        onClick={() => handlePageChange(p as number)}
                         className={[
-                          "w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all",
+                          "w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all cursor-pointer",
                           safePage === p
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-transparent text-muted-foreground hover:text-foreground",
@@ -384,9 +470,9 @@ export function FeedbackTable({
                   )}
 
                 <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() => handlePageChange(Math.min(totalPages, safePage + 1))}
                   disabled={safePage === totalPages}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -404,6 +490,7 @@ export function FeedbackTable({
               onBulkReviewed={() => bulkUpdateStatus("in_review")}
               onBulkResolved={() => bulkUpdateStatus("resolved")}
               onBulkStatusChange={(status) => bulkUpdateStatus(status)}
+              onBulkTag={bulkTag}
               onBulkDelete={bulkDelete}
               onClear={clearSelection}
               isPending={bulkPending}

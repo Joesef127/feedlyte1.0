@@ -168,3 +168,66 @@ export const updateStatusSchema = z.object({
 });
 
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
+
+export const bulkFeedbackActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("status"),
+    feedbackIds: z
+      .array(z.string().min(1))
+      .min(1, "At least one feedback item must be selected")
+      .max(200, "Maximum 200 items per bulk action"),
+    status: z.enum([...FEEDBACK_STATUSES, "reviewed"] as const).transform((val) =>
+      val === "reviewed" ? ("in_review" as const) : val
+    ),
+  }),
+  z.object({
+    action: z.literal("delete"),
+    feedbackIds: z
+      .array(z.string().min(1))
+      .min(1, "At least one feedback item must be selected")
+      .max(200, "Maximum 200 items per bulk action"),
+  }),
+  z.object({
+    action: z.literal("tag"),
+    feedbackIds: z
+      .array(z.string().min(1))
+      .min(1, "At least one feedback item must be selected")
+      .max(200, "Maximum 200 items per bulk action"),
+    tags: z
+      .array(z.string().trim().min(1).max(50))
+      .min(1, "At least one tag required")
+      .max(10, "Maximum 10 tags"),
+    operation: z.enum(["add", "remove", "set"]).default("add"),
+  }),
+  z.object({
+    action: z.literal("assign"),
+    feedbackIds: z
+      .array(z.string().min(1))
+      .min(1, "At least one feedback item must be selected")
+      .max(200, "Maximum 200 items per bulk action"),
+    assigneeId: z.string().trim().nullable(),
+  }),
+]);
+
+export type BulkFeedbackActionInput = z.input<typeof bulkFeedbackActionSchema>;
+
+export const createFeedbackNoteSchema = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1, "Note content cannot be empty")
+    .max(4000, "Note too long (max 4000 characters)"),
+});
+
+export type CreateFeedbackNoteInput = z.infer<typeof createFeedbackNoteSchema>;
+
+export const updateFeedbackDetailsSchema = z.object({
+  status: z
+    .enum([...FEEDBACK_STATUSES, "reviewed"] as const)
+    .transform((val) => (val === "reviewed" ? ("in_review" as const) : val))
+    .optional(),
+  tags: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
+  assignedToId: z.string().trim().nullable().optional(),
+});
+
+export type UpdateFeedbackDetailsInput = z.input<typeof updateFeedbackDetailsSchema>;

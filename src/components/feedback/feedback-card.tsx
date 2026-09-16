@@ -228,6 +228,35 @@ export function FeedbackCard({
         {fb.message}
       </p>
 
+      {/* Tags, Assignee, Notes */}
+      {Boolean(
+        (fb.tags && fb.tags.length > 0) ||
+          fb.assignedTo ||
+          (fb.notesCount && fb.notesCount > 0)
+      ) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {fb.tags?.map((t) => (
+            <span
+              key={t}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20"
+            >
+              #{t}
+            </span>
+          ))}
+          {fb.assignedTo && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded border border-border/50">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              {fb.assignedTo.name || fb.assignedTo.email}
+            </span>
+          )}
+          {Boolean(fb.notesCount && fb.notesCount > 0) && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 bg-muted/40 px-1.5 py-0.5 rounded border border-border/50">
+              {fb.notesCount} note{fb.notesCount !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Footer: page URL + time + tech details */}
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
         {fb.pageUrl ? (

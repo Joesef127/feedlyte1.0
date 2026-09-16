@@ -33,6 +33,15 @@ export async function GET(
         project: {
           select: { id: true, name: true, color: true },
         },
+        assignedTo: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+        notes: {
+          include: {
+            user: { select: { id: true, name: true, email: true, image: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
 
@@ -70,17 +79,33 @@ export async function GET(
     }
 
     return NextResponse.json({
-      id:        feedback.id,
-      projectId: feedback.projectId,
-      message:   feedback.message,
-      email:     feedback.email    ?? "",
-      pageUrl:   feedback.pageUrl  ?? "",
-      userAgent: feedback.userAgent ?? "",
-      status:    feedback.status,
-      category:  feedback.category ?? null,
-      rating:    feedback.rating ?? null,
+      id:               feedback.id,
+      projectId:        feedback.projectId,
+      message:          feedback.message,
+      email:            feedback.email    ?? "",
+      pageUrl:          feedback.pageUrl  ?? "",
+      userAgent:        feedback.userAgent ?? "",
+      status:           feedback.status,
+      category:         feedback.category ?? null,
+      rating:           feedback.rating ?? null,
       technicalDetails,
-      createdAt: feedback.createdAt.toISOString(),
+      tags:             feedback.tags,
+      assignedToId:     feedback.assignedToId,
+      assignedTo:       feedback.assignedTo,
+      resolvedAt:       feedback.resolvedAt?.toISOString() ?? null,
+      firstRespondedAt: feedback.firstRespondedAt?.toISOString() ?? null,
+      notes: feedback.notes.map((n) => ({
+        id:         n.id,
+        feedbackId: n.feedbackId,
+        userId:     n.userId,
+        user:       n.user,
+        content:    n.content,
+        createdAt:  n.createdAt.toISOString(),
+        updatedAt:  n.updatedAt.toISOString(),
+      })),
+      notesCount:       feedback.notes.length,
+      createdAt:        feedback.createdAt.toISOString(),
+      updatedAt:        feedback.updatedAt.toISOString(),
       project: {
         id:    feedback.project.id,
         name:  feedback.project.name,
@@ -137,22 +162,67 @@ export async function PATCH(
       return NextResponse.json({ error: "Feedback not found." }, { status: 404 });
     }
 
-    const body   = await req.json();
-    const parsed = updateStatusSchema.safeParse(body);
+    const body = await req.json();
+    const { updateFeedbackDetailsSchema } = await import("@/lib/validations");
+    const parsed = updateFeedbackDetailsSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0].message },
+        { error: parsed.error.issues[0]?.message ?? "Invalid update payload" },
         { status: 400 }
       );
     }
 
+    const dataToUpdate: Record<string, unknown> = {};
+
+    if (parsed.data.status !== undefined) {
+      dataToUpdate.status = parsed.data.status;
+      if (parsed.data.status === "resolved") {
+        if (!feedback.resolvedAt) {
+          dataToUpdate.resolvedAt = new Date();
+        }
+      } else {
+        dataToUpdate.resolvedAt = null;
+      }
+    }
+
+    if (parsed.data.tags !== undefined) {
+      dataToUpdate.tags = parsed.data.tags;
+    }
+
+    if (parsed.data.assignedToId !== undefined) {
+      if (parsed.data.assignedToId) {
+        const userExists = await prisma.user.findUnique({
+          where: { id: parsed.data.assignedToId },
+          select: { id: true },
+        });
+        if (!userExists) {
+          return NextResponse.json({ error: "Assignee does not exist" }, { status: 400 });
+        }
+      }
+      dataToUpdate.assignedToId = parsed.data.assignedToId;
+    }
+
     const updated = await prisma.feedback.update({
       where: { id },
-      data:  { status: parsed.data.status },
+      data:  dataToUpdate,
+      include: {
+        assignedTo: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+      },
     });
 
-    return NextResponse.json({ id: updated.id, status: updated.status });
+    return NextResponse.json({
+      id:               updated.id,
+      status:           updated.status,
+      tags:             updated.tags,
+      assignedToId:     updated.assignedToId,
+      assignedTo:       updated.assignedTo,
+      resolvedAt:       updated.resolvedAt?.toISOString() ?? null,
+      firstRespondedAt: updated.firstRespondedAt?.toISOString() ?? null,
+      updatedAt:        updated.updatedAt.toISOString(),
+    });
   } catch (e) {
     return handleError(e, "PATCH /api/feedback/[id]");
   }

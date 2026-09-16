@@ -48,19 +48,46 @@ export interface Project {
   showBranding?:            boolean;
 }
 
+export interface FeedbackNote {
+  id:          string;
+  feedbackId:  string;
+  userId:      string;
+  user?: {
+    id:     string;
+    name?:  string | null;
+    email:  string;
+    image?: string | null;
+  } | null;
+  content:    string;
+  createdAt:  string;
+  updatedAt:  string;
+}
+
 export interface Feedback {
-  id:        string;
-  projectId: string;
-  message:   string;
-  email:     string;
-  pageUrl:   string;
-  userAgent: string;
-  status:    Status;
-  category?:  FeedbackCategory | null;
-  rating?:    number | null;
+  id:                string;
+  projectId:         string;
+  message:           string;
+  email:             string;
+  pageUrl:           string;
+  userAgent:         string;
+  status:            Status;
+  category?:         FeedbackCategory | null;
+  rating?:           number | null;
   technicalDetails?: Record<string, string> | null;
-  createdAt: string;
-  updatedAt?: string;
+  tags?:             string[];
+  assignedToId?:     string | null;
+  assignedTo?: {
+    id:     string;
+    name?:  string | null;
+    email:  string;
+    image?: string | null;
+  } | null;
+  resolvedAt?:       string | null;
+  firstRespondedAt?: string | null;
+  notes?:            FeedbackNote[];
+  notesCount?:       number;
+  createdAt:         string;
+  updatedAt?:        string;
 }
 
 export interface User {

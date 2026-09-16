@@ -24,6 +24,8 @@ model User {
   invitations     Invitation[]
   auditEvents     AuditEvent[]
   ownedWorkspaces Workspace[]  @relation("WorkspaceOwner")
+  assignedFeedback Feedback[]  @relation("AssignedFeedback")
+  feedbackNotes   FeedbackNote[]
 
   @@map("users")
 }
@@ -202,14 +204,36 @@ model Feedback {
   technicalDetails       String?   @db.Text               // optional JSON blob of client-selected technical fields
   trackingTokenHash      String?   @unique                // hashed opaque token for the one-time "track this feedback" link
   trackingTokenExpiresAt DateTime?
+  tags                   String[]  @default([])
+  assignedToId           String?
+  resolvedAt             DateTime?
+  firstRespondedAt       DateTime?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @default(now()) @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo User?          @relation("AssignedFeedback", fields: [assignedToId], references: [id], onDelete: SetNull)
+  notes      FeedbackNote[]
 
   @@index([projectId, status, createdAt])
   @@index([projectId, pageUrl])
+  @@index([projectId, assignedToId])
   @@map("feedback")
+}
+
+model FeedbackNote {
+  id         String   @id @default(cuid())
+  feedbackId String
+  userId     String
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackId, createdAt])
+  @@map("feedback_notes")
 }
 
 model Webhook {

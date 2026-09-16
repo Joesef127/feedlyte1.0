@@ -40,11 +40,21 @@ function getListQueryOptions(req: Request) {
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, MAX_SEARCH_LENGTH);
   const status = url.searchParams.get("status") ?? "";
   const category = url.searchParams.get("category") ?? "";
+  const tag = (url.searchParams.get("tag") ?? "").trim();
+  const assignedTo = (url.searchParams.get("assignedTo") ?? "").trim();
+  const projectId = (url.searchParams.get("project") || url.searchParams.get("projectId") || "").trim();
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
 
   return {
     status,
     category,
     q,
+    tag,
+    assignedTo,
+    projectId,
+    from,
+    to,
     take,
     cursor: cursorParam?.trim() || null,
   };
@@ -173,14 +183,35 @@ export async function GET(req: Request) {
   }
 
   const query = getListQueryOptions(req);
-  const { status, category, q, take, cursor } = query;
+  const { status, category, q, tag, assignedTo, projectId, from, to, take, cursor } = query;
   const normalizedStatus = status === "reviewed" ? "in_review" : status;
+
+  // Build date filter
+  const dateFilter: { gte?: Date; lte?: Date } = {};
+  if (from) {
+    const fromDate = new Date(from);
+    if (!Number.isNaN(fromDate.getTime())) dateFilter.gte = fromDate;
+  }
+  if (to) {
+    const toDate = new Date(to);
+    if (!Number.isNaN(toDate.getTime())) dateFilter.lte = toDate;
+  }
 
   const feedback = await prisma.feedback.findMany({
     where: {
-      project: { userId: session.user.id },
+      project: {
+        userId: session.user.id,
+        ...(projectId ? { id: projectId } : {}),
+      },
       ...(normalizedStatus ? { status: normalizedStatus } : {}),
       ...(category ? { category } : {}),
+      ...(tag ? { tags: { has: tag } } : {}),
+      ...(assignedTo === "unassigned"
+        ? { assignedToId: null }
+        : assignedTo
+          ? { assignedToId: assignedTo }
+          : {}),
+      ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
       ...(q
         ? {
             OR: [
@@ -190,6 +221,14 @@ export async function GET(req: Request) {
             ],
           }
         : {}),
+    },
+    include: {
+      assignedTo: {
+        select: { id: true, name: true, email: true, image: true },
+      },
+      _count: {
+        select: { notes: true },
+      },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take,
@@ -214,7 +253,22 @@ export async function GET(req: Request) {
       category: f.category ?? null,
       rating: f.rating ?? null,
       technicalDetails: parseTechnicalDetails(f.technicalDetails),
-      createdAt: f.createdAt.toISOString(),
+      tags: f.tags ?? [],
+      assignedToId: f.assignedToId ?? null,
+      assignedTo: f.assignedTo ?? null,
+      resolvedAt: f.resolvedAt
+        ? typeof f.resolvedAt === "string"
+          ? f.resolvedAt
+          : f.resolvedAt.toISOString()
+        : null,
+      firstRespondedAt: f.firstRespondedAt
+        ? typeof f.firstRespondedAt === "string"
+          ? f.firstRespondedAt
+          : f.firstRespondedAt.toISOString()
+        : null,
+      notesCount: f._count?.notes ?? 0,
+      createdAt: typeof f.createdAt === "string" ? f.createdAt : f.createdAt.toISOString(),
+      updatedAt: f.updatedAt ? (typeof f.updatedAt === "string" ? f.updatedAt : f.updatedAt.toISOString()) : undefined,
     })),
     { headers: withApiVersionHeaders(headers) },
   );

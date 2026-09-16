@@ -20,6 +20,7 @@ This file is intentionally short and intentionally tied to the master roadmap in
 - Neon production database schema alignment (`lastDigestSentAt`, widget customizations, and `outbox_events` table)
 - Webhook SSRF validation and delivery-time destination security
 - GitHub Actions CI/CD workflows and deployment smoke checks
+- Phase 7.1 Inbox Workflow: Neon schema migration with tags, assignees, resolution timestamps, and internal notes; atomic bulk operations API (`/api/feedback/bulk`); internal notes API (`/api/feedback/[id]/notes`); URL-persisted search parameters, 1-click saved views, dynamic filters, and response/resolution metrics UI.
 
 ## Partial
 

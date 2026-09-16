@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
     "validate:env": "node scripts/validate-env.mjs",
     "smoke:deploy": "node scripts/deploy-smoke.mjs",
     "audit:production": "npm audit --omit=dev --audit-level=high"

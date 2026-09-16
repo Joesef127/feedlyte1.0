@@ -52,9 +52,77 @@ export function useDeleteFeedback(projectId?: string) {
   });
 }
 
-export function useAllFeedback(filters?: { status?: string; q?: string; category?: string }) {
+export function useAllFeedback(filters?: feedbackAPI.FeedbackFiltersQuery) {
   return useQuery({
     queryKey: ["feedback", "all", filters],
     queryFn:  () => feedbackAPI.fetchAllFeedback(filters),
+  });
+}
+
+export function useUpdateFeedbackDetails() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      details,
+    }: {
+      id: string;
+      details: {
+        status?:       Status;
+        tags?:         string[];
+        assignedToId?: string | null;
+      };
+    }) => feedbackAPI.updateFeedbackDetails(id, details),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["feedback", "item", id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useBulkFeedbackAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Parameters<typeof feedbackAPI.bulkFeedbackAction>[0]) =>
+      feedbackAPI.bulkFeedbackAction(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useFeedbackNotes(feedbackId: string) {
+  return useQuery({
+    queryKey: ["feedback", feedbackId, "notes"],
+    queryFn:  () => feedbackAPI.fetchFeedbackNotes(feedbackId),
+    enabled:  !!feedbackId,
+  });
+}
+
+export function useAddFeedbackNote(feedbackId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (content: string) => feedbackAPI.addFeedbackNote(feedbackId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedback", feedbackId, "notes"] });
+      queryClient.invalidateQueries({ queryKey: ["feedback", "item", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["feedback"] });
+    },
+  });
+}
+
+export function useDeleteFeedbackNote(feedbackId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (noteId: string) => feedbackAPI.deleteFeedbackNote(feedbackId, noteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedback", feedbackId, "notes"] });
+      queryClient.invalidateQueries({ queryKey: ["feedback", "item", feedbackId] });
+      queryClient.invalidateQueries({ queryKey: ["feedback"] });
+    },
   });
 }

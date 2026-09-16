@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Check, CheckCheck, Trash2, ChevronDown } from "lucide-react";
+import { X, Check, CheckCheck, Trash2, ChevronDown, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ interface BulkActionBarProps {
   onBulkReviewed: () => void;
   onBulkResolved: () => void;
   onBulkStatusChange?: (status: Status) => void;
+  onBulkTag?: (tags: string[], op: "add" | "remove") => Promise<void>;
   onBulkDelete: () => Promise<void>;
   onClear: () => void;
   isPending: boolean;
@@ -36,11 +37,15 @@ export function BulkActionBar({
   onBulkReviewed,
   onBulkResolved,
   onBulkStatusChange,
+  onBulkTag,
   onBulkDelete,
   onClear,
   isPending,
 }: BulkActionBarProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [tagOperation, setTagOperation] = useState<"add" | "remove">("add");
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
@@ -84,14 +89,34 @@ export function BulkActionBar({
       await onBulkDelete();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete feedback"
+        err instanceof Error ? err.message : "Failed to delete feedback",
       );
       console.error("Bulk delete error:", err);
     } finally {
       setShowDeleteModal(false);
     }
   };
-  
+
+  const handleConfirmTag = async () => {
+    const tags = tagInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    if (tags.length === 0) {
+      toast.error("Please enter at least one tag");
+      return;
+    }
+
+    try {
+      await onBulkTag?.(tags, tagOperation);
+      setShowTagModal(false);
+      setTagInput("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update tags");
+    }
+  };
+
   return (
     <div
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-slide-up"
@@ -101,7 +126,7 @@ export function BulkActionBar({
         <div className="flex items-center gap-3">
           <button
             onClick={onClear}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
             aria-label="Clear selection"
           >
             <X size={16} />
@@ -147,6 +172,20 @@ export function BulkActionBar({
             <CheckCheck size={13} />
             Mark Resolved
           </Button>
+
+          {onBulkTag && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTagModal(true)}
+              disabled={isPending}
+              className="gap-1.5 text-xs"
+            >
+              <Tag size={13} />
+              Tags
+            </Button>
+          )}
+
           <div ref={moreMenuRef} className="relative">
             <Button
               variant="outline"
@@ -201,7 +240,7 @@ export function BulkActionBar({
         description={deleteText}
       >
         <p className="text-sm text-muted-foreground mb-6">
-          This action cannot be undone. The selected feedback will be
+          This action cannot be undone. The {count} selected feedback items will be
           permanently removed.
         </p>
         <div className="flex gap-2 justify-end">
@@ -214,6 +253,68 @@ export function BulkActionBar({
             disabled={isPending}
           >
             {isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Bulk Tag Modal */}
+      <Modal
+        open={showTagModal}
+        onClose={() => setShowTagModal(false)}
+        title="Bulk Tag Feedback"
+        description={`Update tags for ${count} selected item${count !== 1 ? "s" : ""}`}
+      >
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTagOperation("add")}
+              className={[
+                "flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer",
+                tagOperation === "add"
+                  ? "border-primary bg-primary/10 text-primary font-semibold"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+            >
+              Add Tags
+            </button>
+            <button
+              type="button"
+              onClick={() => setTagOperation("remove")}
+              className={[
+                "flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer",
+                tagOperation === "remove"
+                  ? "border-primary bg-primary/10 text-primary font-semibold"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              ].join(" ")}
+            >
+              Remove Tags
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-foreground mb-1.5">
+              Tags (comma separated)
+            </label>
+            <input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              placeholder="e.g. bug, v1.0, urgent"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary" onClick={() => setShowTagModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleConfirmTag}
+            disabled={isPending || !tagInput.trim()}
+          >
+            {isPending ? "Applying..." : "Apply Tags"}
           </Button>
         </div>
       </Modal>
