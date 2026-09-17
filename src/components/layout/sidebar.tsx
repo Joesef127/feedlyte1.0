@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   LayoutDashboard,
+  BarChart3,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { Page } from "@/types";
@@ -25,6 +26,7 @@ interface SidebarProps {
 const NAV_ITEMS: { id: Page; label: string; Icon: React.FC<{ size?: number }>; }[] = [
   { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { id: "feedback", label: "All Feedback", Icon: MessageSquare },
+  // { id: "metrics", label: "Metrics", Icon: BarChart3 },
   { id: "projects", label: "Projects", Icon: LayoutGrid },
   { id: "settings", label: "Settings", Icon: Settings },
   { id: "profile", label: "Profile", Icon: User },
@@ -34,6 +36,7 @@ const PAGE_ROUTES: Record<Page, string> = {
   dashboard: "/dashboard",
   projects: "/dashboard/projects",
   feedback: "/dashboard/feedback",
+  metrics: "/dashboard/metrics",
   settings: "/dashboard/settings",
   profile: "/dashboard/profile",
 };

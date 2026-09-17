@@ -43,6 +43,7 @@ export async function GET(
       technicalDetailsEnabled: project.technicalDetailsEnabled,
       launcherIcon:            project.launcherIcon,
       cornerStyle:             project.cornerStyle,
+      showLabel:               project.showLabel !== false,
       showBranding:            project.showBranding,
     });
   } catch (e) {
@@ -125,6 +126,7 @@ export async function PATCH(
       technicalDetailsEnabled: updated.technicalDetailsEnabled,
       launcherIcon:            updated.launcherIcon,
       cornerStyle:             updated.cornerStyle,
+      showLabel:               updated.showLabel !== false,
       showBranding:            updated.showBranding,
     });
   } catch (e) {

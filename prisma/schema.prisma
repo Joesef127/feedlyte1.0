@@ -177,6 +177,7 @@ model Project {
   technicalDetailsEnabled Boolean  @default(false)          // widget: optional technical details opt-in section
   launcherIcon            String   @default("message-square") // widget: Lucide icon name for the launcher button
   cornerStyle             String   @default("rounded")     // widget: "rounded" | "sharp"
+  showLabel               Boolean  @default(true)           // widget: display label alongside launcher icon
   showBranding            Boolean  @default(true)           // widget: "Powered by Feedlyte" footer
   createdAt               DateTime @default(now())
   updatedAt               DateTime @default(now()) @updatedAt

@@ -87,6 +87,7 @@ export const createProjectSchema = z.object({
     .default("bottom-right"),
   label: z.string().max(30).optional().default("Feedback"),
   allowedOrigin: originSchema,
+  showLabel: z.boolean().optional().default(true),
 });
 
 const cooldownSchema = z.enum(NOTIFICATION_COOLDOWNS);
@@ -119,6 +120,7 @@ export const updateProjectSchema = z.object({
   technicalDetailsEnabled: z.boolean().optional(),
   launcherIcon: z.enum(WIDGET_LAUNCHER_ICONS).optional(),
   cornerStyle: z.enum(WIDGET_CORNER_STYLES).optional(),
+  showLabel: z.boolean().optional(),
   showBranding: z.boolean().optional(),
 });
 

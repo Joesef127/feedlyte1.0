@@ -41,6 +41,7 @@ import {
   useUpdateFeedbackDetails,
 } from "@/hooks/use-feedback";
 import type { Status } from "@/types";
+import { friendlyError } from "@/lib/error-messages";
 import { toast } from "sonner";
 
 interface FeedbackDetailPageProps {
@@ -64,6 +65,23 @@ const ALL_STATUSES: { id: Status; label: string }[] = [
   { id: "closed", label: "Closed" },
   { id: "spam", label: "Spam" },
 ];
+
+const REDUNDANT_TECH_KEYS = new Set([
+  "browser & os",
+  "browser",
+  "os",
+  "operating system",
+  "user agent",
+  "useragent",
+  "timestamp",
+  "date",
+  "time",
+  "current url",
+  "page url",
+  "url",
+  "pageurl",
+  "currenturl",
+]);
 
 function parseUserAgent(ua: string): { browser: string; os: string } {
   if (!ua) return { browser: "Unknown", os: "Unknown" };
@@ -159,9 +177,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
       toast.success("Feedback deleted");
       router.push("/dashboard/feedback");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete feedback",
-      );
+      toast.error(friendlyError(err));
       console.error("Delete feedback error:", err);
     }
   };
@@ -184,8 +200,8 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
       setNewTagInput("");
       setIsAddingTag(false);
       toast.success(`Tag #${tag} added`);
-    } catch {
-      toast.error("Failed to add tag");
+    } catch (err) {
+      toast.error(friendlyError(err));
     }
   };
 
@@ -198,8 +214,8 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
         details: { tags: nextTags },
       });
       toast.success(`Tag #${tagToRemove} removed`);
-    } catch {
-      toast.error("Failed to remove tag");
+    } catch (err) {
+      toast.error(friendlyError(err));
     }
   };
 
@@ -212,7 +228,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
       setNoteContent("");
       toast.success("Internal note added");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add note");
+      toast.error(friendlyError(err));
     }
   };
 
@@ -220,8 +236,8 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
     try {
       await deleteNote.mutateAsync(noteId);
       toast.success("Note deleted");
-    } catch {
-      toast.error("Failed to delete note");
+    } catch (err) {
+      toast.error(friendlyError(err));
     }
   };
 
@@ -370,7 +386,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                             toast.success(`Marked as ${s.label}`);
                           },
                           onError: (err) => {
-                            toast.error(err instanceof Error ? err.message : "Failed to update status");
+                            toast.error(friendlyError(err));
                           },
                         },
                       );
@@ -638,38 +654,6 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
           )}
         </Card>
 
-        {/* Technical details (consent-based) */}
-        {feedback.technicalDetails && Object.keys(feedback.technicalDetails).length > 0 && (
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Sliders size={16} className="text-primary" />
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                  Technical Details
-                </h3>
-              </div>
-              <span className="text-xs text-muted-foreground/60 font-medium">
-                Captured with visitor consent
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {Object.entries(feedback.technicalDetails).map(([label, value]) => (
-                <div
-                  key={label}
-                  className="flex flex-col gap-1 p-3 bg-background rounded-lg border border-border"
-                >
-                  <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold">
-                    {label}
-                  </p>
-                  <p className="text-xs sm:text-sm text-foreground font-mono break-all leading-relaxed select-all">
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
         {/* Submission Details */}
         <Card>
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
@@ -771,25 +755,48 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                 <p className="text-sm text-foreground font-medium">{os}</p>
               </div>
             </div>
-
-            {feedback.userAgent && (
-              <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border sm:col-span-2">
-                <Clock
-                  size={15}
-                  className="text-muted-foreground/60 mt-0.5 shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-0.5">
-                    User Agent
-                  </p>
-                  <p className="text-sm text-muted-foreground font-mono break-all leading-relaxed">
-                    {feedback.userAgent}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </Card>
+
+        {/* Technical details (filtered of redundant fields) */}
+        {(() => {
+          const nonRedundantTech = feedback.technicalDetails
+            ? Object.entries(feedback.technicalDetails).filter(
+                ([key]) => !REDUNDANT_TECH_KEYS.has(key.toLowerCase().trim()),
+              )
+            : [];
+          if (nonRedundantTech.length === 0) return null;
+          return (
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sliders size={16} className="text-primary" />
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    Technical Details
+                  </h3>
+                </div>
+                <span className="text-xs text-muted-foreground/60 font-medium">
+                  Captured with visitor consent
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {nonRedundantTech.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex flex-col gap-1 p-3 bg-background rounded-lg border border-border"
+                  >
+                    <p className="text-[11px] text-muted-foreground/50 uppercase tracking-widest font-semibold">
+                      {label}
+                    </p>
+                    <p className="text-xs sm:text-sm text-foreground font-mono break-all leading-relaxed select-all">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          );
+        })()}
 
         {/* Similar feedback */}
         {feedback.similar && feedback.similar.length > 0 && (

@@ -133,6 +133,7 @@ export default function WidgetPage({
   const [technicalDetailsEnabled, setTechnicalDetailsEnabled] = useState(false);
   const [launcherIcon, setLauncherIcon] = useState("message-square");
   const [cornerStyle, setCornerStyle] = useState("rounded");
+  const [showLabel, setShowLabel] = useState(true);
   const [showBranding, setShowBranding] = useState(true);
 
   const [category, setCategory] = useState<string>("");
@@ -219,6 +220,7 @@ export default function WidgetPage({
         setTechnicalDetailsEnabled(Boolean(data.technicalDetailsEnabled));
         if (data.launcherIcon && LAUNCHER_ICONS[data.launcherIcon]) setLauncherIcon(data.launcherIcon);
         if (data.cornerStyle === "sharp" || data.cornerStyle === "rounded") setCornerStyle(data.cornerStyle);
+        if (typeof data.showLabel === "boolean") setShowLabel(data.showLabel);
         setShowBranding(data.showBranding !== false);
       })
       .catch(() => { });
@@ -418,7 +420,7 @@ export default function WidgetPage({
         >
           {submitted ? (
             <div style={{ textAlign: "center", padding: "8px 0" }}>
-              <div style={{ fontSize: "28px", marginBottom: "8px" }}>✓</div>
+              <div style={{ fontSize: "28px", marginBottom: "8px", padding: "12px", backgroundColor: "#10b981ff", color: "white", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", width: "56px", height: "56px" }}>✓</div>
               <p
                 aria-live="polite"
                 style={{
@@ -434,6 +436,7 @@ export default function WidgetPage({
                 We appreciate you taking the time.
               </p>
               {trackingUrl && (
+                <>
                 <p style={{ color: palette.muted, fontSize: "12px", margin: "10px 0 0" }}>
                   Want to check back later?{" "}
                   <a
@@ -444,7 +447,11 @@ export default function WidgetPage({
                   >
                     Track this feedback
                   </a>
-                </p>
+                  </p>
+                  <p style={{ color: palette.muted, fontSize: "12px", margin: "10px 0 0" }}>
+                    <span style={{ fontWeight: 600, color: palette.muted }}>Note:</span> This tracking link will only show up once and only applies to this specific feedback entry.
+                  </p>
+                </>
               )}
               <button
                 onClick={() => {
@@ -781,15 +788,22 @@ export default function WidgetPage({
         style={{
           background: primaryColor,
           border: "none",
-          borderRadius: isSharpCorners ? "4px" : (launcherStyle === "tab" ? "7px 7px 0 0" : "22px"),
+          borderRadius: isSharpCorners
+            ? "4px"
+            : !showLabel
+              ? "50%"
+              : launcherStyle === "tab"
+                ? "7px 7px 0 0"
+                : "22px",
           color: "#ffffff",
           fontSize: "13px",
           fontWeight: 600,
-          padding: "10px 18px",
+          padding: showLabel ? "10px 18px" : "12px",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          gap: "6px",
+          justifyContent: "center",
+          gap: showLabel ? "6px" : "0px",
           boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
           fontFamily: "inherit",
           whiteSpace: "nowrap",
@@ -803,8 +817,8 @@ export default function WidgetPage({
           e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,0.35)";
         }}
       >
-        <LauncherIcon size={15} strokeWidth={2.25} />
-        {widgetLabel}
+        <LauncherIcon size={showLabel ? 15 : 18} strokeWidth={2.25} />
+        {showLabel && widgetLabel}
       </button>
     </div>
   );

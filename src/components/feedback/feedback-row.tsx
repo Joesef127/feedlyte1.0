@@ -18,6 +18,9 @@ import {
 import { useState, useRef, useEffect } from "react";
 import type { Feedback, Status } from "@/types";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { friendlyError } from "@/lib/error-messages";
 import { toast } from "sonner";
 
 interface FeedbackRowProps {
@@ -72,6 +75,9 @@ export function FeedbackRow({
 }: FeedbackRowProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<"bottom" | "top">("bottom");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,6 +89,18 @@ export function FeedbackRow({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen || !menuRef.current) return;
+    const rect = menuRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    if (spaceBelow < 260 && spaceAbove > spaceBelow) {
+      setMenuPosition("top");
+    } else {
+      setMenuPosition("bottom");
+    }
+  }, [menuOpen]);
 
   useEffect(() => {
     const handleEscape = () => {
@@ -229,7 +247,11 @@ export function FeedbackRow({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-80 overflow-y-auto">
+            <div
+              className={`absolute right-0 ${
+                menuPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+              } z-50 w-48 bg-card border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-80 overflow-y-auto`}
+            >
               <button
                 onClick={() => {
                   setMenuOpen(false);
@@ -261,7 +283,7 @@ export function FeedbackRow({
                         await onUpdateStatus(fb.id, status);
                         toast.success(`Marked as ${label.toLowerCase()}`);
                       } catch (error) {
-                        toast.error("Failed to update status");
+                        toast.error(friendlyError(error));
                         console.error(error);
                       }
                     }}
@@ -277,16 +299,10 @@ export function FeedbackRow({
 
               <div className="h-px bg-border mx-2 my-1" />
               <button
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(false);
-                  try {
-                    await onDelete(fb.id);
-                    toast.success("Feedback Deleted");
-                  } catch (error) {
-                    toast.error("Failed to delete feedback");
-                    console.error(error);
-                  }
+                  setDeleteModalOpen(true);
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors cursor-pointer text-left"
               >
@@ -296,6 +312,50 @@ export function FeedbackRow({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <Modal
+          open={deleteModalOpen}
+          onClose={() => !isDeleting && setDeleteModalOpen(false)}
+          title="Delete Feedback"
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground m-0">
+              Are you sure you want to delete this feedback item? This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border">
+              <Button
+                variant="secondary"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={isDeleting}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setIsDeleting(true);
+                  try {
+                    await onDelete(fb.id);
+                    toast.success("Feedback deleted");
+                    setDeleteModalOpen(false);
+                  } catch (error) {
+                    toast.error(friendlyError(error));
+                    console.error(error);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );

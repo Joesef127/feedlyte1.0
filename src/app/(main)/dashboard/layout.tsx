@@ -58,11 +58,13 @@ export default function DashboardLayout({
     ? "projects"
     : pathname.startsWith("/dashboard/feedback")
       ? "feedback"
-      : pathname.startsWith("/dashboard/settings")
-        ? "settings"
-        : pathname.startsWith("/dashboard/profile")
-          ? "profile"
-          : "dashboard";
+      : pathname.startsWith("/dashboard/metrics")
+        ? "metrics"
+        : pathname.startsWith("/dashboard/settings")
+          ? "settings"
+          : pathname.startsWith("/dashboard/profile")
+            ? "profile"
+            : "dashboard";
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">

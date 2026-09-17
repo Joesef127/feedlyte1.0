@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { useProjects } from "@/hooks/use-projects";
+import { useProject } from "@/hooks/use-projects";
 import { ProjectDetailPage } from "@/components/projects/project-detail-page";
 
 export default function ProjectDetailRoute({
@@ -12,8 +12,7 @@ export default function ProjectDetailRoute({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: projects = [], isLoading, error } = useProjects();
-
+  const { data: project, isLoading, error } = useProject(id);
 
   if (isLoading) {
     return (
@@ -23,20 +22,16 @@ export default function ProjectDetailRoute({
     );
   }
 
-  if (error) {
+  if (error || !project) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-destructive text-sm">Failed to load projects.</p>
-      </div>
-    );
-  }
-
-  const project = projects.find((p) => p.id === id);
-
-  if (!project) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center flex-col gap-2">
         <p className="text-muted-foreground text-sm">Project not found.</p>
+        <button
+          onClick={() => router.push("/dashboard/projects")}
+          className="text-xs text-primary hover:underline"
+        >
+          Back to Projects
+        </button>
       </div>
     );
   }

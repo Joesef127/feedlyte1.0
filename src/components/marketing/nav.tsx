@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, MessageSquare, X, ArrowRight, Sparkles } from "lucide-react";
+import { Menu, MessageSquare, X, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navLinks = [

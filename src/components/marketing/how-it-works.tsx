@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Code2, Sparkles, Clock } from "lucide-react";
+import { Copy, Check, Code2, Clock } from "lucide-react";
 import { howItWorksSteps } from "./marketing-data";
 
 export function HowItWorks() {

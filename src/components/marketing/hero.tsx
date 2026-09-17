@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, ShieldCheck, Zap, Globe } from "lucide-react";
+import { ArrowRight, ShieldCheck, Zap, Globe } from "lucide-react";
 import { ProductStageSimulator } from "./product-stage-simulator";
 
 export function Hero() {

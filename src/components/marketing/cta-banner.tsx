@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, CheckCircle2, Shield } from "lucide-react";
+import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 
 export function CTABanner() {
   return (

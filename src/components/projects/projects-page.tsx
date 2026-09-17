@@ -13,6 +13,7 @@ import { useProjects, useCreateProject } from "@/hooks/use-projects";
 import { ProjectFilterBar, ProjectFilters } from "./project-filter-bar";
 import { applyProjectFilters } from "./filtering-helper";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/error-messages";
 
 export function ProjectsPage() {
   const router = useRouter();
@@ -53,8 +54,8 @@ export function ProjectsPage() {
 
       resetForm();
       router.push(`/dashboard/projects/${project.id}`);
-    } catch {
-      // error handled by mutation state
+    } catch (err) {
+      toast.error(friendlyError(err));
     }
   };
 

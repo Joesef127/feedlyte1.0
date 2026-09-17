@@ -22,6 +22,7 @@ export type ProjectPayload = Partial<
     | "technicalDetailsEnabled"
     | "launcherIcon"
     | "cornerStyle"
+    | "showLabel"
     | "showBranding"
   >
 >;
@@ -33,6 +34,18 @@ export type ProjectPayload = Partial<
 export async function fetchProjects(): Promise<Project[]> {
   const res = await fetch("/api/projects");
   if (!res.ok) throw new Error("Failed to load projects");
+  return res.json();
+}
+
+/**
+ * Fetch a single project by ID
+ */
+export async function fetchProject(id: string): Promise<Project> {
+  const res = await fetch(`/api/projects/${id}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? "Failed to load project");
+  }
   return res.json();
 }
 

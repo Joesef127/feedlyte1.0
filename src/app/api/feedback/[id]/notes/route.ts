@@ -91,29 +91,27 @@ export async function POST(
 
     const now = new Date();
 
-    const [note] = await prisma.$transaction([
-      prisma.feedbackNote.create({
-        data: {
-          feedbackId,
-          userId: session.user.id,
-          content: parsed.data.content,
+    const note = await prisma.feedbackNote.create({
+      data: {
+        feedbackId,
+        userId: session.user.id,
+        content: parsed.data.content,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, image: true },
         },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-        },
-      }),
-      // Set first response timestamp if this is the first interaction
-      ...(!feedback.firstRespondedAt
-        ? [
-            prisma.feedback.update({
-              where: { id: feedbackId },
-              data: { firstRespondedAt: now },
-            }),
-          ]
-        : []),
-    ]);
+      },
+    });
+
+    if (!feedback.firstRespondedAt) {
+      await prisma.feedback
+        .update({
+          where: { id: feedbackId },
+          data: { firstRespondedAt: now },
+        })
+        .catch((err) => console.warn("Failed to set firstRespondedAt:", err));
+    }
 
     return NextResponse.json(
       {

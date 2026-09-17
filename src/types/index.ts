@@ -16,7 +16,7 @@ export const WIDGET_LAUNCHER_ICONS = ["message-square", "bug", "lightbulb", "hea
 export const WIDGET_CORNER_STYLES = ["rounded", "sharp"] as const;
 
 export type Status         = (typeof FEEDBACK_STATUSES)[number] | "reviewed";
-export type Page           = "dashboard" | "projects" | "feedback" | "settings" | "profile";
+export type Page           = "dashboard" | "projects" | "feedback" | "settings" | "profile" | "metrics";
 export type ProjectDetailTab = "feedback" | "analytics" | "integrations" | "embed" | "settings";
 export type WidgetPosition = (typeof WIDGET_POSITIONS)[number];
 export type DigestFrequency = (typeof DIGEST_FREQUENCIES)[number];
@@ -45,6 +45,7 @@ export interface Project {
   technicalDetailsEnabled?: boolean;
   launcherIcon?:            WidgetLauncherIcon;
   cornerStyle?:             WidgetCornerStyle;
+  showLabel?:               boolean;
   showBranding?:            boolean;
 }
 

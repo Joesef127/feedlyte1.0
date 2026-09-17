@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Tag,
   UserCheck,
-  Sparkles,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   FilterDropdown,
@@ -34,6 +34,7 @@ export interface FeedbackFilters {
   tag?: string;
   assignedTo?: string;
   view?: string;
+  sortBy?: string;
 }
 
 export const DEFAULT_FEEDBACK_FILTERS: FeedbackFilters = {
@@ -45,6 +46,7 @@ export const DEFAULT_FEEDBACK_FILTERS: FeedbackFilters = {
   tag: "",
   assignedTo: "",
   view: "all",
+  sortBy: "newest",
 };
 
 interface FilterBarProps {
@@ -93,6 +95,14 @@ const EXPORT_OPTIONS: FilterOption[] = [
   { id: "pdf", label: "Export as PDF", icon: FileType },
 ];
 
+const SORT_OPTIONS: FilterOption[] = [
+  { id: "newest", label: "Newest first" },
+  { id: "oldest", label: "Oldest first" },
+  { id: "rating_desc", label: "Highest rating" },
+  { id: "rating_asc", label: "Lowest rating" },
+  { id: "status", label: "By status" },
+];
+
 export const SAVED_VIEWS = [
   { id: "all", label: "All Feedback" },
   { id: "triage", label: "Needs Triage" },
@@ -127,6 +137,7 @@ export function FilterBar({
       filters.projectId ||
       filters.tag ||
       filters.assignedTo ||
+      (filters.sortBy && filters.sortBy !== "newest") ||
       (filters.view && filters.view !== "all")
     );
 
@@ -269,12 +280,23 @@ export function FilterBar({
         {/* Desktop filters */}
         <div className="hidden md:flex items-center gap-2 flex-wrap">
           <FilterDropdown
+            label="Sort"
+            options={SORT_OPTIONS}
+            value={filters.sortBy || "newest"}
+            onChange={set("sortBy")}
+            allLabel=""
+          />
+
+          <FilterDropdown
             label="Status"
             options={STATUS_OPTIONS}
             value={filters.status}
             onChange={(val) => {
-              set("status")(val);
-              if (val) set("view")("");
+              onFiltersChange({
+                ...filters,
+                status: val,
+                view: val ? "" : filters.view,
+              });
             }}
             allLabel="All statuses"
           />
@@ -284,8 +306,11 @@ export function FilterBar({
             options={CATEGORY_OPTIONS}
             value={filters.category}
             onChange={(val) => {
-              set("category")(val);
-              if (val) set("view")("");
+              onFiltersChange({
+                ...filters,
+                category: val,
+                view: val ? "" : filters.view,
+              });
             }}
             allLabel="All categories"
           />
@@ -354,12 +379,23 @@ export function FilterBar({
       {showFilters && (
         <div className="md:hidden flex flex-wrap gap-2 pt-2 border-t border-border">
           <FilterDropdown
+            label="Sort"
+            options={SORT_OPTIONS}
+            value={filters.sortBy || "newest"}
+            onChange={set("sortBy")}
+            allLabel=""
+          />
+
+          <FilterDropdown
             label="Status"
             options={STATUS_OPTIONS}
             value={filters.status}
             onChange={(val) => {
-              set("status")(val);
-              if (val) set("view")("");
+              onFiltersChange({
+                ...filters,
+                status: val,
+                view: val ? "" : filters.view,
+              });
             }}
             allLabel="All statuses"
           />
@@ -369,8 +405,11 @@ export function FilterBar({
             options={CATEGORY_OPTIONS}
             value={filters.category}
             onChange={(val) => {
-              set("category")(val);
-              if (val) set("view")("");
+              onFiltersChange({
+                ...filters,
+                category: val,
+                view: val ? "" : filters.view,
+              });
             }}
             allLabel="All categories"
           />
@@ -450,9 +489,10 @@ export function applyFeedbackFilters<
     category?: string | null;
     tags?: string[];
     assignedToId?: string | null;
+    rating?: number | null;
   },
 >(items: T[], filters: FeedbackFilters): T[] {
-  return items.filter((f) => {
+  const filtered = items.filter((f) => {
     // 1. Saved views
     if (filters.view && filters.view !== "all") {
       const normalizedStatus = f.status === "reviewed" ? "in_review" : f.status;
@@ -517,5 +557,23 @@ export function applyFeedbackFilters<
     }
 
     return true;
+  });
+
+  const sortBy = filters.sortBy || "newest";
+  return filtered.sort((a, b) => {
+    if (sortBy === "oldest") {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+    if (sortBy === "rating_desc") {
+      return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+    }
+    if (sortBy === "rating_asc") {
+      return (Number(a.rating) || 0) - (Number(b.rating) || 0);
+    }
+    if (sortBy === "status") {
+      return (a.status || "").localeCompare(b.status || "");
+    }
+    // Default: newest
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 }

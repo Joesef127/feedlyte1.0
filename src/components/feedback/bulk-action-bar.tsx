@@ -5,6 +5,7 @@ import { X, Check, CheckCheck, Trash2, ChevronDown, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/error-messages";
 import type { Status } from "@/types";
 
 interface BulkActionBarProps {
@@ -88,9 +89,7 @@ export function BulkActionBar({
     try {
       await onBulkDelete();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete feedback",
-      );
+      toast.error(friendlyError(err));
       console.error("Bulk delete error:", err);
     } finally {
       setShowDeleteModal(false);
@@ -113,7 +112,7 @@ export function BulkActionBar({
       setShowTagModal(false);
       setTagInput("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update tags");
+      toast.error(friendlyError(err));
     }
   };
 

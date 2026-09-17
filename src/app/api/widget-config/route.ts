@@ -40,6 +40,7 @@ export async function GET(req: Request) {
       technicalDetailsEnabled: true,
       launcherIcon: true,
       cornerStyle: true,
+      showLabel: true,
       showBranding: true,
     },
   });
@@ -60,6 +61,7 @@ export async function GET(req: Request) {
       technicalDetailsEnabled: Boolean(project.technicalDetailsEnabled),
       launcherIcon: sanitizeLauncherIcon(project.launcherIcon),
       cornerStyle: sanitizeCornerStyle(project.cornerStyle),
+      showLabel: project.showLabel !== false,
       showBranding: project.showBranding !== false,
     },
     {

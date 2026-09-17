@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { updateStatusSchema } from "@/lib/validations";
-import { handleError } from "@/lib/api-helpers";
+import { updateFeedbackDetailsSchema } from "@/lib/validations";
+import { handleError, withApiVersionHeaders } from "@/lib/api-helpers";
 
 // Helper: verify feedback ownership
 async function getOwnedFeedback(id: string, userId: string) {
@@ -163,7 +163,6 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { updateFeedbackDetailsSchema } = await import("@/lib/validations");
     const parsed = updateFeedbackDetailsSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -187,7 +186,7 @@ export async function PATCH(
     }
 
     if (parsed.data.tags !== undefined) {
-      dataToUpdate.tags = parsed.data.tags;
+      dataToUpdate.tags = { set: parsed.data.tags };
     }
 
     if (parsed.data.assignedToId !== undefined) {
@@ -203,6 +202,22 @@ export async function PATCH(
       dataToUpdate.assignedToId = parsed.data.assignedToId;
     }
 
+    if (Object.keys(dataToUpdate).length === 0) {
+      return NextResponse.json(
+        {
+          id:               feedback.id,
+          status:           feedback.status,
+          tags:             feedback.tags,
+          assignedToId:     feedback.assignedToId,
+          assignedTo:       null,
+          resolvedAt:       feedback.resolvedAt?.toISOString() ?? null,
+          firstRespondedAt: feedback.firstRespondedAt?.toISOString() ?? null,
+          updatedAt:        feedback.updatedAt.toISOString(),
+        },
+        { headers: withApiVersionHeaders() }
+      );
+    }
+
     const updated = await prisma.feedback.update({
       where: { id },
       data:  dataToUpdate,
@@ -213,17 +228,21 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json({
-      id:               updated.id,
-      status:           updated.status,
-      tags:             updated.tags,
-      assignedToId:     updated.assignedToId,
-      assignedTo:       updated.assignedTo,
-      resolvedAt:       updated.resolvedAt?.toISOString() ?? null,
-      firstRespondedAt: updated.firstRespondedAt?.toISOString() ?? null,
-      updatedAt:        updated.updatedAt.toISOString(),
-    });
+    return NextResponse.json(
+      {
+        id:               updated.id,
+        status:           updated.status,
+        tags:             updated.tags,
+        assignedToId:     updated.assignedToId,
+        assignedTo:       updated.assignedTo,
+        resolvedAt:       updated.resolvedAt?.toISOString() ?? null,
+        firstRespondedAt: updated.firstRespondedAt?.toISOString() ?? null,
+        updatedAt:        updated.updatedAt.toISOString(),
+      },
+      { headers: withApiVersionHeaders() }
+    );
   } catch (e) {
+    console.error("[PATCH /api/feedback/[id]] failure:", e);
     return handleError(e, "PATCH /api/feedback/[id]");
   }
 }

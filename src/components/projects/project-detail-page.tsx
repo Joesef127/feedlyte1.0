@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import type { Project, ProjectDetailTab, WidgetCornerStyle, WidgetLauncherIcon, WidgetPosition } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 } from "@/hooks/use-feedback";
 import { useDeleteProject, useUpdateProject } from "@/hooks/use-projects";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/error-messages";
 
 interface ProjectDetailPageProps {
   project: Project;
@@ -31,7 +33,20 @@ export function ProjectDetailPage({
   onBack,
   onUpdate,
 }: ProjectDetailPageProps) {
-  const [tab, setTab] = useState<ProjectDetailTab>("feedback");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as ProjectDetailTab) || "feedback";
+  const [tab, setTabState] = useState<ProjectDetailTab>(initialTab);
+
+  const handleTabChange = (nextTab: ProjectDetailTab) => {
+    setTabState(nextTab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", nextTab);
+    window.history.replaceState(null, "", url.toString());
+    window.dispatchEvent(
+      new CustomEvent("feedlyte:tabchange", { detail: nextTab }),
+    );
+  };
+
   const [deleteModal, setDeleteModal] = useState(false);
 
   const { data: pFeedback = [], isLoading: feedbackLoading } = useFeedback(
@@ -47,7 +62,9 @@ export function ProjectDetailPage({
       await deleteProject.mutateAsync(project.id);
       toast.success("Project deleted");
       onBack();
-    } catch {}
+    } catch (err) {
+      toast.error(friendlyError(err));
+    }
   };
 
   const handleSaveSettings = async (data: {
@@ -64,6 +81,7 @@ export function ProjectDetailPage({
     technicalDetailsEnabled?: boolean;
     launcherIcon?: WidgetLauncherIcon;
     cornerStyle?: WidgetCornerStyle;
+    showLabel?: boolean;
     showBranding?: boolean;
   }) => {
     try {
@@ -75,7 +93,9 @@ export function ProjectDetailPage({
       toast.success("Settings saved");
 
       onUpdate({ ...project, ...updated });
-    } catch {}
+    } catch (err) {
+      toast.error(friendlyError(err));
+    }
   };
 
   return (
@@ -110,7 +130,7 @@ export function ProjectDetailPage({
       </div>
 
       <ProjectStats feedback={pFeedback} isLoading={feedbackLoading} />
-      <ProjectTabs active={tab} onChange={setTab} />
+      <ProjectTabs active={tab} onChange={handleTabChange} />
 
       {tab === "feedback" && (
         <FeedbackTab

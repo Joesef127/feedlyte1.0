@@ -28,6 +28,7 @@ interface SettingsTabProps {
     technicalDetailsEnabled: boolean;
     launcherIcon: WidgetLauncherIcon;
     cornerStyle: WidgetCornerStyle;
+    showLabel: boolean;
     showBranding: boolean;
   }) => void;
 }
@@ -62,6 +63,7 @@ export function SettingsTab({
   );
   const [launcherIcon, setLauncherIcon] = useState<WidgetLauncherIcon>(project.launcherIcon ?? "message-square");
   const [cornerStyle, setCornerStyle] = useState<WidgetCornerStyle>(project.cornerStyle ?? "rounded");
+  const [showLabel, setShowLabel] = useState(project.showLabel ?? true);
   const [showBranding, setShowBranding] = useState(project.showBranding ?? true);
 
   const handleSave = () => {
@@ -80,6 +82,7 @@ export function SettingsTab({
       technicalDetailsEnabled,
       launcherIcon,
       cornerStyle,
+      showLabel,
       showBranding,
     });
   };
@@ -140,6 +143,42 @@ export function SettingsTab({
             onChange={setLabel}
             placeholder="Feedback"
           />
+
+          {/* Launcher display mode toggle */}
+          <div>
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-[0.04em] mb-2">
+              Launcher Display Mode
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLabel(true)}
+                style={{
+                  borderColor: showLabel ? color : "var(--border)",
+                  color: showLabel ? color : "var(--muted-foreground)",
+                  background: showLabel ? color + "15" : "transparent",
+                }}
+                className="px-3 py-2 rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
+              >
+                Icon + Label
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLabel(false)}
+                style={{
+                  borderColor: !showLabel ? color : "var(--border)",
+                  color: !showLabel ? color : "var(--muted-foreground)",
+                  background: !showLabel ? color + "15" : "transparent",
+                }}
+                className="px-3 py-2 rounded-[7px] border text-sm font-medium cursor-pointer transition-all"
+              >
+                Icon Only
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground/60 mt-1.5">
+              Choose whether the floating launcher button displays text or only the icon.
+            </p>
+          </div>
 
           {/* Allowed origin */}
           <div>

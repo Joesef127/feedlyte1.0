@@ -29,6 +29,7 @@ import {
 import { BulkActionBar } from "./bulk-action-bar";
 import type { FilterOption } from "@/components/ui/filter-dropdown";
 import { useBulkFeedbackAction } from "@/hooks/use-feedback";
+import { friendlyError } from "@/lib/error-messages";
 import { toast } from "sonner";
 
 interface FeedbackTableProps {
@@ -66,6 +67,7 @@ export function FeedbackTable({
       tag:        searchParams.get("tag") || "",
       assignedTo: searchParams.get("assignedTo") || "",
       view:       searchParams.get("view") || "all",
+      sortBy:     searchParams.get("sortBy") || searchParams.get("sort") || "newest",
     };
   }, [searchParams]);
 
@@ -89,6 +91,7 @@ export function FeedbackTable({
       if (newFilters.tag) params.set("tag", newFilters.tag);
       if (newFilters.assignedTo) params.set("assignedTo", newFilters.assignedTo);
       if (newFilters.view && newFilters.view !== "all") params.set("view", newFilters.view);
+      if (newFilters.sortBy && newFilters.sortBy !== "newest") params.set("sortBy", newFilters.sortBy);
       if (newPage > 1) params.set("page", String(newPage));
 
       const query = params.toString();
@@ -162,7 +165,32 @@ export function FeedbackTable({
     }
   };
 
-  const filtered = applyFeedbackFilters(feedback, filters);
+  const filtered = useMemo(() => {
+    const res = applyFeedbackFilters(feedback, filters);
+    const sortBy = filters.sortBy || "newest";
+    return [...res].sort((a, b) => {
+      if (sortBy === "oldest") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortBy === "rating_desc") {
+        const rA = typeof a.rating === "number" ? a.rating : -1;
+        const rB = typeof b.rating === "number" ? b.rating : -1;
+        if (rB !== rA) return rB - rA;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortBy === "rating_asc") {
+        const rA = typeof a.rating === "number" ? a.rating : 999;
+        const rB = typeof b.rating === "number" ? b.rating : 999;
+        if (rA !== rB) return rA - rB;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortBy === "status") {
+        return a.status.localeCompare(b.status);
+      }
+      // default "newest"
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [feedback, filters]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice(
@@ -220,7 +248,7 @@ export function FeedbackTable({
       );
       clearSelection();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update feedback status");
+      toast.error(friendlyError(err));
     } finally {
       setBulkPending(false);
     }
@@ -237,7 +265,7 @@ export function FeedbackTable({
       toast.success(`Deleted ${selectedIds.size} feedback item(s)`);
       clearSelection();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete feedback items");
+      toast.error(friendlyError(err));
     } finally {
       setBulkPending(false);
     }
@@ -256,7 +284,7 @@ export function FeedbackTable({
       toast.success(`Updated tags for ${selectedIds.size} feedback item(s)`);
       clearSelection();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update tags");
+      toast.error(friendlyError(err));
     } finally {
       setBulkPending(false);
     }

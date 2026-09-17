@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Sparkles, ArrowRight, DollarSign, CircleDollarSignIcon } from "lucide-react";
+import { Check, ArrowRight, DollarSign, CircleDollarSignIcon } from "lucide-react";
 import { pricingPlans } from "./marketing-data";
 
 export function Pricing() {
