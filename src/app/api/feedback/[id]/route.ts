@@ -221,12 +221,14 @@ export async function PATCH(
     const updated = await prisma.feedback.update({
       where: { id },
       data:  dataToUpdate,
-      include: {
-        assignedTo: {
-          select: { id: true, name: true, email: true, image: true },
-        },
-      },
     });
+
+    const assignedTo = updated.assignedToId
+      ? await prisma.user.findUnique({
+          where: { id: updated.assignedToId },
+          select: { id: true, name: true, email: true, image: true },
+        })
+      : null;
 
     return NextResponse.json(
       {
@@ -234,7 +236,7 @@ export async function PATCH(
         status:           updated.status,
         tags:             updated.tags,
         assignedToId:     updated.assignedToId,
-        assignedTo:       updated.assignedTo,
+        assignedTo,
         resolvedAt:       updated.resolvedAt?.toISOString() ?? null,
         firstRespondedAt: updated.firstRespondedAt?.toISOString() ?? null,
         updatedAt:        updated.updatedAt.toISOString(),

@@ -20,6 +20,9 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(),
       delete: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn((promises) => Promise.all(promises)),
   },
 }));
@@ -35,6 +38,9 @@ const mockPrisma = prisma as unknown as {
     findUnique: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+  };
+  user: {
+    findUnique: ReturnType<typeof vi.fn>;
   };
 };
 

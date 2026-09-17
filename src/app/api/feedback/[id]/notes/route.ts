@@ -97,20 +97,29 @@ export async function POST(
         userId: session.user.id,
         content: parsed.data.content,
       },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, image: true },
-        },
-      },
     });
 
+    const user = (prisma.user
+      ? await prisma.user.findUnique({
+          where: { id: note.userId },
+          select: { id: true, name: true, email: true, image: true },
+        })
+      : null) || {
+      id: session.user.id,
+      name: session.user.name ?? null,
+      email: session.user.email ?? null,
+      image: session.user.image ?? null,
+    };
+
     if (!feedback.firstRespondedAt) {
-      await prisma.feedback
-        .update({
+      try {
+        await prisma.feedback.update({
           where: { id: feedbackId },
           data: { firstRespondedAt: now },
-        })
-        .catch((err) => console.warn("Failed to set firstRespondedAt:", err));
+        });
+      } catch (err) {
+        console.warn("Failed to set firstRespondedAt:", err);
+      }
     }
 
     return NextResponse.json(
@@ -118,7 +127,7 @@ export async function POST(
         id: note.id,
         feedbackId: note.feedbackId,
         userId: note.userId,
-        user: note.user,
+        user,
         content: note.content,
         createdAt: note.createdAt.toISOString(),
         updatedAt: note.updatedAt.toISOString(),

@@ -121,8 +121,8 @@ export async function POST(req: Request) {
           data: { tags },
         });
       } else {
-        // Atomic update per item for set union/difference
-        await prisma.$transaction(
+        // Update each item tags
+        await Promise.all(
           accessibleFeedback.map((item) => {
             let nextTags = item.tags;
             if (operation === "add") {
