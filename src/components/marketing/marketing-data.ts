@@ -199,8 +199,8 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: "pro",
     name: "Pro",
-    monthlyPrice: 4,
-    annualPrice: 3.3, // ~$40/yr billed annually
+    monthlyPrice: 1,
+    annualPrice: 0.8, // $10/yr billed annually
     description: "For creators, startups, and small teams shipping real products.",
     badge: "Most Popular",
     highlighted: true,
@@ -224,8 +224,8 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: "team",
     name: "Team",
-    monthlyPrice: 12,
-    annualPrice: 10, // ~$120/yr billed annually
+    monthlyPrice: 10,
+    annualPrice: 8, // ~$80/yr billed annually
     description: "For growing organizations needing collaboration and scale.",
     highlighted: false,
     projectLimit: "Unlimited Projects",

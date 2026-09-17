@@ -65,9 +65,6 @@ export function Nav() {
             <span className="font-bold text-[17px] tracking-tight text-foreground font-sans">
               Feedlyte
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-              <Sparkles size={10} /> v2.0
-            </span>
           </div>
         </Link>
 

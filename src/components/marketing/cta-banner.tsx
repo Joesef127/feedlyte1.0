@@ -23,7 +23,7 @@ export function CTABanner() {
           {/* Content */}
           <div className="relative z-10 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 mb-6">
-              <Sparkles size={12} /> Instant Setup
+              Instant Setup
             </div>
 
             <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1.08] tracking-tight text-foreground mb-5">

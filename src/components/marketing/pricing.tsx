@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Sparkles, ArrowRight } from "lucide-react";
+import { Check, Sparkles, ArrowRight, DollarSign, CircleDollarSignIcon } from "lucide-react";
 import { pricingPlans } from "./marketing-data";
 
 export function Pricing() {
@@ -14,7 +14,7 @@ export function Pricing() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-14 sm:mb-16">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border border-border bg-card text-muted-foreground mb-4">
-            <Sparkles size={12} className="text-primary" /> Transparent Pricing
+            <CircleDollarSignIcon size={12} className="text-primary" /> Transparent Pricing
           </span>
           <h2 className="font-display text-[clamp(2.2rem,4.5vw,3.5rem)] tracking-tight text-foreground mb-4">
             Simple, predictable pricing.

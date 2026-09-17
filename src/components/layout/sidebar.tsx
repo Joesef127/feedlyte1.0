@@ -114,7 +114,7 @@ export function Sidebar({
       >
         {/* Logo */}
         <div className="px-4 py-5 h-18 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
+          <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer">
             <div className="w-7 h-7 bg-primary rounded-[7px] flex items-center justify-center shrink-0">
               <MessageSquare
                 size={14}

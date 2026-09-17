@@ -10,6 +10,10 @@ import {
   Copy,
   Sliders,
   Maximize2,
+  Stars,
+  MailQuestionMark,
+  CircleQuestionMark,
+  Star,
 } from "lucide-react";
 
 export function InteractiveDemo() {
@@ -17,7 +21,7 @@ export function InteractiveDemo() {
   const [label, setLabel] = useState("Feedback");
   const [position, setPosition] = useState<"bottom-right" | "bottom-left">("bottom-right");
   const [launcherStyle, setLauncherStyle] = useState<"pill" | "circle">("pill");
-  const [iconName, setIconName] = useState<"message" | "bug" | "sparkles" | "help">("message");
+  const [iconName, setIconName] = useState<"message" | "bug" | "praise" | "help" | "question">("message");
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -48,10 +52,12 @@ export function InteractiveDemo() {
     switch (iconName) {
       case "bug":
         return <Bug size={15} strokeWidth={2.5} />;
-      case "sparkles":
-        return <Sparkles size={15} strokeWidth={2.5} />;
+      case "praise":
+        return <Star size={15} strokeWidth={2.5} />;
       case "help":
         return <HelpCircle size={15} strokeWidth={2.5} />;
+      case "question":
+        return <CircleQuestionMark size={15} strokeWidth={2.5} />;
       default:
         return <MessageSquare size={15} strokeWidth={2.5} />;
     }
@@ -187,13 +193,14 @@ export function InteractiveDemo() {
               <label className="block text-xs font-semibold text-foreground mb-2">
                 Launcher Icon
               </label>
-              <div className="grid grid-cols-4 gap-2 text-xs">
+              <div className="grid grid-cols-5 gap-2 text-xs">
                 {(
                   [
                     { id: "message", label: "Chat", icon: MessageSquare },
                     { id: "bug", label: "Bug", icon: Bug },
-                    { id: "sparkles", label: "Sparkle", icon: Sparkles },
+                    { id: "praise", label: "Praise", icon: Star },
                     { id: "help", label: "Help", icon: HelpCircle },
+                    { id: "question", label: "Question", icon: CircleQuestionMark },
                   ] as const
                 ).map((item) => {
                   const IconCmp = item.icon;

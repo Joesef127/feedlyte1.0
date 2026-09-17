@@ -192,7 +192,6 @@ export function FilterBar({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/80">
           <div className="flex items-center gap-1 px-2 text-xs font-semibold text-muted-foreground shrink-0">
-            <Sparkles size={13} className="text-primary" />
             <span>Views:</span>
           </div>
           {SAVED_VIEWS.map((sv) => {

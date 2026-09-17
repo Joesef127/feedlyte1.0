@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, Sparkles, ShieldCheck, Zap, Globe } from "lucide-react";
 import { ProductStageSimulator } from "./product-stage-simulator";
 
 export function Hero() {
@@ -63,7 +63,7 @@ export function Hero() {
               <ShieldCheck size={13} className="text-primary" /> Zero CSS or script bleed
             </span>
             <span className="inline-flex items-center gap-1">
-              <Sparkles size={13} className="text-primary" /> Live in 3 minutes
+              <Globe size={13} className="text-primary" /> Live in 3 minutes
             </span>
           </div>
         </div>
