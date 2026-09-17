@@ -45,11 +45,20 @@ export async function GET(
     const feedback = await prisma.feedback.findUnique({
       where: { trackingTokenHash: tokenHash },
       select: {
+        id: true,
+        message: true,
         status: true,
         category: true,
+        rating: true,
         createdAt: true,
         updatedAt: true,
         trackingTokenExpiresAt: true,
+        project: {
+          select: {
+            name: true,
+            color: true,
+          },
+        },
       },
     });
 
@@ -62,8 +71,13 @@ export async function GET(
 
     return NextResponse.json(
       {
+        referenceId: feedback.id,
+        message: feedback.message,
         status: feedback.status,
         category: feedback.category ?? null,
+        rating: feedback.rating ?? null,
+        projectName: feedback.project?.name ?? "Project",
+        projectColor: feedback.project?.color ?? "#F59E0B",
         submittedAt: feedback.createdAt.toISOString(),
         updatedAt: feedback.updatedAt.toISOString(),
       },

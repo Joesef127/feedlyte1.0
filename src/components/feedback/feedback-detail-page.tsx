@@ -155,10 +155,16 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
+function getOpenDuration(createdAt: string | Date): string {
+  const diff = Date.now() - new Date(createdAt).getTime();
+  return formatDuration(diff);
+}
+
 export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const [deleteModal, setDeleteModal] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
   const [newTagInput, setNewTagInput] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
@@ -272,7 +278,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
   const firstResponseDuration = feedback.firstRespondedAt
     ? formatDuration(new Date(feedback.firstRespondedAt).getTime() - createdAtMs)
     : null;
-  const openDuration = formatDuration(Date.now() - createdAtMs);
+  const openDuration = getOpenDuration(feedback.createdAt);
 
   return (
     <div className="flex-1 px-5 sm:px-9 py-8 overflow-y-auto">
@@ -506,7 +512,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                     />
                     <button
                       onClick={handleAddTag}
-                      className="h-7 px-2 text-xs bg-primary text-primary-foreground rounded-md font-semibold"
+                      className="h-7 px-2 text-xs bg-primary text-primary-foreground rounded-md font-semibold cursor-pointer"
                     >
                       Add
                     </button>
@@ -641,7 +647,7 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
                     </div>
                   </div>
                   <button
-                    onClick={() => handleDeleteNote(n.id)}
+                    onClick={() => setNoteToDelete(n.id)}
                     disabled={deleteNote.isPending}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1"
                     title="Delete note"
@@ -880,6 +886,35 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
             disabled={deleteFb.isPending}
           >
             {deleteFb.isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Delete note modal */}
+      <Modal
+        open={!!noteToDelete}
+        onClose={() => setNoteToDelete(null)}
+        title="Delete Note"
+      >
+        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+          Are you sure you want to delete this internal note? This cannot be
+          undone.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary" onClick={() => setNoteToDelete(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              if (noteToDelete) {
+                await handleDeleteNote(noteToDelete);
+                setNoteToDelete(null);
+              }
+            }}
+            disabled={deleteNote.isPending}
+          >
+            {deleteNote.isPending ? "Deleting..." : "Delete"}
           </Button>
         </div>
       </Modal>
