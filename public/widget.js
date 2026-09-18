@@ -7,14 +7,14 @@
   var projectId = script.getAttribute("data-project");
   if (!projectId) return;
 
-  var position = script.getAttribute("data-position") || "bottom-right";
+  var position = script.getAttribute("data-position") || null;
   var allowedPositions = { "bottom-right": true, "bottom-left": true };
-  var resolvedPosition = allowedPositions[position] ? position : "bottom-right";
+  var resolvedPosition = allowedPositions[position] ? position : null;
   var color = script.getAttribute("data-color") || "";
   var resolvedColor = /^#[0-9a-fA-F]{6}$/.test(color) ? color : "";
   var label = script.getAttribute("data-label") || "";
   var resolvedLabel = label.length > 0 && label.length <= 40 ? label : "";
-  var offset = Number(script.getAttribute("data-offset") || "24");
+  var offset = Number(script.getAttribute("data-offset") || null);
   if (!Number.isFinite(offset) || offset < 8 || offset > 80) {
     offset = 24;
   }
@@ -58,17 +58,16 @@
   Object.assign(iframe.style, {
     position: "fixed",
     bottom: offset + "px",
-    right: resolvedPosition === "bottom-right" ? offset + "px" : "auto",
-    left: resolvedPosition === "bottom-left" ? offset + "px" : "auto",
+    left: "10px",
+    right: "10px",
     zIndex: "2147483647",
     border: "none",
-    width: "min(" + width + "px, calc(100vw - " + (offset * 2) + "px))",
-    height: "68px",
-    maxWidth: "calc(100vw - " + (offset * 2) + "px)",
-    maxHeight: "min(720px, calc(100vh - " + (offset * 2 + 16) + "px))",
+    width: "100%",
+    // height: "56px",
+    maxWidth: "100vw",
+    // maxHeight: "min(720px, calc(100vh - " + (offset * 2 + 16) + "px))",
     display: "block",
     overflow: "hidden",
-    transition: "height 0.25s ease",
     background: "transparent",
     colorScheme: "normal",
   });
@@ -84,7 +83,7 @@
     if (!e.data || typeof e.data !== "object") return;
     if (e.data.type !== "feedlyte:resize") return;
     if (typeof e.data.height !== "number" || !Number.isFinite(e.data.height)) return;
-    var safeHeight = Math.min(Math.max(e.data.height, 68), 720);
+    var safeHeight = Math.min(Math.max(e.data.height, 44), 720);
     iframe.style.height = safeHeight + "px";
   });
 

@@ -29,7 +29,8 @@ export default function MainLayout({
     <html lang="en" suppressHydrationWarning>
       {/* Anti-FOUC: apply saved theme before first paint */}
       <body
-        className={`${dmSans.variable} ${dmMono.variable} antialiased font-sans`}
+        className={`${dmSans.variable} ${dmMono.variable} antialiased font-sans` }
+        suppressHydrationWarning
       >
       <script
         dangerouslySetInnerHTML={{

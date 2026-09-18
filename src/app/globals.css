@@ -54,7 +54,8 @@
 }
 
 /* ── Light Theme Overrides ── */
-:root[data-theme="light"] {
+:root[data-theme="light"],
+[data-theme="light"] {
   --background: oklch(0.98 0 0); /* #FAFAFA */
   --foreground: oklch(0.1 0 0); /* #111111 */
 
