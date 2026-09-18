@@ -40,7 +40,7 @@ export function DashboardFilterBar({
       </div>
 
       {/* Timeframe Selector */}
-      <div className="flex items-center bg-secondary/80 border border-border p-0.5 rounded-lg w-full sm:w-auto justify-center">
+      <div className="flex items-center bg-secondary/80 border border-border p-0.5 rounded-lg w-auto sm:w-auto justify-center mx-auto sm:mx-0">
         {(["7d", "30d", "90d"] as const).map((tf) => (
           <button
             key={tf}

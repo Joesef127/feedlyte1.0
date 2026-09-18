@@ -27,7 +27,7 @@ export function DashboardDistributionCard({
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 sm:p-6 flex flex-col justify-between">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
         <div>
           <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">
             Distribution

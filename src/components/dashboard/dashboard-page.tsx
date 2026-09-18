@@ -109,7 +109,7 @@ export function DashboardPage() {
             resolved={data?.stats.resolved ?? 0}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-4 xl:gap-6">
             <DashboardActivityChart
               trendData={trendData}
               resolutionRate={resolutionRate}
