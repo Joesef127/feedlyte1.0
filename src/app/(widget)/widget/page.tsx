@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const LAUNCHER_ICONS: Record<string, typeof MessageSquare> = {
   "message-square": MessageSquare,
@@ -109,7 +110,7 @@ export default function WidgetPage({
   const [position, setPosition] = useState(resolvedParams?.position ?? "");
   const [widgetColor, setWidgetColor] = useState(sanitizeWidgetColor(resolvedParams?.color));
   const [widgetLabel, setWidgetLabel] = useState(sanitizeWidgetLabel(resolvedParams?.label));
-  const [width, setWidth] = useState(sanitizeWidgetNumber(resolvedParams?.width, 360, 280, 480));
+  const [width, setWidth] = useState(sanitizeWidgetNumber(resolvedParams?.width, 360, 320, 480));
   const [theme, setTheme] = useState(sanitizeWidgetTheme(resolvedParams?.theme));
   const [fields, setFields] = useState(sanitizeWidgetFields(resolvedParams?.fields));
   const [consentText, setConsentText] = useState((resolvedParams?.consent ?? "").slice(0, 160));
@@ -161,7 +162,7 @@ export default function WidgetPage({
     setPosition(params.get("position") ?? "bottom-right");
     setWidgetColor(sanitizeWidgetColor(params.get("color") ?? undefined));
     setWidgetLabel(sanitizeWidgetLabel(params.get("label") ?? undefined));
-    setWidth(sanitizeWidgetNumber(params.get("width") ?? undefined, 360, 280, 480));
+    setWidth(sanitizeWidgetNumber(params.get("width") ?? undefined, 360, 320, 480));
     setTheme(sanitizeWidgetTheme(params.get("theme") ?? undefined));
     setFields(sanitizeWidgetFields(params.get("fields") ?? undefined));
     setConsentText((params.get("consent") ?? "").slice(0, 160));
@@ -379,8 +380,6 @@ export default function WidgetPage({
     ? { panel: "#ffffff", field: "#f5f5f5", border: "#d4d4d4", text: "#171717", muted: "#525252" }
     : { panel: "#1a1a1a", field: "#111111", border: "#2d2d2d", text: "#e5e5e5", muted: "#a3a3a3" };
   const isSharpCorners = cornerStyle === "sharp";
-  const panelRadius = isSharpCorners ? "4px" : "12px";
-  const fieldRadius = isSharpCorners ? "3px" : "7px";
   const LauncherIcon = LAUNCHER_ICONS[launcherIcon] ?? MessageSquare;
   const trackingUrl = trackingToken && typeof window !== "undefined"
     ? `${window.location.origin}/track/${trackingToken}`
@@ -391,15 +390,10 @@ export default function WidgetPage({
       ref={containerRef}
       dir={isRtl ? "rtl" : "ltr"}
       lang={resolvedParams?.lang ?? "en"}
-      style={{
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: isRight ? "flex-end" : "flex-start",
-        padding: "0",
-        background: "transparent",
-        width: "100%",
-      }}
+      className={cn(
+        "w-full flex flex-col p-0 bg-transparent font-sans",
+        isRight ? "items-end" : "items-start",
+      )}
     >
       {/* Feedback panel */}
       {open && (
@@ -407,49 +401,65 @@ export default function WidgetPage({
           id="feedlyte-feedback-form"
           role="dialog"
           aria-label="Feedback form"
-          style={{
-            background: palette.panel,
-            border: `1px solid ${palette.border}`,
-            borderRadius: panelRadius,
-            padding: "16px",
-            marginBottom: "10px",
-            width: `${width}px`,
-            maxWidth: "calc(100vw - 32px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-          }}
+          className={cn(
+            "p-4 mb-2.5 max-w-[calc(100vw-2px)] border shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+            isSharpCorners ? "rounded" : "rounded-xl",
+            theme === "light"
+              ? "bg-white border-[#d4d4d4] text-neutral-900"
+              : "bg-[#1a1a1a] border-[#2d2d2d] text-[#e5e5e5]",
+          )}
+          style={{ width: `${width}px` }}
         >
           {submitted ? (
-            <div style={{ textAlign: "center", padding: "8px 0" }}>
-              <div style={{ fontSize: "28px", marginBottom: "8px", padding: "12px", backgroundColor: "#10b981ff", color: "white", borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", width: "56px", height: "56px" }}>✓</div>
+            <div className="text-center py-2">
+              <div className="text-[28px] mb-2 p-3 bg-emerald-500 text-white rounded-full inline-flex items-center justify-center w-14 h-14 font-semibold">
+                ✓
+              </div>
               <p
                 aria-live="polite"
-                style={{
-                  color: palette.text,
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  margin: "0 0 4px",
-                }}
+                className={cn(
+                  "text-sm font-semibold m-0 mb-1",
+                  theme === "light" ? "text-neutral-900" : "text-[#e5e5e5]",
+                )}
               >
                 Thanks for your feedback!
               </p>
-              <p style={{ color: palette.muted, fontSize: "14px", margin: 0 }}>
+              <p
+                className={cn(
+                  "text-sm m-0",
+                  theme === "light" ? "text-neutral-600" : "text-[#a3a3a3]",
+                )}
+              >
                 We appreciate you taking the time.
               </p>
               {trackingUrl && (
                 <>
-                <p style={{ color: palette.muted, fontSize: "12px", margin: "10px 0 0" }}>
-                  Want to check back later?{" "}
-                  <a
-                    href={trackingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: primaryColor, fontWeight: 600 }}
+                  <p
+                    className={cn(
+                      "text-xs mt-2.5 mb-0",
+                      theme === "light" ? "text-neutral-600" : "text-[#a3a3a3]",
+                    )}
                   >
-                    Track this feedback
-                  </a>
+                    Want to check back later?{" "}
+                    <a
+                      href={trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline-offset-2 hover:underline"
+                      style={{ color: primaryColor }}
+                    >
+                      Track this feedback
+                    </a>
                   </p>
-                  <p style={{ color: palette.muted, fontSize: "12px", margin: "10px 0 0" }}>
-                    <span style={{ fontWeight: 600, color: palette.muted }}>Note:</span> This tracking link will only show up once and only applies to this specific feedback entry.
+                  <p
+                    className={cn(
+                      "text-xs mt-2.5 mb-0",
+                      theme === "light" ? "text-neutral-600" : "text-[#a3a3a3]",
+                    )}
+                  >
+                    <span className="font-semibold">Note:</span> This tracking
+                    link will only show up once and only applies to this specific
+                    feedback entry.
                   </p>
                 </>
               )}
@@ -459,37 +469,24 @@ export default function WidgetPage({
                   setOpen(false);
                   setTrackingToken("");
                 }}
-                style={{
-                  marginTop: "14px",
-                  background: "transparent",
-                  border: "1px solid #d3d0d0",
-                  borderRadius: "6px",
-                  color: "#a3a3a3",
-                  fontSize: "12px",
-                  padding: "6px 14px",
-                  cursor: "pointer",
-                }}
+                className={cn(
+                  "mt-3.5 bg-transparent border rounded-md text-xs px-3.5 py-1.5 cursor-pointer transition-colors",
+                  theme === "light"
+                    ? "border-[#d3d0d0] text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
+                    : "border-[#3d3d3d] text-[#a3a3a3] hover:text-white hover:bg-neutral-800",
+                )}
               >
                 Close
               </button>
             </div>
           ) : (
             <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "12px",
-                }}
-              >
+              <div className="flex justify-between items-center mb-3">
                 <p
-                  style={{
-                    color: palette.text,
-                    fontSize: "18px",
-                    fontWeight: 600,
-                    margin: 0,
-                  }}
+                  className={cn(
+                    "text-lg font-semibold m-0",
+                    theme === "light" ? "text-neutral-900" : "text-[#e5e5e5]",
+                  )}
                 >
                   Share your feedback
                 </p>
@@ -498,26 +495,36 @@ export default function WidgetPage({
                     setOpen(false);
                     requestAnimationFrame(() => launcherRef.current?.focus());
                   }}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: palette.muted,
-                    fontSize: "18px",
-                    cursor: "pointer",
-                    lineHeight: 1,
-                    padding: "0 2px",
-                  }}
+                  className={cn(
+                    "bg-transparent border-none text-lg cursor-pointer leading-none px-0.5 transition-colors",
+                    theme === "light"
+                      ? "text-neutral-500 hover:text-neutral-900"
+                      : "text-[#a3a3a3] hover:text-white",
+                  )}
                   aria-label="Close"
                 >
                   ×
                 </button>
               </div>
               {categoryEnabled && (
-                <div style={{ marginBottom: "10px" }}>
-                  <p style={{ margin: "0 0 6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
-                    What&apos;s this about? <span style={{ color: palette.muted, fontWeight: 400 }}>(optional)</span>
+                <div className="mb-2.5">
+                  <p
+                    className={cn(
+                      "m-0 mb-1.5 text-sm font-semibold",
+                      theme === "light" ? "text-neutral-900" : "text-[#e5e5e5]",
+                    )}
+                  >
+                    What&apos;s this about?{" "}
+                    <span
+                      className={cn(
+                        "font-normal",
+                        theme === "light" ? "text-neutral-500" : "text-[#a3a3a3]",
+                      )}
+                    >
+                      (optional)
+                    </span>
                   </p>
-                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <div className="flex flex-wrap gap-1.5">
                     {CATEGORY_OPTIONS.map(({ value, label, Icon }) => {
                       const selected = category === value;
                       return (
@@ -526,19 +533,14 @@ export default function WidgetPage({
                           type="button"
                           onClick={() => setCategory(selected ? "" : value)}
                           aria-pressed={selected}
+                          className={cn(
+                            "flex items-center gap-1.25 text-xs font-semibold px-2.25 py-1.25 cursor-pointer font-sans transition-all border",
+                            isSharpCorners ? "rounded-[3px]" : "rounded-[7px]",
+                          )}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
                             background: selected ? `${primaryColor}20` : "transparent",
-                            border: `1px solid ${selected ? primaryColor : palette.border}`,
-                            borderRadius: fieldRadius,
+                            borderColor: selected ? primaryColor : palette.border,
                             color: selected ? primaryColor : palette.muted,
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            padding: "5px 9px",
-                            cursor: "pointer",
-                            fontFamily: "inherit",
                           }}
                         >
                           <Icon size={12} strokeWidth={2.25} />
@@ -549,7 +551,13 @@ export default function WidgetPage({
                   </div>
                 </div>
               )}
-              <label htmlFor="feedlyte-message" style={{ display: "block", marginBottom: "6px", color: "#d4d4d4", fontSize: "14px", fontWeight: 600 }}>
+              <label
+                htmlFor="feedlyte-message"
+                className={cn(
+                  "block mb-1.5 text-sm font-semibold",
+                  theme === "light" ? "text-neutral-900" : "text-[#d4d4d4]",
+                )}
+              >
                 Feedback message
               </label>
               <textarea
@@ -561,29 +569,35 @@ export default function WidgetPage({
                 maxLength={2000}
                 rows={3}
                 aria-label="Feedback message"
-                style={{
-                  width: "100%",
-                  background: "#111",
-                  border: "1px solid #2d2d2d",
-                  borderRadius: "7px",
-                  color: "#e5e5e5",
-                  fontSize: "14px",
-                  padding: "8px 10px",
-                  resize: "vertical",
-                  outline: "none",
-                  boxSizing: "border-box",
-                  marginBottom: "8px",
-                  fontFamily: "inherit",
-                }}
+                className={cn(
+                  "w-full text-sm px-2.5 py-2 resize-y outline-none mb-2 font-sans border transition-colors box-border",
+                  isSharpCorners ? "rounded-[3px]" : "rounded-[7px]",
+                  theme === "light"
+                    ? "bg-[#f5f5f5] text-neutral-900 border-[#d4d4d4] placeholder:text-neutral-400"
+                    : "bg-[#111111] text-[#e5e5e5] border-[#2d2d2d] placeholder:text-neutral-500",
+                )}
                 onFocus={(e) => (e.target.style.borderColor = primaryColor)}
-                onBlur={(e) => (e.target.style.borderColor = "#2d2d2d")}
+                onBlur={(e) => (e.target.style.borderColor = palette.border)}
               />
               {ratingEnabled && (
-                <div style={{ marginBottom: "10px" }}>
-                  <p style={{ margin: "0 0 6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
-                    How would you rate your experience? <span style={{ color: palette.muted, fontWeight: 400 }}>(optional)</span>
+                <div className="mb-2.5">
+                  <p
+                    className={cn(
+                      "m-0 mb-1.5 text-sm font-semibold",
+                      theme === "light" ? "text-neutral-900" : "text-[#e5e5e5]",
+                    )}
+                  >
+                    How would you rate your experience?{" "}
+                    <span
+                      className={cn(
+                        "font-normal",
+                        theme === "light" ? "text-neutral-500" : "text-[#a3a3a3]",
+                      )}
+                    >
+                      (optional)
+                    </span>
                   </p>
-                  <div role="radiogroup" aria-label="Rating" style={{ display: "flex", gap: "4px" }}>
+                  <div role="radiogroup" aria-label="Rating" className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((value) => {
                       const filled = value <= (hoveredRating || rating);
                       return (
@@ -596,7 +610,7 @@ export default function WidgetPage({
                           onClick={() => setRating(rating === value ? 0 : value)}
                           onMouseEnter={() => setHoveredRating(value)}
                           onMouseLeave={() => setHoveredRating(0)}
-                          style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
+                          className="bg-transparent border-none cursor-pointer p-0.5 transition-transform hover:scale-110"
                         >
                           <Star
                             size={20}
@@ -610,54 +624,59 @@ export default function WidgetPage({
                   </div>
                 </div>
               )}
-              {fields.email && <>
-                <label htmlFor="feedlyte-email" style={{ display: "block", marginBottom: "6px", color: palette.text, fontSize: "14px", fontWeight: 600 }}>
-                  Email
-                </label>
-                <input
-                  id="feedlyte-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email (optional)"
-                  aria-label="Email"
-                  style={{ width: "100%", background: palette.field, border: `1px solid ${palette.border}`, borderRadius: "7px", color: palette.text, fontSize: "14px", padding: "7px 10px", outline: "none", boxSizing: "border-box", marginBottom: "10px", fontFamily: "inherit" }}
-                  onFocus={(e) => (e.target.style.borderColor = primaryColor)}
-                  onBlur={(e) => (e.target.style.borderColor = palette.border)}
-                />
-              </>}
+              {fields.email && (
+                <>
+                  <label
+                    htmlFor="feedlyte-email"
+                    className={cn(
+                      "block mb-1.5 text-sm font-semibold",
+                      theme === "light" ? "text-neutral-900" : "text-[#e5e5e5]",
+                    )}
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="feedlyte-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email (optional)"
+                    aria-label="Email"
+                    className={cn(
+                      "w-full text-sm px-2.5 py-1.75 outline-none mb-2.5 font-sans border transition-colors box-border",
+                      isSharpCorners ? "rounded-[3px]" : "rounded-[7px]",
+                      theme === "light"
+                        ? "bg-[#f5f5f5] text-neutral-900 border-[#d4d4d4] placeholder:text-neutral-400"
+                        : "bg-[#111111] text-[#e5e5e5] border-[#2d2d2d] placeholder:text-neutral-500",
+                    )}
+                    onFocus={(e) => (e.target.style.borderColor = primaryColor)}
+                    onBlur={(e) => (e.target.style.borderColor = palette.border)}
+                  />
+                </>
+              )}
               {technicalDetailsEnabled && (
-                <div style={{ marginBottom: "10px" }}>
+                <div className="mb-2.5">
                   <button
                     type="button"
                     onClick={() => setShowTechnicalPanel((prev) => !prev)}
                     aria-expanded={showTechnicalPanel}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      background: "transparent",
-                      border: "none",
-                      color: palette.muted,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      padding: 0,
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}
+                    className={cn(
+                      "flex items-center gap-1.25 bg-transparent border-none text-xs font-semibold p-0 cursor-pointer font-sans transition-colors hover:opacity-80",
+                      theme === "light" ? "text-neutral-600" : "text-[#a3a3a3]",
+                    )}
                   >
                     {showTechnicalPanel ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                     Include technical details (optional)
                   </button>
                   {showTechnicalPanel && (
                     <div
-                      style={{
-                        marginTop: "8px",
-                        padding: "8px 10px",
-                        border: `1px solid ${palette.border}`,
-                        borderRadius: fieldRadius,
-                        background: palette.field,
-                      }}
+                      className={cn(
+                        "mt-2 px-2.5 py-2 border font-sans",
+                        isSharpCorners ? "rounded-[3px]" : "rounded-[7px]",
+                        theme === "light"
+                          ? "bg-[#f5f5f5] border-[#d4d4d4]"
+                          : "bg-[#111111] border-[#2d2d2d]",
+                      )}
                     >
                       <button
                         type="button"
@@ -666,17 +685,8 @@ export default function WidgetPage({
                             !TECHNICAL_DETAIL_FIELDS.every((field) => technicalSelections[field.key]),
                           )
                         }
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: primaryColor,
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          padding: 0,
-                          marginBottom: "6px",
-                          cursor: "pointer",
-                          fontFamily: "inherit",
-                        }}
+                        className="bg-transparent border-none text-[11px] font-semibold p-0 mb-1.5 cursor-pointer font-sans hover:underline"
+                        style={{ color: primaryColor }}
                       >
                         {TECHNICAL_DETAIL_FIELDS.every((field) => technicalSelections[field.key])
                           ? "Deselect all"
@@ -685,21 +695,21 @@ export default function WidgetPage({
                       {TECHNICAL_DETAIL_FIELDS.map((field) => (
                         <label
                           key={field.key}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "7px",
-                            color: palette.text,
-                            fontSize: "12px",
-                            padding: "3px 0",
-                          }}
+                          className={cn(
+                            "flex items-center gap-1.75 text-xs py-0.75 cursor-pointer select-none",
+                            theme === "light" ? "text-neutral-900" : "text-[#e5e5e5]",
+                          )}
                         >
                           <input
                             type="checkbox"
                             checked={Boolean(technicalSelections[field.key])}
                             onChange={(e) =>
-                              setTechnicalSelections((prev) => ({ ...prev, [field.key]: e.target.checked }))
+                              setTechnicalSelections((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.checked,
+                              }))
                             }
+                            className="accent-primary"
                           />
                           {field.label}
                         </label>
@@ -708,19 +718,25 @@ export default function WidgetPage({
                   )}
                 </div>
               )}
-              {consentText && <label style={{ display: "flex", gap: "8px", alignItems: "flex-start", color: palette.muted, fontSize: "11px", marginBottom: "10px" }}>
-                <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} aria-label="Consent" />
-                <span>{consentText}</span>
-              </label>}
-              {error && (
-                <p
-                  aria-live="polite"
-                  style={{
-                    color: "#ef4444",
-                    fontSize: "14px",
-                    margin: "0 0 8px",
-                  }}
+              {consentText && (
+                <label
+                  className={cn(
+                    "flex gap-2 items-start text-[11px] mb-2.5 cursor-pointer select-none",
+                    theme === "light" ? "text-neutral-600" : "text-[#a3a3a3]",
+                  )}
                 >
+                  <input
+                    type="checkbox"
+                    checked={consentGiven}
+                    onChange={(e) => setConsentGiven(e.target.checked)}
+                    aria-label="Consent"
+                    className="accent-primary mt-0.5"
+                  />
+                  <span>{consentText}</span>
+                </label>
+              )}
+              {error && (
+                <p aria-live="polite" className="text-red-500 text-sm m-0 mb-2 font-medium">
                   {error}
                 </p>
               )}
@@ -729,30 +745,36 @@ export default function WidgetPage({
                 onClick={handleSubmit}
                 disabled={!canSubmit}
                 aria-label={error ? "Try again" : "Send feedback"}
+                className={cn(
+                  "w-full border-none text-base font-semibold px-4 py-2 font-sans transition-all",
+                  isSharpCorners ? "rounded-[3px]" : "rounded-[7px]",
+                  !canSubmit
+                    ? "bg-[#d3d0d0] text-[#737373] cursor-not-allowed dark:bg-[#333333] dark:text-[#777777]"
+                    : "cursor-pointer active:scale-[0.99] text-[#1a1a1a]",
+                  prefersReducedMotion ? "transition-none" : "transition-[background,transform] duration-150",
+                )}
                 style={{
-                  width: "100%",
-                  background: !canSubmit ? "#d3d0d0" : primaryColor,
-                  border: "none",
-                  borderRadius: "7px",
-                  color: !canSubmit ? "#737373" : "#1a1a1a",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  padding: "8px 16px",
-                  cursor: !canSubmit ? "not-allowed" : "pointer",
-                  fontFamily: "inherit",
-                  transition: prefersReducedMotion ? "none" : "background 0.15s",
+                  background: canSubmit ? primaryColor : undefined,
                 }}
               >
                 {submitting ? "Sending..." : error ? "Try again" : "Send Feedback"}
               </button>
               {showBranding && (
-                <p style={{ textAlign: "center", margin: "10px 0 0", fontSize: "10px", color: palette.muted }}>
+                <p
+                  className={cn(
+                    "text-center mt-2.5 mb-0 text-[10px]",
+                    theme === "light" ? "text-neutral-500" : "text-[#a3a3a3]",
+                  )}
+                >
                   Powered by{" "}
                   <a
                     href="https://feedlyte.vercel.app"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: palette.muted, fontWeight: 600 }}
+                    className={cn(
+                      "font-semibold hover:underline",
+                      theme === "light" ? "text-neutral-600" : "text-[#a3a3a3]",
+                    )}
                   >
                     Feedlyte
                   </a>
@@ -785,36 +807,21 @@ export default function WidgetPage({
         aria-expanded={open}
         aria-haspopup="dialog"
         data-state={open ? "open" : "closed"}
+        className={cn(
+          "border-none text-white text-[13px] font-semibold cursor-pointer flex items-center justify-center font-sans whitespace-nowrap outline-none",
+          "shadow-[0_4px_16px_rgba(245,158,11,0.35)] focus-visible:ring-2 focus-visible:ring-white/75",
+          showLabel ? "px-4.5 py-2.5 gap-1.5" : "p-3 gap-0",
+          isSharpCorners
+            ? "rounded"
+            : !showLabel
+              ? "rounded-full"
+              : launcherStyle === "tab"
+                ? "rounded-t-[7px] rounded-b-none"
+                : "rounded-[22px]",
+          prefersReducedMotion ? "transition-none" : "transition-transform duration-150 ease-out hover:scale-105 active:scale-95",
+        )}
         style={{
           background: primaryColor,
-          border: "none",
-          borderRadius: isSharpCorners
-            ? "4px"
-            : !showLabel
-              ? "50%"
-              : launcherStyle === "tab"
-                ? "7px 7px 0 0"
-                : "22px",
-          color: "#ffffff",
-          fontSize: "13px",
-          fontWeight: 600,
-          padding: showLabel ? "10px 18px" : "12px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: showLabel ? "6px" : "0px",
-          boxShadow: "0 4px 16px rgba(245,158,11,0.35)",
-          fontFamily: "inherit",
-          whiteSpace: "nowrap",
-          transition: prefersReducedMotion ? "none" : "transform 0.15s ease",
-          outline: "none",
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.boxShadow = "0 0 0 2px rgba(255,255,255,0.75), 0 4px 16px rgba(245,158,11,0.35)";
-        }}
-        onBlur={(e) => {
-          e.currentTarget.style.boxShadow = "0 4px 16px rgba(245,158,11,0.35)";
         }}
       >
         <LauncherIcon size={showLabel ? 15 : 18} strokeWidth={2.25} />

@@ -1,4 +1,12 @@
 import type { Metadata } from "next";
+import { DM_Sans } from "next/font/google";
+import "../globals.css";
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Feedlyte Widget",
@@ -6,10 +14,8 @@ export const metadata: Metadata = {
 
 /**
  * Isolated root layout for the /widget route.
- * No app CSS is imported here — the widget is a self-contained overlay
- * rendered inside an iframe on third-party pages.
- * The <style> tag is placed first in <body> so it applies before any
- * child renders, overriding the browser's default white document background.
+ * Imports globals.css so Tailwind CSS utility classes and design tokens are loaded.
+ * The <style> tag keeps html and body background transparent for the iframe overlay.
  */
 export default function WidgetRootLayout({
   children,
@@ -18,7 +24,7 @@ export default function WidgetRootLayout({
 }) {
   return (
     <html lang="en" style={{ colorScheme: "normal" }}>
-      <body>
+      <body className={`${dmSans.variable} font-sans`}>
         <style>{`
           html, body {
             background: transparent !important;
