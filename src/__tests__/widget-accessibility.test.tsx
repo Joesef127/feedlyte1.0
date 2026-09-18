@@ -1,10 +1,20 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import WidgetPage from "../app/(widget)/widget/page";
 
 describe("widget accessibility contract", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      }),
+    );
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     Object.defineProperty(window.navigator, "onLine", {

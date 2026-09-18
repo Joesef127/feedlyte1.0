@@ -57,6 +57,7 @@ export default function WidgetPage({
   const [cornerStyle, setCornerStyle] = useState("rounded");
   const [showLabel, setShowLabel] = useState(true);
   const [showBranding, setShowBranding] = useState(true);
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
 
   const [category, setCategory] = useState<string>("");
   const [rating, setRating] = useState(0);
@@ -130,30 +131,78 @@ export default function WidgetPage({
   // Fetch project config
   useEffect(() => {
     const id = projectId || resolvedParams?.project;
-    if (!id) return;
+    if (!id) {
+      setIsConfigLoaded(true);
+      return;
+    }
+
+    // Check localStorage cache for instant render on refresh / subsequent visits
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`feedlyte_cfg_${id}`);
+        if (cached) {
+          const data = JSON.parse(cached);
+          if (data) {
+            if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
+            if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
+            if (data.position) setPosition(data.position);
+            if (data.offset) setOffset(sanitizeWidgetNumber(String(data.offset), 24, 8, 80));
+            setCategoryEnabled(Boolean(data.categoryEnabled));
+            setRatingEnabled(Boolean(data.ratingEnabled));
+            setTechnicalDetailsEnabled(Boolean(data.technicalDetailsEnabled));
+            if (data.launcherIcon && LAUNCHER_ICONS[data.launcherIcon]) setLauncherIcon(data.launcherIcon);
+            if (data.cornerStyle === "sharp" || data.cornerStyle === "rounded") setCornerStyle(data.cornerStyle);
+            if (typeof data.showLabel === "boolean") setShowLabel(data.showLabel);
+            setShowBranding(data.showBranding !== false);
+            setIsConfigLoaded(true);
+          }
+        }
+      } catch {
+        // Ignore cache parse error
+      }
+    }
+
+    let isMounted = true;
     const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
     fetch(`${base}/api/widget-config?project=${encodeURIComponent(id)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (!data) return;
-        if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
-        if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
-        if (data.position) setPosition(data.position);
-        if (data.offset) setOffset(sanitizeWidgetNumber(String(data.offset), 24, 8, 80));
-        setCategoryEnabled(Boolean(data.categoryEnabled));
-        setRatingEnabled(Boolean(data.ratingEnabled));
-        setTechnicalDetailsEnabled(Boolean(data.technicalDetailsEnabled));
-        if (data.launcherIcon && LAUNCHER_ICONS[data.launcherIcon]) setLauncherIcon(data.launcherIcon);
-        if (data.cornerStyle === "sharp" || data.cornerStyle === "rounded") setCornerStyle(data.cornerStyle);
-        if (typeof data.showLabel === "boolean") setShowLabel(data.showLabel);
-        setShowBranding(data.showBranding !== false);
+        if (!isMounted) return;
+        if (data) {
+          if (data.color) setWidgetColor(sanitizeWidgetColor(data.color));
+          if (data.label) setWidgetLabel(sanitizeWidgetLabel(data.label));
+          if (data.position) setPosition(data.position);
+          if (data.offset) setOffset(sanitizeWidgetNumber(String(data.offset), 24, 8, 80));
+          setCategoryEnabled(Boolean(data.categoryEnabled));
+          setRatingEnabled(Boolean(data.ratingEnabled));
+          setTechnicalDetailsEnabled(Boolean(data.technicalDetailsEnabled));
+          if (data.launcherIcon && LAUNCHER_ICONS[data.launcherIcon]) setLauncherIcon(data.launcherIcon);
+          if (data.cornerStyle === "sharp" || data.cornerStyle === "rounded") setCornerStyle(data.cornerStyle);
+          if (typeof data.showLabel === "boolean") setShowLabel(data.showLabel);
+          setShowBranding(data.showBranding !== false);
+
+          try {
+            localStorage.setItem(`feedlyte_cfg_${id}`, JSON.stringify(data));
+          } catch {
+            // Ignore storage quota
+          }
+        }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) {
+          setIsConfigLoaded(true);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [projectId, resolvedParams?.project]);
 
   // Notify parent of size changes
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isConfigLoaded || typeof window === "undefined") return;
     const targetOrigin = (() => {
       try {
         const origin = new URL(pageUrl || document.referrer).origin;
@@ -171,7 +220,7 @@ export default function WidgetPage({
     const observer = new ResizeObserver(notifySize);
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [open, submitted, pageUrl]);
+  }, [open, submitted, pageUrl, isConfigLoaded]);
 
   // Escape key handler
   useEffect(() => {
@@ -351,7 +400,8 @@ export default function WidgetPage({
       lang={resolvedParams?.lang ?? "en"}
       data-theme={theme}
       className={cn(
-        "w-full min-h-full flex flex-col justify-end p-0 bg-transparent font-sans",
+        "w-full flex flex-col justify-end p-0 bg-transparent font-sans transition-opacity duration-150",
+        !isConfigLoaded && "opacity-0 pointer-events-none",
         isRight ? "items-end" : "items-start",
       )}
     >
@@ -412,18 +462,20 @@ export default function WidgetPage({
       )}
 
       {/* Launcher trigger button */}
-      <WidgetLauncher
-        open={open}
-        onToggle={handleToggle}
-        launcherRef={launcherRef}
-        primaryColor={primaryColor}
-        widgetLabel={widgetLabel}
-        showLabel={showLabel}
-        launcherIcon={launcherIcon}
-        launcherStyle={launcherStyle}
-        isSharpCorners={isSharpCorners}
-        prefersReducedMotion={prefersReducedMotion}
-      />
+      {isConfigLoaded && (
+        <WidgetLauncher
+          open={open}
+          onToggle={handleToggle}
+          launcherRef={launcherRef}
+          primaryColor={primaryColor}
+          widgetLabel={widgetLabel}
+          showLabel={showLabel}
+          launcherIcon={launcherIcon}
+          launcherStyle={launcherStyle}
+          isSharpCorners={isSharpCorners}
+          prefersReducedMotion={prefersReducedMotion}
+        />
+      )}
     </div>
   );
 }

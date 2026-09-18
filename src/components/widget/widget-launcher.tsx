@@ -43,7 +43,7 @@ export function WidgetLauncher({
       aria-haspopup="dialog"
       data-state={open ? "open" : "closed"}
       className={cn(
-        "border-none text-primary-foreground text-[13px] font-semibold cursor-pointer flex items-center justify-center font-sans whitespace-nowrap outline-none select-none",
+        "border-none text-primary-foreground mx-2.5 text-[13px] font-semibold cursor-pointer flex items-center justify-center font-sans whitespace-nowrap outline-none select-none",
         "shadow-lg focus-visible:ring-2 focus-visible:ring-ring",
         showLabel ? "px-4.5 py-2.5 gap-1.5" : "p-3 gap-0",
         isSharpCorners
