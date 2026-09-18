@@ -272,13 +272,13 @@ export function FilterBar({
         {/* Mobile filter toggle */}
         <button
           onClick={() => setShowFilters((prev) => !prev)}
-          className="md:hidden h-10 w-10 shrink-0 flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
+          className="lg:hidden h-10 w-10 shrink-0 flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"
         >
           {showFilters ? <X size={16} /> : <Funnel size={16} />}
         </button>
 
         {/* Desktop filters */}
-        <div className="hidden md:flex items-center gap-2 flex-wrap">
+        <div className="hidden lg:flex items-center gap-2 flex-wrap">
           <FilterDropdown
             label="Sort"
             options={SORT_OPTIONS}
@@ -377,7 +377,7 @@ export function FilterBar({
 
       {/* Mobile filters expansion */}
       {showFilters && (
-        <div className="md:hidden flex flex-wrap gap-2 pt-2 border-t border-border">
+        <div className="lg:hidden flex flex-wrap gap-2 pt-2 border-t border-border">
           <FilterDropdown
             label="Sort"
             options={SORT_OPTIONS}
@@ -465,7 +465,7 @@ export function FilterBar({
           {hasFilters && (
             <button
               onClick={() => onFiltersChange(DEFAULT_FEEDBACK_FILTERS)}
-              className="px-3 py-2 text-sm rounded-lg border border-border bg-card text-muted-foreground"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-none px-1"
             >
               Reset Filters
             </button>

@@ -118,7 +118,7 @@ export function FeedbackCard({
     >
       {/* Top row: project info + status + menu + checkbox */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div
             onClick={handleCheckboxClick}
             className="flex items-center justify-center w-5 h-5 rounded border border-border bg-background shrink-0 hover:bg-accent transition-colors"

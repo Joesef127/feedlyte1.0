@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare, BarChart3 } from "lucide-react";
 import { FeedbackTable } from "./feedback-table";
@@ -17,24 +17,15 @@ import { MetricsPage } from "@/components/metrics/metrics-page";
 export function AllFeedbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") === "metrics" ? "metrics" : "feedback";
-  const [activeTab, setActiveTab] = useState<"feedback" | "metrics">(initialTab);
+  const activeTab: "feedback" | "metrics" =
+    searchParams.get("tab") === "metrics" ? "metrics" : "feedback";
 
   const { data: feedback = [], isLoading } = useAllFeedback();
   const { data: projects = [] } = useProjects();
   const updateStatus = useUpdateFeedbackStatus();
   const deleteFb = useDeleteFeedback();
 
-  // Sync tab with URL search parameter
-  useEffect(() => {
-    const tabFromUrl = searchParams.get("tab");
-    if (tabFromUrl === "metrics" || tabFromUrl === "feedback") {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams]);
-
   const handleTabChange = (tab: "feedback" | "metrics") => {
-    setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     if (tab === "metrics") {
       params.set("tab", "metrics");
@@ -43,7 +34,7 @@ export function AllFeedbackPage() {
     }
     const query = params.toString();
     const newUrl = query ? `/dashboard/feedback?${query}` : "/dashboard/feedback";
-    window.history.replaceState(null, "", newUrl);
+    router.replace(newUrl, { scroll: false });
   };
 
   // Build project filter options and project lookup map
