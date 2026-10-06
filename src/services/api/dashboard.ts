@@ -45,10 +45,18 @@ export interface TopProject {
 }
 
 export interface FeedbackTrendPoint {
-  date:      string;
-  label:     string;
-  count:     number;
-  resolved?: number;
+  date:          string;
+  label:         string;
+  count:         number;
+  resolved?:     number;
+  unreviewed?:   number;
+  in_review?:    number;
+  in_progress?:  number;
+  accepted?:     number;
+  closed?:       number;
+  not_feasible?: number;
+  spam?:         number;
+  [key: string]: string | number | undefined;
 }
 
 export interface StatusDistributionItem {

@@ -39,11 +39,11 @@ export function DashboardPage() {
   const deleteFb = useDeleteFeedback();
 
   const projectMap = useMemo(() => {
-    const projects = data?.recentProjects ?? [];
+    const projects = data?.allProjects ?? data?.recentProjects ?? [];
     return Object.fromEntries(
       projects.map((p) => [p.id, { name: p.name, color: p.color }]),
     );
-  }, [data?.recentProjects]);
+  }, [data?.allProjects, data?.recentProjects]);
 
   const allProjects = useMemo(() => {
     return data?.allProjects ?? data?.recentProjects ?? [];
@@ -88,6 +88,7 @@ export function DashboardPage() {
             userName={session?.user?.name}
             unreviewedCount={unreviewed}
             projectsCount={projectsCount}
+            timeframe={timeframe}
             onNewProject={() => setShowModal(true)}
           />
 
@@ -114,6 +115,8 @@ export function DashboardPage() {
                 trendData={trendData}
                 resolutionRate={resolutionRate}
                 timeframe={timeframe}
+                activeStatuses={activeStatuses}
+                totalFeedback={totalFeedback}
               />
 
               <DashboardDistributionCard
@@ -130,6 +133,7 @@ export function DashboardPage() {
                 <DashboardRecentFeedback
                   recentFeedback={recentFeedback}
                   projectMap={projectMap}
+                  timeframe={timeframe}
                   onUpdateStatus={async (id, status) => {
                     await updateStatus.mutateAsync({ id, status });
                   }}

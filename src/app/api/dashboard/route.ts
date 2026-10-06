@@ -55,10 +55,15 @@ export async function GET(req: Request) {
       ? { project: { id: projectId, userId } }
       : { project: { userId } };
 
+    const timeframeFeedbackWhere = {
+      ...feedbackWhere,
+      createdAt: { gte: timeframeDate },
+    };
+
     // Run queries in parallel
     const [allUserProjects, feedbackStats, categoryStats, recentFeedback, topProjects, trendFeedback] =
       await Promise.all([
-        // All projects with feedback count
+        // All projects with feedback counts scoped to timeframe
         prisma.project.findMany({
           where:   { userId },
           orderBy: { name: "asc" },
@@ -67,31 +72,32 @@ export async function GET(req: Request) {
             name: true,
             color: true,
             createdAt: true,
-            _count: { select: { feedback: true } },
             feedback: {
-              where:  { status: "unreviewed" },
-              select: { id: true },
+              where: {
+                createdAt: { gte: timeframeDate },
+              },
+              select: { id: true, status: true },
             },
           },
         }),
 
-        // Feedback status aggregation
+        // Feedback status aggregation (within timeframe)
         prisma.feedback.groupBy({
           by:    ["status"],
-          where: feedbackWhere,
+          where: timeframeFeedbackWhere,
           _count: { status: true },
         }),
 
-        // Feedback category aggregation
+        // Feedback category aggregation (within timeframe)
         prisma.feedback.groupBy({
           by:    ["category"],
-          where: { ...feedbackWhere, category: { not: null } },
+          where: { ...timeframeFeedbackWhere, category: { not: null } },
           _count: { category: true },
         }),
 
-        // Recent feedback (last 8)
+        // Recent feedback (within timeframe, last 8)
         prisma.feedback.findMany({
-          where:   feedbackWhere,
+          where:   timeframeFeedbackWhere,
           orderBy: { createdAt: "desc" },
           take:    8,
           include: {
@@ -99,14 +105,13 @@ export async function GET(req: Request) {
           },
         }),
 
-        // Top projects by feedback count (last 30 days)
+        // Top projects by feedback count (within timeframe)
         prisma.project.findMany({
           where:   { userId },
           include: {
-            _count: { select: { feedback: true } },
             feedback: {
               where: {
-                createdAt: { gte: thirtyDaysAgo },
+                createdAt: { gte: timeframeDate },
               },
               select: { id: true },
             },
@@ -117,10 +122,7 @@ export async function GET(req: Request) {
 
         // Feedback for trend chart (within timeframe)
         prisma.feedback.findMany({
-          where: {
-            ...feedbackWhere,
-            createdAt: { gte: timeframeDate },
-          },
+          where: timeframeFeedbackWhere,
           select: { createdAt: true, status: true },
           orderBy: { createdAt: "asc" },
         }),
@@ -172,17 +174,43 @@ export async function GET(req: Request) {
         };
       });
 
-    // Timeframe volume trend daily map
-    const dailyMap: Record<string, { count: number; resolved: number }> = {};
+    // Timeframe volume trend daily map tracking submissions and all lifecycle states
+    const dailyMap: Record<
+      string,
+      {
+        count: number;
+        resolved: number;
+        unreviewed: number;
+        in_review: number;
+        in_progress: number;
+        accepted: number;
+        closed: number;
+        not_feasible: number;
+        spam: number;
+      }
+    > = {};
+
     for (let d = new Date(timeframeDate); d <= now; d.setDate(d.getDate() + 1)) {
-      dailyMap[d.toISOString().slice(0, 10)] = { count: 0, resolved: 0 };
+      dailyMap[d.toISOString().slice(0, 10)] = {
+        count: 0,
+        resolved: 0,
+        unreviewed: 0,
+        in_review: 0,
+        in_progress: 0,
+        accepted: 0,
+        closed: 0,
+        not_feasible: 0,
+        spam: 0,
+      };
     }
+
     for (const f of trendFeedback) {
       const day = f.createdAt.toISOString().slice(0, 10);
       if (day in dailyMap) {
         dailyMap[day].count += 1;
-        if (f.status === "resolved") {
-          dailyMap[day].resolved += 1;
+        const normalizedStatus = f.status === "reviewed" ? "in_review" : f.status;
+        if (normalizedStatus in dailyMap[day]) {
+          (dailyMap[day] as Record<string, number>)[normalizedStatus] += 1;
         }
       }
     }
@@ -192,8 +220,7 @@ export async function GET(req: Request) {
       return {
         date,
         label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        count: data.count,
-        resolved: data.resolved,
+        ...data,
       };
     });
 
@@ -220,14 +247,17 @@ export async function GET(req: Request) {
         name:  p.name,
         color: p.color,
       })),
-      recentProjects: allUserProjects.slice(0, 5).map((p) => ({
-        id:              p.id,
-        name:            p.name,
-        color:           p.color,
-        feedbackCount:   p._count.feedback,
-        unreviewedCount: p.feedback.length,
-        createdAt:       p.createdAt.toISOString(),
-      })),
+      recentProjects: allUserProjects
+        .filter((p) => (!projectId ? true : p.id === projectId))
+        .slice(0, 5)
+        .map((p) => ({
+          id:              p.id,
+          name:            p.name,
+          color:           p.color,
+          feedbackCount:   p.feedback.length,
+          unreviewedCount: p.feedback.filter((f) => f.status === "unreviewed").length,
+          createdAt:       p.createdAt.toISOString(),
+        })),
       recentFeedback: recentFeedback.map((f) => ({
         id:        f.id,
         message:   f.message,
@@ -247,7 +277,7 @@ export async function GET(req: Request) {
           id:             p.id,
           name:           p.name,
           color:          p.color,
-          totalFeedback:  p._count.feedback,
+          totalFeedback:  p.feedback.length,
           last30Days:     p.feedback.length,
         }))
         .sort((a, b) => b.last30Days - a.last30Days)

@@ -10,6 +10,7 @@ import type { Feedback, Status } from "@/types";
 interface DashboardRecentFeedbackProps {
   recentFeedback: Feedback[];
   projectMap: Record<string, { name: string; color: string }>;
+  timeframe?: "7d" | "30d" | "90d";
   onUpdateStatus: (id: string, status: Status) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
@@ -17,6 +18,7 @@ interface DashboardRecentFeedbackProps {
 export function DashboardRecentFeedback({
   recentFeedback,
   projectMap,
+  timeframe,
   onUpdateStatus,
   onDelete,
 }: DashboardRecentFeedbackProps) {
@@ -40,7 +42,13 @@ export function DashboardRecentFeedback({
           <EmptyState
             icon={<MessageSquare size={22} />}
             title="No feedback received yet"
-            description="When users submit feedback through your embedded widget, it will appear here in real time."
+            description={
+              timeframe
+                ? `No feedback submissions recorded in the last ${
+                    timeframe === "7d" ? "7 days" : timeframe === "90d" ? "90 days" : "30 days"
+                  }.`
+                : "When users submit feedback through your embedded widget, it will appear here in real time."
+            }
           />
         </Card>
       ) : (

@@ -8,6 +8,7 @@ interface DashboardHeaderProps {
   userName?: string | null;
   unreviewedCount: number;
   projectsCount: number;
+  timeframe?: "7d" | "30d" | "90d";
   onNewProject: () => void;
 }
 
@@ -22,16 +23,23 @@ export function DashboardHeader({
   userName,
   unreviewedCount,
   projectsCount,
+  timeframe,
   onNewProject,
 }: DashboardHeaderProps) {
   const firstName = userName?.split(" ")[0] ?? "there";
 
+  const tfLabel = timeframe
+    ? `in the last ${timeframe === "7d" ? "7 days" : timeframe === "90d" ? "90 days" : "30 days"}`
+    : "";
+
   const summaryLine =
     unreviewedCount === 0
-      ? "Everything is up to date."
+      ? `Everything is up to date${tfLabel ? ` ${tfLabel}` : ""}.`
       : `You have ${unreviewedCount} unreviewed feedback item${
           unreviewedCount !== 1 ? "s" : ""
-        } across ${projectsCount} project${projectsCount !== 1 ? "s" : ""}.`;
+        } across ${projectsCount} project${projectsCount !== 1 ? "s" : ""}${
+          tfLabel ? ` ${tfLabel}` : ""
+        }.`;
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
