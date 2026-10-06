@@ -106,7 +106,7 @@ export default function MarketingLayout({
         )}
       </head>
       <body
-        className={`${instrumentSerif.variable} ${fraunces.variable} ${dmSans.variable} ${dmMono.variable} ${lora.variable} font-sans antialiased text-foreground bg-background grain selection:bg-primary/20 selection:text-primary min-h-screen`}
+        className={`${fraunces.variable} ${dmSans.variable} ${dmMono.variable} ${lora.variable} font-sans antialiased text-foreground bg-background grain selection:bg-primary/20 selection:text-primary min-h-screen`}
       >
         <script
           dangerouslySetInnerHTML={{
