@@ -5,15 +5,17 @@ import type { Project, WidgetCornerStyle, WidgetLauncherIcon, WidgetPosition } f
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
+import { SettingsLoading } from "./loading";
 
 const COMMON_TIMEZONES = Intl.supportedValuesOf("timeZone");
 
 interface SettingsTabProps {
-  project: Project;
+  project?: Project;
   onUpdate: (project: Project) => void;
   isSaving: boolean;
   isError: boolean;
   errorMsg: string;
+  isLoading?: boolean;
   onSave: (data: {
     color: string;
     position: WidgetPosition;
@@ -33,13 +35,21 @@ interface SettingsTabProps {
   }) => void;
 }
 
-export function SettingsTab({
+export function SettingsTab(props: SettingsTabProps) {
+  if (props.isLoading || !props.project) {
+    return <SettingsLoading />;
+  }
+
+  return <SettingsForm {...props} project={props.project} />;
+}
+
+function SettingsForm({
   project,
   isSaving,
   isError,
   errorMsg,
   onSave,
-}: SettingsTabProps) {
+}: SettingsTabProps & { project: Project }) {
   const [color, setColor] = useState(project.color);
   const [position, setPosition] = useState<WidgetPosition>(project.position);
   const [label, setLabel] = useState(project.label);

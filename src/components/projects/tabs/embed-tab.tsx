@@ -2,12 +2,17 @@ import type { Project } from "@/types";
 import { Card } from "@/components/ui/card";
 import { EmbedCode } from "@/components/projects/embed-code";
 import { WidgetPreview } from "@/components/widget/widget-preview";
+import { EmbedLoading } from "./loading";
 
 interface EmbedTabProps {
-  project: Project;
+  project?: Project;
+  isLoading?: boolean;
 }
 
-export function EmbedTab({ project }: EmbedTabProps) {
+export function EmbedTab({ project, isLoading = false }: EmbedTabProps) {
+  if (isLoading || !project) {
+    return <EmbedLoading />;
+  }
   return (
     <div className="xl:max-w-4/5 2xl:max-w-3/5 space-y-4">
       <EmbedCode project={project} />

@@ -7,6 +7,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { BarChart2 } from "lucide-react";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { AnalyticsLoading } from "./loading";
 
 interface AnalyticsTabProps {
   projectId:    string;
@@ -51,11 +52,7 @@ export function AnalyticsTab({ projectId, projectColor }: AnalyticsTabProps) {
   const { data, isLoading } = useAnalytics(projectId);
 
   if (isLoading) {
-    return (
-      <div className="text-center py-16 text-muted-foreground text-sm">
-        Loading analytics...
-      </div>
-    );
+    return <AnalyticsLoading />;
   }
 
   if (!data || data.total === 0) {

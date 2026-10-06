@@ -5,7 +5,7 @@ const TABS: { id: ProjectDetailTab; label: string }[] = [
   { id: "analytics",   label: "Analytics"      },
   { id: "integrations",label: "Integrations"   },
   { id: "embed",        label: "Embed Code"     },
-  { id: "settings",     label: "Widget Settings"},
+  { id: "settings",     label: "Settings"},
 ];
 
 interface ProjectTabsProps {

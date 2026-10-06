@@ -25,6 +25,7 @@ import {
 } from "@/hooks/use-webhooks";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/error-messages";
+import { IntegrationsLoading } from "./loading";
 
 interface IntegrationsTabProps {
   projectId: string;
@@ -220,6 +221,10 @@ export function IntegrationsTab({ projectId }: IntegrationsTabProps) {
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
   const [secret, setSecret] = useState("");
+
+  if (isLoading) {
+    return <IntegrationsLoading />;
+  }
 
   const resetForm = () => {
     setUrl("");

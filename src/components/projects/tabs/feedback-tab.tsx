@@ -2,6 +2,7 @@
 
 import type { Feedback, Status } from "@/types";
 import { FeedbackTable } from "@/components/feedback/feedback-table";
+import { FeedbackTableLoading } from "./loading";
 
 interface FeedbackTabProps {
   feedback:       Feedback[];
@@ -16,6 +17,10 @@ export function FeedbackTab({
   onUpdateStatus,
   onDelete,
 }: FeedbackTabProps) {
+  if (isLoading) {
+    return <FeedbackTableLoading />;
+  }
+
   return (
     <FeedbackTable
       feedback={feedback}
