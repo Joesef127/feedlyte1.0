@@ -140,8 +140,7 @@ export function FeedbackTable({
       exportFeedbackCSV(filtered, projectMap);
       toast.success(`Exported ${filtered.length} feedback item(s) to CSV`);
     } catch (error) {
-      toast.error("Failed to export CSV");
-      console.error("CSV export error:", error);
+      toast.error(friendlyError(error, "Failed to export CSV"));
     }
   };
 
@@ -150,8 +149,7 @@ export function FeedbackTable({
       exportFeedbackJSON(filtered, projectMap);
       toast.success(`Exported ${filtered.length} feedback item(s) to JSON`);
     } catch (error) {
-      toast.error("Failed to export JSON");
-      console.error("JSON export error:", error);
+      toast.error(friendlyError(error, "Failed to export JSON"));
     }
   };
 
@@ -160,8 +158,7 @@ export function FeedbackTable({
       exportFeedbackPDF(filtered, projectMap);
       toast.success(`Exported ${filtered.length} feedback item(s) to PDF`);
     } catch (error) {
-      toast.error("Failed to export PDF");
-      console.error("PDF export error:", error);
+      toast.error(friendlyError(error, "Failed to export PDF"));
     }
   };
 

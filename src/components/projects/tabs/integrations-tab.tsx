@@ -24,6 +24,7 @@ import {
   type Webhook,
 } from "@/hooks/use-webhooks";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/error-messages";
 
 interface IntegrationsTabProps {
   projectId: string;
@@ -197,8 +198,7 @@ function WebhookRow({
                   setDeleteModal(false);
                 })
                 .catch((err) => {
-                  toast.error("Failed to delete webhook");
-                  console.error(err);
+                  toast.error(friendlyError(err));
                 });
             }}
             disabled={deleteWebhook.isPending}

@@ -11,7 +11,7 @@ export function HowItWorks() {
   const codeSnippets = {
     html: `<!-- 1. Drop before closing </body> tag -->
 <script
-  src="https://feedlyte.vercel.app/widget.js"
+  src="https://feedlyte.com/widget.js"
   data-project="proj_live_94k2m"
   defer
 ></script>`,
@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <Script
-          src="https://feedlyte.vercel.app/widget.js"
+          src="https://feedlyte.com/widget.js"
           data-project="proj_live_94k2m"
           strategy="lazyOnload"
         />
@@ -35,7 +35,7 @@ export default function RootLayout({ children }) {
     react: `// In your App.tsx or index.html
 useEffect(() => {
   const script = document.createElement("script");
-  script.src = "https://feedlyte.vercel.app/widget.js";
+  script.src = "https://feedlyte.com/widget.js";
   script.setAttribute("data-project", "proj_live_94k2m");
   script.defer = true;
   document.body.appendChild(script);

@@ -33,7 +33,7 @@ export function InteractiveDemo() {
   ];
 
   const generatedScript = `<script
-  src="https://feedlyte.vercel.app/widget.js"
+  src="https://feedlyte.com/widget.js"
   data-project="proj_k9x2m"
   data-color="${color}"
   data-position="${position}"

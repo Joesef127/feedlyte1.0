@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { FeedbackRow } from "@/components/feedback/feedback-row";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Feedback, Status } from "@/types";
 
 interface DashboardRecentFeedbackProps {
@@ -35,10 +36,12 @@ export function DashboardRecentFeedback({
       </div>
 
       {!recentFeedback.length ? (
-        <Card>
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No feedback yet for this selection.
-          </p>
+        <Card className="p-2 sm:p-4">
+          <EmptyState
+            icon={<MessageSquare size={22} />}
+            title="No feedback received yet"
+            description="When users submit feedback through your embedded widget, it will appear here in real time."
+          />
         </Card>
       ) : (
         recentFeedback.slice(0, 6).map((fb) => (

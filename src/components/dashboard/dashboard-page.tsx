@@ -18,6 +18,7 @@ import { DashboardDistributionCard } from "./dashboard-distribution-card";
 import { DashboardRecentFeedback } from "./dashboard-recent-feedback";
 import { DashboardRecentProjects } from "./dashboard-recent-projects";
 import { CreateProjectModal } from "./create-project-modal";
+import DashboardLoading from "@/app/(main)/dashboard/loading";
 
 export function DashboardPage() {
   const router = useRouter();
@@ -79,74 +80,74 @@ export function DashboardPage() {
 
   return (
     <div className="flex-1 px-5 sm:px-9 py-8 overflow-y-auto">
-      <DashboardHeader
-        userName={session?.user?.name}
-        unreviewedCount={unreviewed}
-        projectsCount={projectsCount}
-        onNewProject={() => setShowModal(true)}
-      />
-
-      <DashboardFilterBar
-        selectedProject={selectedProject}
-        onSelectProject={setSelectedProject}
-        projects={allProjects}
-        timeframe={timeframe}
-        onSelectTimeframe={setTimeframe}
-      />
-
       {isLoading ? (
-        <div className="text-center py-20 text-muted-foreground text-sm">
-          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          Loading dashboard...
-        </div>
+        <DashboardLoading />
       ) : (
-        <div className="flex flex-col gap-8">
-          <DashboardStatsGrid
-            totalProjects={projectsCount}
-            totalFeedback={totalFeedback}
-            unreviewed={unreviewed}
-            reviewed={data?.stats.reviewed ?? 0}
-            resolved={data?.stats.resolved ?? 0}
+        <>
+          <DashboardHeader
+            userName={session?.user?.name}
+            unreviewedCount={unreviewed}
+            projectsCount={projectsCount}
+            onNewProject={() => setShowModal(true)}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-4 xl:gap-6">
-            <DashboardActivityChart
-              trendData={trendData}
-              resolutionRate={resolutionRate}
-              timeframe={timeframe}
-            />
+          <DashboardFilterBar
+            selectedProject={selectedProject}
+            onSelectProject={setSelectedProject}
+            projects={allProjects}
+            timeframe={timeframe}
+            onSelectTimeframe={setTimeframe}
+          />
 
-            <DashboardDistributionCard
-              distributionView={distributionView}
-              onViewChange={setDistributionView}
-              activeStatuses={activeStatuses}
-              activeCategories={activeCategories}
+
+          <div className="flex flex-col gap-8">
+            <DashboardStatsGrid
+              totalProjects={projectsCount}
               totalFeedback={totalFeedback}
+              unreviewed={unreviewed}
+              reviewed={data?.stats.reviewed ?? 0}
+              resolved={data?.stats.resolved ?? 0}
             />
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
-            <div className="flex flex-col gap-6 xl:col-span-2">
-              <DashboardRecentFeedback
-                recentFeedback={recentFeedback}
-                projectMap={projectMap}
-                onUpdateStatus={async (id, status) => {
-                  await updateStatus.mutateAsync({ id, status });
-                }}
-                onDelete={async (id) => {
-                  await deleteFb.mutateAsync(id);
-                }}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-4 xl:gap-6">
+              <DashboardActivityChart
+                trendData={trendData}
+                resolutionRate={resolutionRate}
+                timeframe={timeframe}
+              />
+
+              <DashboardDistributionCard
+                distributionView={distributionView}
+                onViewChange={setDistributionView}
+                activeStatuses={activeStatuses}
+                activeCategories={activeCategories}
+                totalFeedback={totalFeedback}
               />
             </div>
 
-            <div className="flex flex-col gap-6 xl:gap-8">
-              <DashboardRecentProjects
-                recentProjects={data?.recentProjects ?? []}
-                onNewProject={() => setShowModal(true)}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">
+              <div className="flex flex-col gap-6 xl:col-span-2">
+                <DashboardRecentFeedback
+                  recentFeedback={recentFeedback}
+                  projectMap={projectMap}
+                  onUpdateStatus={async (id, status) => {
+                    await updateStatus.mutateAsync({ id, status });
+                  }}
+                  onDelete={async (id) => {
+                    await deleteFb.mutateAsync(id);
+                  }}
+                />
+              </div>
+
+              <div className="flex flex-col gap-6 xl:gap-8">
+                <DashboardRecentProjects
+                  recentProjects={data?.recentProjects ?? []}
+                  onNewProject={() => setShowModal(true)}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <CreateProjectModal

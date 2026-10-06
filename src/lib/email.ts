@@ -81,7 +81,6 @@ export async function sendPasswordResetEmail(
       subject: "Reset your Feedlyte password",
       html: passwordResetTemplate(resetUrl),
     });
-    console.log("[email] Password reset email sent", { id: result?.id });
     return { success: true };
   } catch (error) {
     console.error("[email] sendPasswordResetEmail failed", error);

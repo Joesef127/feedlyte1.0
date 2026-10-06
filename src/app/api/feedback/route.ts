@@ -24,6 +24,7 @@ const IDEMPOTENCY_TTL_MS = 60 * 60 * 1000;
 const IDEMPOTENCY_CACHE = new Map<string, number>();
 
 const FALLBACK_ORIGINS = [
+  "https://feedlyte.com",
   "https://feedlyte.vercel.app",
   "http://localhost:3000",
 ];

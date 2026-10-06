@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import { siteConfig } from "@/lib/site-config";
 import "../globals.css";
 
 const dmSans = DM_Sans({
@@ -9,7 +10,16 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: "Track your feedback — Feedlyte",
+  description: "Check real-time review status, updates, and resolution progress for your submitted feedback.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 /**

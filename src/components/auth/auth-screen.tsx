@@ -65,10 +65,10 @@ export function AuthScreen() {
                 strokeWidth={2}
               />
             </div>
-            <span className="text-[22px] font-bold text-foreground tracking-[-0.03em]">
-              Feedlyte
-            </span>
-          </div>
+          <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0 inline">
+            Feedlyte
+          </h1>
+        </div>
           <p className="text-muted-foreground text-sm">
             Feedback infrastructure for modern products.
           </p>
@@ -127,9 +127,9 @@ export function AuthScreen() {
               strokeWidth={2}
             />
           </div>
-          <span className="text-[22px] font-bold text-foreground tracking-[-0.03em]">
+          <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0 inline">
             Feedlyte
-          </span>
+          </h1>
         </div>
         <p className="text-muted-foreground text-sm">
           Feedback infrastructure for modern products.

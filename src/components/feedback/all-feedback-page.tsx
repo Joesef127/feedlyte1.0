@@ -13,6 +13,7 @@ import { useProjects } from "@/hooks/use-projects";
 import type { FilterOption } from "@/components/ui/filter-dropdown";
 import { ProjectStats } from "../projects/project-stats";
 import { MetricsPage } from "@/components/metrics/metrics-page";
+import FeedbackLoading from "@/app/(main)/dashboard/feedback/loading";
 
 export function AllFeedbackPage() {
   const router = useRouter();
@@ -110,19 +111,25 @@ export function AllFeedbackPage() {
       {/* Tab Content */}
       {activeTab === "feedback" ? (
         <>
-          <ProjectStats
-            feedback={feedback}
-            isLoading={isLoading}
-            projects={projects.map((p) => p.id)}
-          />
+          {isLoading ? (
+            <FeedbackLoading />
+          ) : (
+            <>
+            <ProjectStats
+              feedback={feedback}
+              isLoading={isLoading}
+              projects={projects.map((p) => p.id)}
+            />
           <FeedbackTable
-            feedback={feedback}
-            isLoading={isLoading}
-            onUpdateStatus={(id, status) => updateStatus.mutateAsync({ id, status })}
-            onDelete={(id) => deleteFb.mutateAsync(id)}
-            projects={projectOptions}
-            projectMap={projectMap}
+          feedback={feedback}
+          isLoading={isLoading}
+          onUpdateStatus={(id, status) => updateStatus.mutateAsync({ id, status })}
+          onDelete={(id) => deleteFb.mutateAsync(id)}
+          projects={projectOptions}
+          projectMap={projectMap}
           />
+        </>
+          )}
         </>
       ) : (
         <MetricsPage embedded />

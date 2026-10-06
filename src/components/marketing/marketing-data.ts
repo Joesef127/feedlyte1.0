@@ -115,7 +115,7 @@ export const howItWorksSteps: HowItWorksStep[] = [
     description:
       "Copy your generated script snippet and drop it into your HTML or root layout. The loader defers execution until page paint is complete.",
     detail: "Loads in <50ms. Sandboxed in an iframe with zero CSS or JS bleed.",
-    codeSnippet: `<script\n  src="https://feedlyte.vercel.app/widget.js"\n  data-project="proj_live_94k2m"\n  defer\n></script>`,
+    codeSnippet: `<script\n  src="https://feedlyte.com/widget.js"\n  data-project="proj_live_94k2m"\n  defer\n></script>`,
   },
   {
     number: "03",

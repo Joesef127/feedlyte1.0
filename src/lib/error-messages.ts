@@ -56,14 +56,17 @@ const ERROR_PATTERNS: ErrorPattern[] = [
  * Transforms a technical error into a user-friendly message.
  * Falls back to a generic message if no pattern matches.
  */
-export function friendlyError(error: unknown): string {
+export function friendlyError(
+  error: unknown,
+  fallback = "Something unexpected happened. Please try again."
+): string {
   const message = error instanceof Error
     ? error.message
     : typeof error === "string"
       ? error
       : "";
 
-  if (!message) return "Something unexpected happened. Please try again.";
+  if (!message) return fallback;
 
   for (const pattern of ERROR_PATTERNS) {
     if (typeof pattern.match === "string") {
@@ -78,5 +81,5 @@ export function friendlyError(error: unknown): string {
     return message;
   }
 
-  return "Something unexpected happened. Please try again.";
+  return fallback;
 }

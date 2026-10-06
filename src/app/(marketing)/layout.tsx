@@ -6,6 +6,7 @@ import {
   Fraunces,
   Lora,
 } from "next/font/google";
+import { siteConfig } from "@/lib/site-config";
 import "./marketing.css";
 import "../globals.css";
 
@@ -38,14 +39,51 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Feedlyte — Feedback infrastructure for modern products",
-  description:
-    "Drop one script tag into any website and instantly collect user feedback. Sandboxed iframe, multi-category triage, and real-time dashboard.",
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: "Feedlyte - Feedback infrastructure for modern products",
+    template: "%s | Feedlyte",
+  },
+  description: siteConfig.description,
+  keywords: [...siteConfig.keywords],
+  authors: [{ name: "Feedlyte Inc.", url: siteConfig.productionUrl }],
+  creator: "Feedlyte",
+  publisher: "Feedlyte",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Feedlyte — Feedback infrastructure for modern products",
-    description:
-      "Drop one script tag into any website and instantly collect user feedback. Sandboxed iframe, multi-category triage, and real-time dashboard.",
+    title: "Feedlyte - Feedback infrastructure for modern products",
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    locale: "en_US",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Feedlyte - Feedback infrastructure for modern products",
+    description: siteConfig.description,
+    creator: siteConfig.twitterHandle,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: "/favicon.ico",
   },
 };
 
@@ -61,14 +99,14 @@ export default function MarketingLayout({
       <head>
         {projectId && (
           <script
-            src="https://feedlyte.vercel.app/widget.js"
+            src="/widget.js"
             data-project={projectId}
             defer
           ></script>
         )}
       </head>
       <body
-        className={`${fraunces.variable} ${dmSans.variable} ${dmMono.variable} ${lora.variable} font-sans antialiased text-foreground bg-background grain selection:bg-primary/20 selection:text-primary min-h-screen`}
+        className={`${instrumentSerif.variable} ${fraunces.variable} ${dmSans.variable} ${dmMono.variable} ${lora.variable} font-sans antialiased text-foreground bg-background grain selection:bg-primary/20 selection:text-primary min-h-screen`}
       >
         <script
           dangerouslySetInnerHTML={{

@@ -11,6 +11,7 @@ import { MetricsVolumeChart } from "./metrics-volume-chart";
 import { MetricsStatusCard } from "./metrics-status-card";
 import { MetricsCategoryCard } from "./metrics-category-card";
 import { MetricsProjectVolumeCard } from "./metrics-project-volume-card";
+import MetricsLoading from "@/app/(main)/dashboard/metrics/loading";
 
 export function MetricsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [timeframe, setTimeframe] = useState<7 | 30 | 90>(30);
@@ -18,14 +19,7 @@ export function MetricsPage({ embedded = false }: { embedded?: boolean } = {}) {
 
   if (isLoading) {
     return (
-      <div
-        className={`flex flex-col items-center justify-center p-12 text-muted-foreground ${
-          embedded ? "min-h-[300px]" : "flex-1"
-        }`}
-      >
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-sm font-medium">Gathering workspace metrics...</p>
-      </div>
+      <MetricsLoading />
     );
   }
 

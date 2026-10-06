@@ -49,7 +49,8 @@ function Modal({
             </div>
             <button
               onClick={onClose}
-              className="text-[#737373] hover:text-foreground cursor-pointer p-1 transition-colors"
+              className="text-muted-foreground hover:text-foreground cursor-pointer p-2 rounded-lg hover:bg-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+              aria-label="Close dialog"
             >
               <X size={18} />
             </button>

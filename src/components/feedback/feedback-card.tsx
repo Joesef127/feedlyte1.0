@@ -207,7 +207,6 @@ export function FeedbackCard({
                         toast.success(`Marked as ${label.toLowerCase()}`);
                       } catch (error) {
                         toast.error(friendlyError(error));
-                        console.error(error);
                       }
                     }}
                     className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left disabled:opacity-40 disabled:cursor-not-allowed"
@@ -239,7 +238,7 @@ export function FeedbackCard({
 
       {/* Message */}
       <p
-        className="text-sm text-foreground leading-relaxed line-clamp-3 cursor-pointer hover:text-primary transition-colors"
+        className="text-sm text-foreground leading-relaxed line-clamp-3 break-words cursor-pointer hover:text-primary transition-colors"
       >
         {fb.message}
       </p>
@@ -329,7 +328,6 @@ export function FeedbackCard({
                     setDeleteModalOpen(false);
                   } catch (error) {
                     toast.error(friendlyError(error));
-                    console.error(error);
                   } finally {
                     setIsDeleting(false);
                   }

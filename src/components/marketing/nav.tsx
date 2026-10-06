@@ -6,10 +6,9 @@ import { Menu, MessageSquare, X, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navLinks = [
-  { label: "Product", href: "#features" },
+  { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Capabilities", href: "#capabilities" },
-  { label: "Widget Demo", href: "#demo" },
+  { label: "Live Demo", href: "#demo" },
   { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
 ];

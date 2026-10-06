@@ -103,7 +103,7 @@ export function FeedbackDetailHeader({
       )}
 
       <div className="bg-background border border-border rounded-xl px-3 sm:px-5 py-4">
-        <p className="text-sm sm:text-base text-foreground leading-relaxed m-0 whitespace-pre-wrap">
+        <p className="text-sm sm:text-base text-foreground leading-relaxed m-0 whitespace-pre-wrap break-words">
           {message}
         </p>
       </div>

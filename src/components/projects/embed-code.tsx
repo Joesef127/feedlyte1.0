@@ -18,7 +18,10 @@ function escapeAttribute(value: string): string {
 export function EmbedCode({ project }: EmbedCodeProps) {
   const [copied, setCopied] = useState(false);
 
-  const prodUrl = process.env.PROD_URL || "https://feedlyte.vercel.app";
+  const prodUrl =
+    typeof window !== "undefined"
+      ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin)
+      : (process.env.NEXT_PUBLIC_APP_URL || "https://feedlyte.com");
 
   const embedCode = `<script src="${prodUrl}/widget.js?v=${WIDGET_SCRIPT_VERSION}" data-project="${escapeAttribute(project.id)}" data-position="${project.position}" data-color="${escapeAttribute(project.color)}" data-label="${escapeAttribute(project.label)}" data-offset="24" data-width="360" data-theme="dark" data-fields="message,email" data-launcher="pill"></script>`;
 

@@ -41,13 +41,13 @@ export default function DashboardLayout({
   return () => window.removeEventListener("keydown", handleKeyDown);
 }, []);
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
-  }
+  // if (status === "loading") {
+  //   return (
+  //     <div className="min-h-screen bg-background flex items-center justify-center">
+  //       <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+  //     </div>
+  //   );
+  // }
 
   if (status === "unauthenticated") return null;
 

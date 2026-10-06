@@ -146,7 +146,7 @@ export function FeedbackRow({
       {/* Main content — clickable */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between flex-wrap gap-1.5 mb-2">
-          <p className="text-sm text-foreground font-medium leading-relaxed line-clamp-2 truncate max-w-4/5">
+          <p className="text-sm text-foreground font-medium leading-relaxed line-clamp-2 break-words max-w-full md:max-w-[85%]">
             {fb.message}
           </p>
 
@@ -284,7 +284,6 @@ export function FeedbackRow({
                         toast.success(`Marked as ${label.toLowerCase()}`);
                       } catch (error) {
                         toast.error(friendlyError(error));
-                        console.error(error);
                       }
                     }}
                     className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer text-left disabled:opacity-40 disabled:cursor-not-allowed"
@@ -345,7 +344,6 @@ export function FeedbackRow({
                     setDeleteModalOpen(false);
                   } catch (error) {
                     toast.error(friendlyError(error));
-                    console.error(error);
                   } finally {
                     setIsDeleting(false);
                   }

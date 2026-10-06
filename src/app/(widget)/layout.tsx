@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import { siteConfig } from "@/lib/site-config";
 import "../globals.css";
 
 const dmSans = DM_Sans({
@@ -9,7 +10,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: "Feedlyte Widget",
+  description: "Sandboxed Feedlyte feedback collection widget.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 /**

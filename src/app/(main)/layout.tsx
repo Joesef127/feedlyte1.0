@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { siteConfig } from "@/lib/site-config";
 import "../globals.css";
 
 const dmSans = DM_Sans({
@@ -16,8 +17,15 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Feedlyte — Feedback infrastructure for modern products",
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: "Dashboard | Feedlyte",
+    template: "%s | Feedlyte",
+  },
   description: "Collect and manage feedback from your users with a lightweight embeddable widget.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function MainLayout({

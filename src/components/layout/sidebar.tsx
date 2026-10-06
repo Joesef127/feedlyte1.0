@@ -35,7 +35,7 @@ interface SidebarProps {
 const NAV_ITEMS: { id: Page; label: string; Icon: React.FC<{ size?: number }>; }[] = [
   { id: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { id: "feedback", label: "All Feedback", Icon: MessageSquare },
-  // { id: "metrics", label: "Metrics", Icon: BarChart3 },
+  { id: "metrics", label: "Metrics", Icon: BarChart3 },
   { id: "projects", label: "Projects", Icon: LayoutGrid },
   { id: "settings", label: "Settings", Icon: Settings },
   { id: "profile", label: "Profile", Icon: User },

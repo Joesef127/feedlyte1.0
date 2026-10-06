@@ -90,7 +90,6 @@ export function BulkActionBar({
       await onBulkDelete();
     } catch (err) {
       toast.error(friendlyError(err));
-      console.error("Bulk delete error:", err);
     } finally {
       setShowDeleteModal(false);
     }

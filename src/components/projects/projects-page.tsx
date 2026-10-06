@@ -14,6 +14,7 @@ import { ProjectFilterBar, ProjectFilters } from "./project-filter-bar";
 import { applyProjectFilters } from "./filtering-helper";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/error-messages";
+import ProjectsLoading from "@/app/(main)/dashboard/projects/loading";
 
 export function ProjectsPage() {
   const router = useRouter();
@@ -59,6 +60,12 @@ export function ProjectsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <ProjectsLoading />
+    )
+  }
+
   return (
     <ErrorBoundary context="projects-page">
       <div className="flex-1 px-4 sm:px-9 py-8 overflow-y-auto">
@@ -79,12 +86,6 @@ export function ProjectsPage() {
         </div>
 
         <ProjectFilterBar filters={filters} onFiltersChange={setFilters} />
-
-        {isLoading && (
-          <div className="text-center py-20 text-muted-foreground text-sm">
-            Loading projects...
-          </div>
-        )}
 
         {isError && (
           <EmptyState

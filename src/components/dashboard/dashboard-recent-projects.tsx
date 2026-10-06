@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, LayoutGrid, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface RecentProjectItem {
   id: string;
@@ -38,16 +39,18 @@ export function DashboardRecentProjects({
               <ArrowRight size={12} />
             </Link>
           </div>
-          <Card>
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No projects yet.
-            </p>
-            <div className="flex justify-center">
-              <Button onClick={onNewProject} className="gap-1.5">
-                <Plus size={14} />
-                Create project
-              </Button>
-            </div>
+          <Card className="p-2 sm:p-4">
+            <EmptyState
+              icon={<LayoutGrid size={22} />}
+              title="No projects created yet"
+              description="Create your first feedback project to generate a widget embed snippet."
+              action={
+                <Button onClick={onNewProject} className="gap-1.5" size="sm">
+                  <Plus size={14} />
+                  Create project
+                </Button>
+              }
+            />
           </Card>
         </>
       ) : (

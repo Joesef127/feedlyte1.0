@@ -40,7 +40,7 @@ export function ResetPasswordScreen() {
               <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" className="text-destructive" />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-foreground mb-2">Invalid link</h2>
+          <h1 className="text-base font-bold text-foreground mb-2">Invalid link</h1>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
             This reset link is missing or malformed. Request a new one from
             the forgot password page.
@@ -110,9 +110,9 @@ export function ResetPasswordScreen() {
                 <path d="M4 10l4.5 4.5 7.5-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-success" />
               </svg>
             </div>
-            <h2 className="text-base font-bold text-foreground mb-2 tracking-tight">
+            <h1 className="text-base font-bold text-foreground mb-2 tracking-tight">
               Password updated
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Your password has been reset. Redirecting you to sign in...
             </p>
@@ -120,9 +120,9 @@ export function ResetPasswordScreen() {
         ) : (
           <>
             <div className="mb-6">
-              <h2 className="text-base font-bold text-foreground mb-1.5 tracking-tight">
+              <h1 className="text-base font-bold text-foreground mb-1.5 tracking-tight">
                 Set new password
-              </h2>
+              </h1>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Choose a strong password with at least 8 characters.
               </p>

@@ -2,8 +2,9 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   useFeedbackItem,
   useUpdateFeedbackStatus,
@@ -29,6 +30,7 @@ import { FeedbackNotesTimeline } from "./detail/feedback-notes-timeline";
 import { FeedbackSubmissionDetails } from "./detail/feedback-submission-details";
 import { FeedbackSimilarAndProject } from "./detail/feedback-similar-and-project";
 import { FeedbackDeleteModals } from "./detail/feedback-delete-modals";
+import FeedbackDetailLoading from "@/app/(main)/dashboard/feedback/[id]/loading";
 
 interface FeedbackDetailPageProps {
   params: Promise<{ id: string }>;
@@ -55,7 +57,6 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
       router.push("/dashboard/feedback");
     } catch (err) {
       toast.error(friendlyError(err));
-      console.error("Delete feedback error:", err);
     }
   };
 
@@ -132,22 +133,26 @@ export function FeedbackDetailPage({ params }: FeedbackDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
+      <FeedbackDetailLoading />
     );
   }
 
   if (isError || !feedback) {
     return (
-      <div className="flex-1 flex items-center justify-center flex-col gap-3">
-        <p className="text-muted-foreground text-sm">Feedback not found.</p>
-        <Button
-          variant="secondary"
-          onClick={() => router.push("/dashboard/feedback")}
-        >
-          Back to Feedback
-        </Button>
+      <div className="flex-1 flex items-center justify-center py-12">
+        <EmptyState
+          icon={<MessageSquare size={24} />}
+          title="Feedback item not found"
+          description="This feedback submission may have been deleted, or you don't have permission to access it."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => router.push("/dashboard/feedback")}
+            >
+              Back to Feedback
+            </Button>
+          }
+        />
       </div>
     );
   }

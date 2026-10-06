@@ -358,7 +358,7 @@ export function WidgetFeedbackForm({
             <p className="text-center text-[10px] text-muted-foreground m-0 mt-2 font-sans">
               Powered by{" "}
               <a
-                href="https://feedlyte.vercel.app"
+                href="https://feedlyte.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-muted-foreground hover:text-foreground hover:underline"

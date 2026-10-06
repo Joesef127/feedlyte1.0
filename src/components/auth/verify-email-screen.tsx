@@ -43,9 +43,9 @@ export function VerifyEmailScreen() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <MessageSquare size={16} className="text-primary-foreground" strokeWidth={2} />
             </div>
-            <span className="text-[22px] font-bold text-foreground tracking-[-0.03em]">
+            <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0 inline">
               Feedlyte
-            </span>
+            </h1>
           </div>
           <p className="text-muted-foreground text-sm">
             Feedback infrastructure for modern products.
@@ -103,9 +103,9 @@ export function VerifyEmailScreen() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <MessageSquare size={16} className="text-primary-foreground" strokeWidth={2} />
           </div>
-          <span className="text-[22px] font-bold text-foreground tracking-[-0.03em]">
+          <h1 className="text-[22px] font-bold text-foreground tracking-[-0.03em] m-0 inline">
             Feedlyte
-          </span>
+          </h1>
         </div>
         <p className="text-muted-foreground text-sm">
           Feedback infrastructure for modern products.

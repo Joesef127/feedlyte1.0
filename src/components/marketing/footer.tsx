@@ -21,8 +21,9 @@ const footerLinks = {
   Company: [
     { label: "Sign In", href: "/auth" },
     { label: "Create Free Account", href: "/auth" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
     { label: "Support Contact", href: "mailto:support@feedlyte.com" },
-    { label: "Terms & Privacy", href: "#" },
   ],
 };
 

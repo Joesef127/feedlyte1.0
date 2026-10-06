@@ -59,9 +59,9 @@ export function ForgotPasswordScreen() {
                 <path d="M4 10l4.5 4.5 7.5-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-success" />
               </svg>
             </div>
-            <h2 className="text-base font-bold text-foreground mb-2 tracking-tight">
+            <h1 className="text-base font-bold text-foreground mb-2 tracking-tight">
               Check your inbox
-            </h2>
+            </h1>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               If an account exists for{" "}
               <span className="text-foreground font-medium">{email}</span>,
@@ -83,9 +83,9 @@ export function ForgotPasswordScreen() {
           /* Request form */
           <>
             <div className="mb-6">
-              <h2 className="text-base font-bold text-foreground mb-1.5 tracking-tight">
+              <h1 className="text-base font-bold text-foreground mb-1.5 tracking-tight">
                 Forgot your password?
-              </h2>
+              </h1>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Enter your account email and we&apos;ll send you a link to reset
                 your password.
