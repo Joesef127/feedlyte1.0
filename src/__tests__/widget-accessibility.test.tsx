@@ -237,4 +237,77 @@ describe("widget accessibility contract", () => {
     expect(await screen.findByText(/too many requests/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
+
+  it("resolves project config from window.location.search fallback before completing config load", async () => {
+    window.history.pushState({}, "", "/widget?project=proj_fallback");
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        label: "Fallback Help",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      await act(async () => {
+        render(<WidgetPage searchParams={Promise.resolve({})} />);
+      });
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          expect.stringContaining("/api/widget-config?project=proj_fallback"),
+        );
+      });
+
+      const launcher = await screen.findByRole("button", { name: /toggle feedback form/i });
+      expect(launcher).toHaveTextContent("Fallback Help");
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
+  });
+
+  it("submits feedback with project query parameter and technicalDetails", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/api/widget-config")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ label: "Feedback", technicalDetailsEnabled: true }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ trackingToken: "trk_123" }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await act(async () => {
+      render(
+        <WidgetPage
+          searchParams={Promise.resolve({
+            project: "proj_999",
+            position: "bottom-right",
+            url: "https://example.com",
+          })}
+        />,
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /toggle feedback form/i }));
+    await user.type(screen.getByRole("textbox", { name: /feedback message/i }), "Testing submission query param");
+    await user.click(screen.getByRole("button", { name: /send feedback/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/api/feedback?project=proj_999"),
+        expect.objectContaining({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+  });
 });
+

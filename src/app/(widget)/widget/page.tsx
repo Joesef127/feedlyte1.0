@@ -132,6 +132,12 @@ export default function WidgetPage({
   useEffect(() => {
     const id = projectId || resolvedParams?.project;
     if (!id) {
+      if (typeof window !== "undefined" && window.location?.search) {
+        const searchProject = new URLSearchParams(window.location.search).get("project");
+        if (searchProject?.trim()) {
+          return;
+        }
+      }
       setIsConfigLoaded(true);
       return;
     }
@@ -266,7 +272,7 @@ export default function WidgetPage({
       email?: string;
       category?: string;
       rating?: number;
-      metadata?: Record<string, string>;
+      technicalDetails?: Record<string, string>;
       pageUrl?: string;
       referrer?: string;
     } = {
@@ -304,7 +310,7 @@ export default function WidgetPage({
         }
       });
       if (Object.keys(metadata).length > 0) {
-        payload.metadata = metadata;
+        payload.technicalDetails = metadata;
       }
     }
 
@@ -314,7 +320,7 @@ export default function WidgetPage({
 
     try {
       const base = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
-      const res = await fetch(`${base}/api/feedback`, {
+      const res = await fetch(`${base}/api/feedback?project=${encodeURIComponent(activeProjectId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
